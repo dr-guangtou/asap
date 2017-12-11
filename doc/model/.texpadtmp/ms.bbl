@@ -1,0 +1,110 @@
+ \newcommand{\noop}[1]{}
+\begin{thebibliography}{}
+\makeatletter
+\relax
+\def\mn@urlcharsother{\let\do\@makeother \do\$\do\&\do\#\do\^\do\_\do\%\do\~}
+\def\mn@doi{\begingroup\mn@urlcharsother \@ifnextchar [ {\mn@doi@}
+  {\mn@doi@[]}}
+\def\mn@doi@[#1]#2{\def\@tempa{#1}\ifx\@tempa\@empty \href
+  {http://dx.doi.org/#2} {doi:#2}\else \href {http://dx.doi.org/#2} {#1}\fi
+  \endgroup}
+\def\mn@eprint#1#2{\mn@eprint@#1:#2::\@nil}
+\def\mn@eprint@arXiv#1{\href {http://arxiv.org/abs/#1} {{\tt arXiv:#1}}}
+\def\mn@eprint@dblp#1{\href {http://dblp.uni-trier.de/rec/bibtex/#1.xml}
+  {dblp:#1}}
+\def\mn@eprint@#1:#2:#3:#4\@nil{\def\@tempa {#1}\def\@tempb {#2}\def\@tempc
+  {#3}\ifx \@tempc \@empty \let \@tempc \@tempb \let \@tempb \@tempa \fi \ifx
+  \@tempb \@empty \def\@tempb {arXiv}\fi \@ifundefined
+  {mn@eprint@\@tempb}{\@tempb:\@tempc}{\expandafter \expandafter \csname
+  mn@eprint@\@tempb\endcsname \expandafter{\@tempc}}}
+
+\bibitem[\protect\citeauthoryear{{Astropy Collaboration} et~al.,}{{Astropy
+  Collaboration} et~al.}{2013}]{AstroPy}
+{Astropy Collaboration} et~al., 2013, \mn@doi [\aap]
+  {10.1051/0004-6361/201322068}, \href
+  {http://adsabs.harvard.edu/abs/2013A%26A...558A..33A} {558, A33}
+
+\bibitem[\protect\citeauthoryear{{Barbary}, {Boone}  \& {Deil}}{{Barbary}
+  et~al.}{2015}]{PythonSEP}
+{Barbary} {Boone}  {Deil} 2015, sep: v0.3.0, \mn@doi{10.5281/zenodo.15669},
+  \url {http://dx.doi.org/10.5281/zenodo.15669}
+
+\bibitem[\protect\citeauthoryear{{Cappellari} et~al.,}{{Cappellari}
+  et~al.}{2013}]{Cappellari2013b}
+{Cappellari} M.,  et~al., 2013, \mn@doi [\mnras] {10.1093/mnras/stt644}, \href
+  {http://adsabs.harvard.edu/abs/2013MNRAS.432.1862C} {432, 1862}
+
+\bibitem[\protect\citeauthoryear{{Chabrier}}{{Chabrier}}{2003}]{Chabrier2003}
+{Chabrier} G.,  2003, \mn@doi [\pasp] {10.1086/376392}, \href
+  {http://adsabs.harvard.edu/abs/2003PASP..115..763C} {115, 763}
+
+\bibitem[\protect\citeauthoryear{{Diemer}}{{Diemer}}{2015}]{Colossus}
+{Diemer} B.,  2015, {Colossus: COsmology, haLO, and large-Scale StrUcture
+  toolS}, Astrophysics Source Code Library (\mn@eprint {ascl} {1501.016})
+
+\bibitem[\protect\citeauthoryear{{Driver} et~al.,}{{Driver}
+  et~al.}{2011}]{Driver2011}
+{Driver} S.~P.,  et~al., 2011, \mn@doi [\mnras]
+  {10.1111/j.1365-2966.2010.18188.x}, \href
+  {http://adsabs.harvard.edu/abs/2011MNRAS.413..971D} {413, 971}
+
+\bibitem[\protect\citeauthoryear{{Eisenstein} et~al.,}{{Eisenstein}
+  et~al.}{2011}]{Eisenstein2011}
+{Eisenstein} D.~J.,  et~al., 2011, \mn@doi [\aj] {10.1088/0004-6256/142/3/72},
+  \href {http://adsabs.harvard.edu/abs/2011AJ....142...72E} {142, 72}
+
+\bibitem[\protect\citeauthoryear{Hunter}{Hunter}{2007}]{Matplotlib}
+Hunter J.~D.,  2007, \mn@doi [Computing In Science \& Engineering]
+  {10.1109/MCSE.2007.55}, 9, 90
+
+\bibitem[\protect\citeauthoryear{Jones, Oliphant, Peterson  et~al.}{Jones
+  et~al.}{2001}]{SciPy}
+Jones E.,  Oliphant T.,  Peterson P.,   et~al., 2001, {SciPy}: Open source
+  scientific tools for {Python}, \url {http://www.scipy.org/}
+
+\bibitem[\protect\citeauthoryear{{Liske} et~al.,}{{Liske}
+  et~al.}{2015}]{Liske2015}
+{Liske} J.,  et~al., 2015, \mn@doi [\mnras] {10.1093/mnras/stv1436}, \href
+  {http://adsabs.harvard.edu/abs/2015MNRAS.452.2087L} {452, 2087}
+
+\bibitem[\protect\citeauthoryear{{Miyazaki} et~al.,}{{Miyazaki}
+  et~al.}{2012}]{Miyazaki2012}
+{Miyazaki} S.,  et~al., 2012, in Ground-based and Airborne Instrumentation for
+  Astronomy IV. p. 84460Z, \mn@doi{10.1117/12.926844}
+
+\bibitem[\protect\citeauthoryear{{Miyazaki et~al.}}{{Miyazaki
+  et~al.}}{prep}]{MiyazakiInPrep}
+{Miyazaki et~al.} J.,  \noop{2046}in prep., In preparation
+
+\bibitem[\protect\citeauthoryear{{Oke} \& {Gunn}}{{Oke} \&
+  {Gunn}}{1983}]{Oke1983}
+{Oke} J.~B.,  {Gunn} J.~E.,  1983, \mn@doi [\apj] {10.1086/160817}, \href
+  {http://adsabs.harvard.edu/abs/1983ApJ...266..713O} {266, 713}
+
+\bibitem[\protect\citeauthoryear{Pedregosa et~al.,}{Pedregosa
+  et~al.}{2011}]{scikit-learn}
+Pedregosa F.,  et~al., 2011, Journal of Machine Learning Research, 12, 2825
+
+\bibitem[\protect\citeauthoryear{P\'erez \& Granger}{P\'erez \&
+  Granger}{2007}]{IPython}
+P\'erez F.,  Granger B.~E.,  2007, \mn@doi [Computing in Science and
+  Engineering] {10.1109/MCSE.2007.53}, 9, 21
+
+\bibitem[\protect\citeauthoryear{{Schlafly} \& {Finkbeiner}}{{Schlafly} \&
+  {Finkbeiner}}{2011}]{Schlafly11}
+{Schlafly} E.~F.,  {Finkbeiner} D.~P.,  2011, \mn@doi [\apj]
+  {10.1088/0004-637X/737/2/103}, 737, 103
+
+\bibitem[\protect\citeauthoryear{{Vanderplas}, {Connolly}, {Ivezi{\'c}}  \&
+  {Gray}}{{Vanderplas} et~al.}{2012}]{astroML}
+{Vanderplas} J.,  {Connolly} A.,  {Ivezi{\'c}} {\v Z}.,   {Gray} A.,  2012, in
+  Conference on Intelligent Data Understanding (CIDU). pp 47 --54,
+  \mn@doi{10.1109/CIDU.2012.6382200}
+
+\bibitem[\protect\citeauthoryear{Walt, Colbert  \& Varoquaux}{Walt
+  et~al.}{2011}]{NumPy}
+Walt S. v.~d.,  Colbert S.~C.,   Varoquaux G.,  2011, \mn@doi [Computing in
+  Science and Engg.] {10.1109/MCSE.2011.37}, 13, 22
+
+\makeatother
+\end{thebibliography}

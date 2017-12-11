@@ -1,10 +1,11 @@
 """ Module storing functions used to paint M10 values onto model galaxies
 """
 import numpy as np
+
 from halotools.empirical_models import conditional_abunmatch
 
 
-def sm10_cam(log10_sm100_data,
+def minn_cam(log10_sm100_data,
              log10_sm10_data,
              log10_sm100_model,
              secondary_haloprop,

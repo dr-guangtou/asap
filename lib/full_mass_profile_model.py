@@ -3,12 +3,12 @@ Module storing functions used to paint values of M10, M100 and M*_tot onto
 model galaxies
 """
 
-from sm_tot_model import smtot_from_mhalo_log_linear
-from sm_m10_model import sm10_cam
-from sm_m100_model import sm100_from_smtot
+from sm_halo_model import logms_halo_from_logmh_log_linear
+from sm_minn_model import logms_inn_cam
+from sm_mtot_model import logms_tot_from_logms_halo
 
 
-def sm_profile_from_mhalo(log_mhalo,
+def sm_profile_from_mhalo(logmh,
                           shmr_a,
                           shmr_b,
                           random_scatter_in_dex,
@@ -22,9 +22,9 @@ def sm_profile_from_mhalo(log_mhalo,
     """
     Parameters
     ----------
-    mhalo : float or ndarray
+    logmh : float or ndarray
         Float or Numpy array of shape (num_gals, ) of the halo mass of the
-        galaxy in units of Msun
+        galaxy in units of log10(Msun)
         (*not* in scaled h=1 units, but instead in "straight up" units
         calculated assuming little h equals the value appropriate for
         its cosmology)
@@ -33,14 +33,20 @@ def sm_profile_from_mhalo(log_mhalo,
         Power law scaling index of smtot with mhalo
 
     shmr_b : float
-        Normalization of the power law scaling between mhalo and smtot
+        Normalization of the power law scaling between mhalo and smtot.
 
     random_scatter_in_dex : float
-        Dispersion of the log-normal random noise added to smtot at fixed mhalo
+        Dispersion of the log-normal random noise added to smtot at fixed mhalo.
 
     frac_tot_by_halo: ndarray
+        Fraction of the stellar mass of (central + ICL) to the total
+        stellar mass within the halo (including satellites galaxies).
+        (e.g., the ones predicted by UniverseMachine model.)
 
     frac_inn_by_tot: ndarray
+        Fraction of the stellar mass in the inner region of galaxy
+        to the total stellar mass of the galaxy (central + ICL).
+        (e.g., the ones predicted by UniverseMachine model.)
 
     log_m100_data : ndarray
         Numpy array of shape (num_gals, ) storing log10(M100) of the
@@ -59,39 +65,53 @@ def sm_profile_from_mhalo(log_mhalo,
 
     Returns
     -------
-    log_m10 : float or ndarray
+    logms_inn : float or ndarray
         Float or Numpy array of shape (num_gals, ) storing the total stellar
-        mass within 10 kpc aperture
+        mass in the inner region (e.g., within 10 kpc aperture),
+        in unit of log10(Msun).
 
-    log_m100 : float or ndarray
+    logms_tot : float or ndarray
         Float or Numpy array of shape (num_gals, ) storing the total stellar
-        mass within 100 kpc aperture
+        mass within a very large aperture (e.g., 100 kpc aperture),
+        in unit of log10(Msun).
 
-    log_mtot : float or ndarray
+    logms_halo : float or ndarray
         Float or Numpy array of shape (num_gals, ) storing the total stellar
-        mass in the halo, including BCG, IHL and total satellite galaxy mass
-        in units of Msun
+        mass in the halo, including central galaxy, ICL and total satellite
+        galaxy mass in units of log10(Msun).
+
+    mask_tot : boolen
+        Flags for useful items in the predicted stellar masses.
     """
-    logms_tot = smtot_from_mhalo_log_linear(log_mhalo,
-                                            shmr_a,
-                                            shmr_b,
-                                            random_scatter_in_dex,
-                                            log_mass=log_mass)
+    # Given the prameters for stellar mass halo mass relation, and the
+    # random scatter of stellar mass, predict the stellar mass of all
+    # galaxies (central + ICL + satellites) in haloes.
+    logms_halo = logms_halo_from_logmh_log_linear(logmh,
+                                                  shmr_a,
+                                                  shmr_b,
+                                                  random_scatter_in_dex,
+                                                  log_mass=log_mass)
 
-    logms_100 = sm100_from_smtot(logms_tot,
-                                 frac_tot_by_halo,
-                                 log_mass=log_mass)
+    # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot = logms_tot_from_logms_halo(logms_halo,
+                                          frac_tot_by_halo,
+                                          log_mass=log_mass)
 
-    mask_m100 = ((logms_100 >= logms_tot_bins[0]) &
-                 (logms_100 <= logms_tot_bins[-1]))
+    # Only keep the ones with Ms,tot within the obseved range.
+    mask_tot = ((logms_tot >= logms_tot_bins[0]) &
+                (logms_tot <= logms_tot_bins[-1]))
 
-    logms_10 = sm10_cam(logms_tot_obs,
-                        logms_inn_obs,
-                        logms_100[mask_m100],
-                        frac_inn_by_tot[mask_m100],
-                        logms_tot_bins,
-                        sigma=0,
-                        num_required_gals_per_massbin=ngal_min)
+    # Given the modelled fraction of Ms,cen/Ms,tot from UM2,
+    # predict the stellar mass in the inner region using
+    # conditional abundance matching method.
+    logms_inn = logms_inn_cam(logms_tot_obs,
+                              logms_inn_obs,
+                              logms_tot[mask_tot],
+                              frac_inn_by_tot[mask_tot],
+                              logms_tot_bins,
+                              sigma=0,
+                              num_required_gals_per_massbin=ngal_min)
 
-    return (logms_10, logms_100,
-            logms_tot, mask_m100)
+    return (logms_inn, logms_tot,
+            logms_halo, mask_tot)

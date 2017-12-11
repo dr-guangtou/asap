@@ -88,7 +88,8 @@ def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz,
     downsampling_factor : float
         Factor by which the particles have been downsampled.
         For example, if the total number of particles in the entire simulation
-        is num_ptcl_tot = 2048**3, then downsampling_factor = num_ptcl_tot/float(len(ptclx))
+        is num_ptcl_tot = 2048**3, then
+        downsampling_factor = num_ptcl_tot/float(len(ptclx))
 
     rp_bins : ndarray
         Array of shape (num_bins, ) storing the bins in projected separation
@@ -108,5 +109,6 @@ def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz,
     galaxy_positions = np.vstack((galx, galy, galz)).T
     particle_positions = np.vstack((ptclx, ptcly, ptclz)).T
 
-    return total_mass_enclosed_per_cylinder(galaxy_positions, particle_positions,
-        particle_masses, downsampling_factor, rp_bins, period)
+    return total_mass_enclosed_per_cylinder(
+        galaxy_positions, particle_positions, particle_masses,
+        downsampling_factor, rp_bins, period)

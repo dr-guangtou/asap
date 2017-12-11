@@ -124,9 +124,11 @@
 \def\mbcg{{$M_{\star,\mathrm{BCG}}$}}
 \def\micl{{$M_{\star,\mathrm{ICL}}$}}
 \def\mcen{{$M_{\star,\mathrm{Cen}}$}}
+\def\mgal{{$M_{\star,\mathrm{Gal}}$}}
 
 \def\fraccen{{$M_{\star,\ \mathrm{Cen,\ Ori}} / M_{\star,\ \mathrm{All,\ Ori}}$}}
 \def\fracbcg{{$M_{\star,\ \mathrm{BCG,\ Ori}} / M_{\star,\ \mathrm{Cen,\ Ori}}$}}
+\def\fracins{{$M_{\star,\ \mathrm{in-situ,\ Ori}} / M_{\star,\ \mathrm{Cen,\ Ori}}$}}
 
 \def\sigms{{$\sigma_{\log\ M_{\star}}$}}
 \def\sigmh{{$\sigma_{\log\ M_{\mathrm{Halo}}}$}}
@@ -142,8 +144,9 @@
 
 \def\insitu{\textit{in situ}}
 \def\exsitu{\textit{ex situ}}
+
 \def\mins{{$M_{\star,ins}$}}
-\def\mexs{{$M_{\star,exs}$}}
+\def\macc{{$M_{\star,exs}$}}
 
 %% ------------------------------------------------------------------------------------ %% 
 % Commenting:
@@ -405,10 +408,10 @@
 %% ------------------------------------------------------------------------------------ %% 
 
 %% ------------------------------------------------------------------------------------ %% 
-\subsection{Modeling the \mtot{}--\minn{} plane}
-    \label{ssec:m100_m10}
+\subsection{Old Model: the \mtot{}--\minn{} plane}
+    \label{ssec:old_m100_m10}
     
-    \plan{Briefly explain the \um{} semi-empirical model.}
+    \plan{Need a lot of edits!}
 
     Physical motivation of this model is based on the finding in simulations that the 
     stellar mass of \emph{all} galaxies in the halo correlates the best with the 
@@ -494,6 +497,124 @@
         details about the MCMC run).}
 
 %% ------------------------------------------------------------------------------------ %% 
+\subsection{New Model: the \mins{}--\macc{} plane}
+    \label{ssec:new_m100_m10}
+
+    \song{For discussion, we keep descriptions for both old and new models here.  
+          Directly mapping the \mbcg{} and \mcen{} to our \minn{} and \mtot{}
+          turns out to be problematic.  
+          As show in the Figure~\ref{fig:um2_m100_m10_4}, the fraction of \mbcg{}
+          in \mcen{} from the \um{} model shows a very different distribution 
+          compared to the fraction of \minn{} in \mtot{} from HSC observations. 
+          Too many \um{} massive galaxies have very high \mbcg{} fraction that 
+          will significantly mislead the model. 
+          \um{} model now uses a very simple model to determine the fraction of 
+          stars that go into the ICL component after merger.  
+          So it is not surprising that there is mismatch with observation. 
+          }
+          
+    Here we describe the basic structure of the model. 
+    The physical parameters used here are: 
+
+    \begin{itemize}
+    
+        \item \mhalo{}: Dark matter halo mass. 
+        
+        \item \mall{}: Total stellar mass of all galaxies (central and satellites)
+            in the dark matter halo.
+        
+        \item \mins{}: The stellar mass of the \insitu{} component, which is the 
+            stars formed in the dark matter halo of the main progenitor.
+        
+        \item \macc{}: The stellar mass of the \exsitu{} component, which is the 
+            stars accreted from merging with galaxies in other dark matter haloes. 
+        
+        \item \mgal{}: The total stellar mass of the galaxy, which is 
+            \mins{}$+$\macc{}.
+        
+        \item \mtot{}: Observed stellar mass within a 100 kpc elliptical aperture. 
+        
+        \item \minn{}: Observed stellar mass within a 10 kpc elliptical aperture. 
+
+    \end{itemize}
+
+    Using the \um{} model based on the MultiDark simulation (referred to 
+    as the \um{} model), we assume there is a simple log--linear relation between 
+    \mhalo{} and \mall{}: 
+
+    \begin{equation}
+        \log M_{\star, \mathrm{All}} = a \times \log M_{\rm Halo} + b.
+    \end{equation}
+
+    The above relation has a log--normal scatter.  
+    The scatter varies with \mhalo{}, and follows a simple form: 
+
+    \begin{equation}
+        \sigma_{\log{M_{\star, \mathrm{All}}}} = c \times \log M_{\rm Halo} + d.
+    \end{equation}
+    
+    The slopes and normalizations of these two relations ($a, b, c, d$) will be 
+    modelled as free parameters in our model.
+    Using these assumptions, now we can `remap' the \um{} model to predict 
+    the observed aperture stellar masses using conditional abundance matching 
+    method. 
+    This process makes use of two mass fractions from the \um{} model:
+    
+    \begin{itemize}
+    
+        \item $f_{\mathrm{Cen,\ UM}}=$\fraccen{}: 
+            is the fraction of stellar mass of the central galaxy to the total 
+            stellar mass within the halo. 
+            $f_{\mathrm{Cen,\ UM}}\sim 1.0$ means that central galaxy dominates 
+            the stellar mass budget of the halo.
+                
+        \item \fracbcg{}: if we assume that the \mcen{} is the ``true'' total stellar 
+            mass of the central galaxy system, \fracbcg{} is the fraction of the 
+            stellar mass stored in the inner region of the central galaxy.
+ 
+    \end{itemize}
+    
+    In addition, we assume empirical relations between the modeled and observed 
+    stellar masses. 
+    
+    In the simplest form, we assume the observed \minn{} represent a constant 
+    fraction of the \insitu{} component, and \mtot{} represents the total stellar 
+    mass of the galaxy: 
+    
+    \begin{align}
+        \label{eqn:eqlabel}
+        \begin{split}
+        M_{\star, \mathrm{10\ kpc}} = f_{in-situ} \times M_{\star, in-situ},
+        \\
+        M_{\star, \mathrm{100\ kpc}} = M_{\star,\ in-situ} + M_{\star, ex-situ}.
+        \end{split}
+    \end{align}
+    
+    We will ``remap'' the distributions of parameters 
+    using conditional abundance matching method.  
+    The original parameters from the \um{} model will be labelled with $\mathrm{Ori}$, 
+    while the ``remapped'' ones will be labelled as $\mathrm{Remap}$.  
+
+    To compare with observations, we make the assumption that, after the ``remapping'', 
+    we can use the $M_{\star,\ \mathrm{Cen,\ Remap}}$ and 
+    $M_{\star,\ \mathrm{BCG,\ Remap}}$ to match the observed \mtot{} and \minn{}.
+
+    The ``remapped'' $M_{\star,\ \mathrm{Cen,\ Remap}}$ and 
+    $M_{\star,\ \mathrm{BCG,\ Remap}}$ are from: 
+
+    \begin{equation}
+        M_{\star,\ \mathrm{Cen,\ Remap}} = M_{\star,\ \mathrm{All,\ Remap}} * 
+            (M_{\star,\ \mathrm{Cen,\ Ori}} / M_{\star,\ \mathrm{All,\ Ori}})
+    \end{equation}
+
+    \begin{equation}
+        M_{\star,\ \mathrm{BCG,\ Remap}} = M_{\star,\ \mathrm{Cen,\ Remap}} * 
+            (M_{\star,\ \mathrm{BCG,\ Ori}} / M_{\star,\     \mathrm{Cen,\ Ori}})
+    \end{equation}
+
+     
+
+%% ------------------------------------------------------------------------------------ %% 
     \begin{figure*}
         \centering 
         \includegraphics[width=\textwidth]{fig/um2_model_A}
@@ -516,7 +637,7 @@
             \caption{
                 Corner plot for the best--fit parameters from the MCMC modelling.
                 }
-        \label{fig:um2_m100_m10_1}
+        \label{fig:um2_m100_m10_2}
     \end{figure}
 %% ------------------------------------------------------------------------------------ %% 
 
@@ -693,7 +814,7 @@
                 Cleveland 1979, Cleveland \& Devlin 1988, \citealt{Cappellari2013b}).  
                 The `iso--\mhalo{}' curves are overlaid as well.
                 }
-        \label{fig:um2_m100_m10_1}
+        \label{fig:um2_m100_m10_3}
     \end{figure}
 %% ------------------------------------------------------------------------------------ %% 
 
@@ -718,7 +839,7 @@
                 And there appears to be a population of central galaxies in \um{} with 
                 no ICL component at all, especially in the left sample.
                 }
-        \label{fig:um2_m100_m10_1}
+        \label{fig:um2_m100_m10_4}
     \end{figure*}
 %% ------------------------------------------------------------------------------------ %% 
 

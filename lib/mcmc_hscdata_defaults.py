@@ -8,7 +8,6 @@ default_priors['logMmin'] = [9.0, 14.0]
 default_priors['mean_occupation_centrals_assembias_param1'] = [-1.0, 1.0]
 default_priors['mean_occupation_satellites_assembias_param1'] = [-1.0, 1.0]
 
-
 # Some default fit parameters
 default_ndim = 7
 default_nwalkers = 28

@@ -3,11 +3,12 @@ derived quantities from the mock galaxies, like the
 total stellar mass in each halo, and the lensing signal precomputation.
 """
 import numpy as np
+
 from halotools.utils import group_member_generator
 from halotools.mock_observables import total_mass_enclosed_per_cylinder
 
 
-def total_stellar_mass_including_satellites(gals, colname):
+def total_stellar_mass_including_satellites(gals, colname, hostid='halo_hostid'):
     """
     Sum up all the stellar mass in each host halo, including mass bound up in satellites.
 
@@ -39,21 +40,22 @@ def total_stellar_mass_including_satellites(gals, colname):
     msg = "Input ``gals`` table must have a ``{0}`` column"
     assert colname in list(gals.keys()), msg.format(colname)
 
-    msg = ("Input ``gals`` table must have a ``halo_hostid`` column\n"
-        "This column is pre-computed by the `value_added_mock` function in the `umachine_pyio` package\n")
-    assert 'halo_hostid' in list(gals.keys()), msg
+    msg = ("Input ``gals`` table must have a %s column\n" % hostid
+           "This column is pre-computed by the `value_added_mock` function" +
+           "in the `umachine_pyio` package\n")
+    assert hostid in list(gals.keys()), msg
 
-    msg = ("Input ``gals`` table must be pre-sorted in ascending order of ``halo_hostid`` column\n"
-        "You must call np.sort(gals) prior to calling this function.\n")
-    assert np.all(np.diff(gals['halo_hostid']) >= 0), msg
+    msg = ("Input ``gals`` table must be pre-sorted in ascending order " +
+           "of ``halo_hostid`` column\n"
+           "You must call np.sort(gals) prior to calling this function.\n")
+    assert np.all(np.diff(gals[hostid]) >= 0), msg
 
     #  Initialize the array to be filled in the loop
     total_stellar_mass = np.zeros(len(gals))
 
     #  Calculate generator that will yield our grouped mock data
-    grouping_key = 'halo_hostid'
     requested_columns = [colname]
-    group_gen = group_member_generator(gals, grouping_key, requested_columns)
+    group_gen = group_member_generator(gals, hostid, requested_columns)
 
     #  Iterate over the generator and calculate total stellar mass in each halo
     for first, last, member_props in group_gen:
@@ -108,4 +110,3 @@ def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz,
 
     return total_mass_enclosed_per_cylinder(galaxy_positions, particle_positions,
         particle_masses, downsampling_factor, rp_bins, period)
-

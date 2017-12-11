@@ -4,19 +4,19 @@ model galaxies
 """
 
 from sm_tot_model import smtot_from_mhalo_log_linear
-from sm_m100_model import sm100_from_smtot
 from sm_m10_model import sm10_cam
+from sm_m100_model import sm100_from_smtot
 
 
 def sm_profile_from_mhalo(log_mhalo,
-                          log_mhalo_coeff,
-                          normalization_param,
+                          shmr_a,
+                          shmr_b,
                           random_scatter_in_dex,
-                          frac_sm100_by_smtot,
-                          frac_sm10_by_sm100,
-                          logms_100_data,
-                          logms_10_data,
-                          logms_100_bins,
+                          frac_tot_by_halo,
+                          frac_inn_by_tot,
+                          logms_tot_obs,
+                          logms_inn_obs,
+                          logms_tot_bins,
                           log_mass=True,
                           ngal_min=25):
     """
@@ -29,18 +29,18 @@ def sm_profile_from_mhalo(log_mhalo,
         calculated assuming little h equals the value appropriate for
         its cosmology)
 
-    log_mhalo_coeff : float
+    shmr_a : float
         Power law scaling index of smtot with mhalo
 
-    normalization_param : float
+    shmr_b : float
         Normalization of the power law scaling between mhalo and smtot
 
     random_scatter_in_dex : float
         Dispersion of the log-normal random noise added to smtot at fixed mhalo
 
-    frac_sm100_by_smtot: ndarray
+    frac_tot_by_halo: ndarray
 
-    frac_sm10_by_sm100: ndarray
+    frac_inn_by_tot: ndarray
 
     log_m100_data : ndarray
         Numpy array of shape (num_gals, ) storing log10(M100) of the
@@ -73,23 +73,23 @@ def sm_profile_from_mhalo(log_mhalo,
         in units of Msun
     """
     logms_tot = smtot_from_mhalo_log_linear(log_mhalo,
-                                            log_mhalo_coeff,
-                                            normalization_param,
+                                            shmr_a,
+                                            shmr_b,
                                             random_scatter_in_dex,
                                             log_mass=log_mass)
 
     logms_100 = sm100_from_smtot(logms_tot,
-                                 frac_sm100_by_smtot,
+                                 frac_tot_by_halo,
                                  log_mass=log_mass)
 
-    mask_m100 = ((logms_100 >= logms_100_bins[0]) &
-                 (logms_100 <= logms_100_bins[-1]))
+    mask_m100 = ((logms_100 >= logms_tot_bins[0]) &
+                 (logms_100 <= logms_tot_bins[-1]))
 
-    logms_10 = sm10_cam(logms_100_data,
-                        logms_10_data,
+    logms_10 = sm10_cam(logms_tot_obs,
+                        logms_inn_obs,
                         logms_100[mask_m100],
-                        frac_sm10_by_sm100[mask_m100],
-                        logms_100_bins,
+                        frac_inn_by_tot[mask_m100],
+                        logms_tot_bins,
                         sigma=0,
                         num_required_gals_per_massbin=ngal_min)
 

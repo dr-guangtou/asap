@@ -3,9 +3,9 @@
 import numpy as np
 
 
-def smtot_from_mhalo_log_linear(mhalo,
-                                log_mhalo_coeff,
-                                normalization_param,
+def smtot_from_mhalo_log_linear(log_mhalo,
+                                shmr_a,
+                                shmr_b,
                                 random_scatter_in_dex,
                                 log_mass=True):
     r""" Power law model for total stellar mass in a halo as a function of halo mass.
@@ -13,7 +13,7 @@ def smtot_from_mhalo_log_linear(mhalo,
     the also the total galaxy + IHM mass bound in satellites of the halo.
 
 
-    log_smtot = log_mhalo_coeff*log_mhalo + normalization_param
+    log_smtot = shmr_a*log_mhalo + shmr_b
 
     Parameters
     ----------
@@ -22,10 +22,10 @@ def smtot_from_mhalo_log_linear(mhalo,
         in units of Msun (*not* in scaled h=1 units, but instead in "straight up" units
         calculated assuming little h equals the value appropriate for its cosmology)
 
-    log_mhalo_coeff : float
+    shmr_a : float
         Power law scaling index of smtot with mhalo
 
-    normalization_param : float
+    shmr_b : float
         Normalization of the power law scaling between mhalo and smtot
 
     random_scatter_in_dex : float
@@ -37,17 +37,7 @@ def smtot_from_mhalo_log_linear(mhalo,
         Float or Numpy array of shape (num_gals, ) storing the total stellar mass
         in the halo, including BCG, IHL and total satellite galaxy mass in units of Msun
     """
-    if log_mass:
-        log_mhalo = mhalo
-    else:
-        log_mhalo = np.log10(mhalo)
+    log_mhalo = log_mhalo if log_mass else np.log10(log_mhalo)
 
-    mean_log_sm = (log_mhalo_coeff * log_mhalo + normalization_param)
-
-    log_smtot = np.random.normal(loc=mean_log_sm,
-                                 scale=random_scatter_in_dex)
-
-    if log_mass:
-        return log_smtot
-    else:
-        return (10.0 ** log_smtot)
+    return np.random.normal(loc=(shmr_a * log_mhalo + shmr_b),
+                            scale=random_scatter_in_dex)

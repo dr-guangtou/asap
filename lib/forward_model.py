@@ -3,7 +3,6 @@ Forward modeling the M100 and M10 SMFs along with HSC WL signals.
 """
 
 import os
-# import sys
 import copy
 import pickle
 from time import time
@@ -55,7 +54,7 @@ class UMMassProfModel():
 
     At HSC Observation side:
         M_Inn   : Mass within a smaller aperture
-        M_tot   : Mass within a larger aperture, as proxy of the observed
+        M_Tot   : Mass within a larger aperture, as proxy of the observed
                   "total" stellar mass
         M_10    : Stellar mass within 10 kpc elliptical aperture
         M_100   : Stellar mass within 100 kpc elliptical aperture
@@ -982,7 +981,8 @@ class UMMassProfModel():
 
     def umPredictMass(self, shmr_a, shmr_b, sigms_a, sigms_b,
                       star_col='logms_tot',
-                      halo_col='logmh_host'):
+                      halo_col='logmh_host',
+                      constant_bin=False):
         """
         Predict M100, M10, Mtot using Mvir, M_gal, M_ICL.
 
@@ -1012,14 +1012,13 @@ class UMMassProfModel():
 
         star_col : string
             Column for stellar mass.
-        """
-        logms_obs_inn = self.obs_logms_inn
-        logms_obs_tot = self.obs_logms_tot
 
+        constant_bin : boolen
+            Whether to use constant bin size for logMs_tot or not.
+        """
         # Make the model
         # ! Required by sm_profile_from_mhalo, this is not logMhalo
-        sample = self.um_mock
-        mhalo = sample[halo_col]
+        mhalo = self.um_mock[halo_col]
         random_scatter_in_dex = self.mockGetSimpleMhScatter(
             mhalo, sigms_a, sigms_b
         )
@@ -1028,40 +1027,38 @@ class UMMassProfModel():
         # ! Binning will create artifical step-like feature on M100-M10 plane
         # ! Bin size should not be too large
 
-        # logms_tot_bins = np.linspace(self.obs_smf_tot_min,
-        #                             self.obs_smf_tot_max,
-        #                             self.um_mtot_nbin)
+        if constant_bin:
+            # Constant log-linear bin size
+            logms_tot_bins = np.linspace(self.obs_smf_tot_min,
+                                         self.obs_smf_tot_max,
+                                         self.um_mtot_nbin)
 
-        # Try equal number object bin
-        nobj_bin = np.ceil(len(self.obs_logms_tot) / self.um_mtot_nbin)
-        if nobj_bin <= self.um_ngal_bin_min:
-            nobj_bin = self.um_ngal_bin_min
+        else:
+            # Try equal number object bin
+            nobj_bin = np.ceil(len(self.obs_logms_tot) / self.um_mtot_nbin)
+            nobj_bin = (nobj_bin if nobj_bin <= self.um_ngal_bin_min else
+                        self.um_gal_bin_min)
 
-        mtot_sort = np.sort(copy.deepcopy(self.obs_logms_tot))
-        logms_tot_bins = []
-        for ii, mm in enumerate(mtot_sort):
-            if ((ii - 1) % int(nobj_bin)) == 0:
-                logms_tot_bins.append(mm)
-        logms_tot_bins[-1] = mtot_sort[-1]
-        logms_tot_bins = np.asarray(logms_tot_bins)
+            logms_tot_sort = np.sort(self.obs_logms_tot)
+            logms_tot_bins = logms_tot_sort[
+                np.where(np.arange(len(logms_tot_sort)) % nobj_bin == 0)]
+            logms_tot_bins[-1] = mtot_sort[-1]
 
         # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
         # (including satellites)
-        frac_tot_by_halo = ((10.0 ** sample['logms_tot']) /
-                            (10.0 ** sample['logms_halo']))
-        frac_inn_by_tot = ((10.0 ** sample['logms_gal']) /
-                           (10.0 ** sample['logms_tot']))
-        self.frac_tot_by_halo = frac_tot_by_halo
-        self.frac_inn_by_tot = frac_inn_by_tot
+        self.frac_tot_by_halo = ((10.0 ** self.um_mock['logms_tot']) /
+                                 (10.0 ** self.um_mock['logms_halo']))
+        self.frac_inn_by_tot = ((10.0 ** self.um_mock['logms_gal']) /
+                                (10.0 ** self.um_mock['logms_tot']))
 
         # This returns UM predicted m10, m100, smtot
         um_mass_model = sm_profile_from_mhalo(
             mhalo, shmr_a, shmr_b,
             random_scatter_in_dex,
-            frac_tot_by_halo,
-            frac_inn_by_tot,
-            logms_obs_tot,
-            logms_obs_inn,
+            self.frac_tot_by_halo,
+            self.frac_inn_by_tot,
+            self.obs_logms_tot,
+            self.obs_logms_inn
             logms_tot_bins,
             ngal_min=self.um_ngal_bin_min
         )

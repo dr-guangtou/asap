@@ -25,6 +25,6 @@ def get_n(n, total_sats):
         raise Exception("n must be > 0, got {}".format(n))
     # Return ceiled fraction if is a fraction
     elif n < 1:
-        return np.ceil(n * total_sats)
+        return int(np.ceil(n * total_sats))
     # Return n (at most the total_sats) if it is a number
     return min(n, total_sats)

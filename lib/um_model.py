@@ -1042,7 +1042,7 @@ class UMMassProfModel():
             logms_tot_sort = np.sort(self.obs_logms_tot)
             logms_tot_bins = logms_tot_sort[
                 np.where(np.arange(len(logms_tot_sort)) % nobj_bin == 0)]
-            logms_tot_bins[-1] = mtot_sort[-1]
+            logms_tot_bins[-1] = logms_tot_sort[-1]
 
         # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
         # (including satellites)
@@ -1058,7 +1058,7 @@ class UMMassProfModel():
             self.frac_tot_by_halo,
             self.frac_inn_by_tot,
             self.obs_logms_tot,
-            self.obs_logms_inn
+            self.obs_logms_inn,
             logms_tot_bins,
             ngal_min=self.um_ngal_bin_min
         )

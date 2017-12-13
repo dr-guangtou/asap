@@ -14,8 +14,8 @@ def centrals_with_satellites(centrals, satellites, n):
             np.searchsorted(satellites["uparent_ID"], central["ID"], side="right")
             ]
         sats = sats[:get_n(n, len(sats))]
-        # Now add sats to new_centrals
-        for col in ['m', 'mp', 'sm', 'icl', 'sfr']:
+        # Now add satellite stellar mass/formation to new_centrals
+        for col in ['sm', 'icl', 'sfr']:
             new_centrals[i][col] += np.sum(sats[col])
     return new_centrals
 

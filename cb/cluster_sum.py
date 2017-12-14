@@ -3,16 +3,21 @@ import numpy as np
 def centrals_with_satellites(centrals, satellites, n):
     """
     Given an array of centrals and satellites where the satellites are sorted by
-    "uparent_ID" and then "mp" (or relevant mass key), adds the masses of the n
+    "upid" and then "mp" (or relevant mass key), adds the masses of the n
     largest satellites (or n% largest satellites if n < 1) to the centrals.
     """
     new_centrals = np.copy(centrals) # no mutation!
     for i, central in enumerate(new_centrals):
-        # Remember sats are sorted by "uparent_ID" then "mp"
+        # Remember sats are sorted by "upid" then the sum of stellar masses, ascending
         sats = satellites[
-            np.searchsorted(satellites["uparent_ID"], central["ID"], side="left"):
-            np.searchsorted(satellites["uparent_ID"], central["ID"], side="right")
+            np.searchsorted(satellites["upid"], central["id"], side="left"):
+            np.searchsorted(satellites["upid"], central["id"], side="right")
             ]
+        print(len(sats))
+        if i == 16:
+            print(satellites["upid"][:10])
+            print(central["id"])
+            break
         sats = sats[:get_n(n, len(sats))]
         # Now add satellite stellar mass/formation to new_centrals
         for col in ['sm', 'icl', 'sfr']:

@@ -15,7 +15,7 @@ def add_scatter_plot(ax, x, y, label = None):
     std, _, _ = sps.binned_statistic(x, y, statistic = np.std, bins = bins)
 
     bin_midpoints = bins[:-1] + np.diff(bins) / 2
-    ax.errorbar(bin_midpoints, mean, yerr = std, linestyle = "None", marker = ".", label = label)
+    ax.errorbar(bin_midpoints, mean, yerr = std, linestyle = "None", marker = ".", label = label, zorder = 3) # https://github.com/matplotlib/matplotlib/issues/1622
 
 def dm_vs_all_sm_error(catalogs, labels = None):
     fig, ax = plt.subplots()

@@ -5,23 +5,60 @@ import scipy.stats as sps
 
 solarMassUnits = r"($M_{\odot}$)"
 
-def add_scatter_plot(ax, x, y):
-    # We do this entirely in log space
+# Be very careful with when you are in log and when not in log...
+# All plotters should plot using log10(value)
+# Whether they take in data in that format or convert it depends so keep track of that
+
+def add_scatter_plot(ax, x, y, label = None):
     bins = np.arange(np.min(x), np.max(x), 0.2)
     mean, _, _ = sps.binned_statistic(x, y, statistic = "mean", bins = bins)
     std, _, _ = sps.binned_statistic(x, y, statistic = np.std, bins = bins)
 
     bin_midpoints = bins[:-1] + np.diff(bins) / 2
-    # And then raise to the power before plotting
-    ax.errorbar(bin_midpoints, mean, yerr = std, color = "red", marker = "o", fmt = ".")
-    print(std)
+    ax.errorbar(bin_midpoints, mean, yerr = std, linestyle = "None", marker = ".", label = label)
+
+def dm_vs_all_sm_error(catalogs, labels = None):
+    fig, ax = plt.subplots()
+    fig.set_size_inches(18.5, 10.5)
+    label = None
+    peturbation = 0
+    for i, catalog in enumerate(catalogs):
+        x = np.log10(catalog["mp"]) + peturbation
+        y = np.log10(catalog["icl"] + catalog["sm"])
+        bins = np.arange(np.min(x), np.max(x), 0.2)
+        std, _, _ = sps.binned_statistic(x, y, statistic = np.std, bins = bins)
+        bin_midpoints = bins[:-1] + np.diff(bins) / 2
+        if labels is not None:
+            label = labels[i]
+        plt.plot(bin_midpoints, std, label = label)
+    ax.set (
+            xlabel = r"Peak HM " + solarMassUnits,
+            ylabel = r"SM Scatter (dex)",
+            title = "SM-HM scatter vs Peak HM",
+    )
+    ax.legend()
+    return ax
+
+def dm_vs_all_sm(catalog, ax = None):
+    if ax is None:
+        _, ax = plt.subplots()
+    x = np.log10(catalog["mp"])
+    y = np.log10(catalog["icl"] + catalog["sm"])
+    ax.plot(x, y, linestyle = "None", marker = "o", markersize = 0.1)
+    ax.set(
+            xlabel = r"Peak HM " + solarMassUnits,
+            ylabel = r"SM (all) " + solarMassUnits,
+            title = "Total SM vs Peak HM",
+    )
+    add_scatter_plot(ax, x, y)
+    return ax
 
 def dm_vs_insitu(catalog, ax=None):
     if ax is None:
         _, ax = plt.subplots()
     x = np.log10(catalog["mp"])
     y = np.log10(catalog["sm"])
-    ax.scatter(x, y, s = 0.01)
+    ax.plot(x, y, linestyle = "None", marker = "o", markersize = 0.1)
     ax.set(
             xlabel = r"Peak HM " + solarMassUnits,
             ylabel = r"SM (insitu) " + solarMassUnits,
@@ -35,7 +72,7 @@ def dm_vs_exsitu(catalog, ax = None):
         _, ax = plt.subplots()
     x = np.log10(catalog["mp"])
     y = np.log10(catalog["icl"], where = catalog["icl"] > 0)
-    ax.scatter(x, y, s = 0.1)
+    ax.plot(x, y, linestyle = "None", marker = "o", markersize = 0.1)
     ax.set(
             xlabel = r"Peak HM " + solarMassUnits,
             ylabel = r"SM (exsitu) " + solarMassUnits,
@@ -43,21 +80,6 @@ def dm_vs_exsitu(catalog, ax = None):
     )
     add_scatter_plot(ax, x, y)
     return ax
-
-def dm_vs_all_sm(catalog, ax = None):
-    if ax is None:
-        _, ax = plt.subplots()
-    x = np.log10(catalog["mp"])
-    y = np.log10(catalog["icl"] + catalog["sm"])
-    ax.scatter(x, y, s = 0.1)
-    ax.set(
-            xlabel = r"Peak HM " + solarMassUnits,
-            ylabel = r"SM (all) " + solarMassUnits,
-            title = "Total SM vs Peak HM",
-    )
-    add_scatter_plot(ax, x, y)
-    return ax
-
 
 def plotly_stuff(data, y_cols):
     scatters = [

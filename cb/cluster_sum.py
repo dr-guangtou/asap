@@ -13,12 +13,7 @@ def centrals_with_satellites(centrals, satellites, n):
             np.searchsorted(satellites["upid"], central["id"], side="left"):
             np.searchsorted(satellites["upid"], central["id"], side="right")
             ]
-        print(len(sats))
-        if i == 16:
-            print(satellites["upid"][:10])
-            print(central["id"])
-            break
-        sats = sats[:get_n(n, len(sats))]
+        sats = sats[::-1][:get_n(n, len(sats))] # Reversed to get the largest
         # Now add satellite stellar mass/formation to new_centrals
         for col in ['sm', 'icl', 'sfr']:
             new_centrals[i][col] += np.sum(sats[col])

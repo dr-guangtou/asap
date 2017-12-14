@@ -40,9 +40,6 @@ def compute_smf(sm_array, volume, nb, sm_min, sm_max,
     # !! Only works for constant bin size now
     mass_bin_width = (bin_edges[1] - bin_edges[0])
 
-    # Normalize
-    smf = (smf / volume / mass_bin_width)
-
     # Poison error
     if not smf_only:
         err = np.sqrt(smf)
@@ -50,6 +47,9 @@ def compute_smf(sm_array, volume, nb, sm_min, sm_max,
         err = (err / volume / mass_bin_width)
         # X-axis
         x = bin_edges[:-1] + (mass_bin_width / 2.0)
+
+    # Normalize
+    smf = (smf / volume / mass_bin_width)
 
     if not smf_only:
         if return_bins:

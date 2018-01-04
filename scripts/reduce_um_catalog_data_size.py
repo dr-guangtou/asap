@@ -20,7 +20,7 @@ import os
 full_catalog_dtype = [
         # Halo stuff
         ("id", "int"), # Unique halo ID
-        ("descid", "int"), # ID of descendant halo (or -1 at z=0).
+        ("descid", "int"), # ID of descendant halo (or -1 at z=0)
         ("upid", "int"), # Parent halo ID (or -1 if this is a central)
         ("flags", "int"), # Ignore
         ("updist", "float64"), # Ignore
@@ -45,7 +45,7 @@ full_catalog_dtype = [
         ("ssfr", "float64"), # observed SSFR
         ("sm_hm", "float64"), # SMHM ratio
         ("obs_uv", "float64"), # Observed UV Magnitude (M_1500 AB)
-]
+]  # yapf: disable
 
 reduced_catalog_dtype = [
         # Halo stuff
@@ -59,9 +59,10 @@ reduced_catalog_dtype = [
         ("sm", "float64"), # True stellar mass (Msun) (This is mass in stars)
         ("icl", "float64"), # True intracluster stellar mass (Msun) (This is mass in gas/dust)
         ("sfr", "float64"), # True star formation rate (Msun/yr)
-]
+]  # yapf: disable
 
 data_dir = "/home/christopher/Data/data/universe_machine/"
+
 
 def main():
     # With current data:
@@ -83,7 +84,8 @@ def main():
                 if line.startswith("#"):
                     continue
                 row = np.loadtxt(StringIO(line), dtype=full_catalog_dtype)
-                reduced_catalog[count] = row[list(reduced_catalog.dtype.names)].copy()
+                reduced_catalog[count] = row[list(
+                    reduced_catalog.dtype.names)].copy()
                 count += 1
                 if count % blockSize == 0:
                     reduced_catalog.resize(len(reduced_catalog) + blockSize)
@@ -96,28 +98,33 @@ def main():
     if not os.path.isfile(final_file):
         reduced_catalog = np.load(inter_file)
         # All centrals greater than a given mass
-        central_catalog = np.sort(reduced_catalog[
-                (reduced_catalog["upid"] == -1) &
-                (reduced_catalog["mp"] > 1e12)
-        ], order="id")
+        central_catalog = np.sort(
+            reduced_catalog[(reduced_catalog["upid"] == -1)
+                            & (reduced_catalog["mp"] > 1e12)],
+            order="id")
         central_ids = frozenset(central_catalog["id"])
         # Remove all halos not associated with one of those centrals
-        satellite_catalog = reduced_catalog[
-                np.array([parent in central_ids for parent in reduced_catalog["upid"]])
-        ]
+        satellite_catalog = reduced_catalog[np.array(
+            [parent in central_ids for parent in reduced_catalog["upid"]])]
         # Add a field for the total stellar mass to the satellites and sort
         original_cols = satellite_catalog.dtype.names
         satellite_catalog = np_rfn.append_fields(
-                satellite_catalog, "total_stellar_mass",
-                satellite_catalog["sm"] + satellite_catalog["icl"], usemask=False
-        )
-        satellite_catalog = np.sort(satellite_catalog, order=["upid", "total_stellar_mass", "id"])
+            satellite_catalog,
+            "total_stellar_mass",
+            satellite_catalog["sm"] + satellite_catalog["icl"],
+            usemask=False)
+        satellite_catalog = np.sort(
+            satellite_catalog, order=["upid", "total_stellar_mass", "id"])
         # Remove the total stellar mass field and save the catalog
         satellite_catalog = satellite_catalog[list(original_cols)]
-        np.savez(final_file, centrals=central_catalog, satellites=satellite_catalog)
+        np.savez(
+            final_file, centrals=central_catalog, satellites=satellite_catalog)
         del reduced_catalog, central_catalog, central_ids, satellite_catalog
     else:
-        print("Skipping removing small parent halos and their satellites, file already exists")
+        print(
+            "Skipping removing small parent halos and their satellites, file already exists"
+        )
+
 
 if __name__ == "__main__":
     main()

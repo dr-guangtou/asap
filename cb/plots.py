@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 import scipy.stats as sps
+import cluster_sum
 
 solarMassUnits = r"($M_{\odot}$)"
 
@@ -9,8 +10,7 @@ solarMassUnits = r"($M_{\odot}$)"
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
-
-def add_scatter_plot(ax, x, y, label=None):
+def add_mean_and_stddev(ax, x, y, label=None):
     bins = np.arange(np.min(x), np.max(x), 0.2)
     mean, _, _ = sps.binned_statistic(x, y, statistic="mean", bins=bins)
     std, _, _ = sps.binned_statistic(x, y, statistic=np.std, bins=bins)
@@ -26,24 +26,49 @@ def add_scatter_plot(ax, x, y, label=None):
         zorder=3)  # https://github.com/matplotlib/matplotlib/issues/1622
 
 
+def richness_vs_scatter(catalogs, satellites, min_mass, labels = None):
+    fig, ax = plt.subplots()
+    fig.set_size_inches(18.5, 10.5)
+    label = None
+
+    for i, catalog in enumerate(catalogs):
+        mass = np.log10(catalog["icl"] + catalog["sm"])
+        richness = cluster_sum.get_number_satellites(catalog, satellites, min_mass)
+        bins = np.arange(np.min(richness), np.max(richness))
+        # mean, _, _ = sps.binned_statistic(richness, mass, statistic="mean", bins=bins)
+        std, _, _ = sps.binned_statistic(richness, mass, statistic=np.std, bins=bins)
+
+        # ax.plot(richness, mass, linestyle="None", marker="o", markersize=0.1)
+        bin_midpoints = bins[:-1] + np.diff(bins) / 2
+        if labels is not None:
+            label = labels[i]
+        ax.plot(bin_midpoints, std, label=label)
+    ax.set(
+        xlabel=r"Richness (# of satellites with total SM > {})".format(np.log10(min_mass)),
+        ylabel=r"SM-HM Scatter (dex)",
+        title="Total Stellar Mass - Halo Mass scatter at fixed halo mass vs Richness",
+    )
+    ax.legend()
+    return ax
+
+
 def dm_vs_all_sm_error(catalogs, labels=None):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
     label = None
-    peturbation = 0
     for i, catalog in enumerate(catalogs):
-        x = np.log10(catalog["mp"]) + peturbation
+        x = np.log10(catalog["mp"])
         y = np.log10(catalog["icl"] + catalog["sm"])
         bins = np.arange(np.min(x), np.max(x), 0.2)
         std, _, _ = sps.binned_statistic(x, y, statistic=np.std, bins=bins)
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
         if labels is not None:
             label = labels[i]
-        plt.plot(bin_midpoints, std, label=label)
+        ax.plot(bin_midpoints, std, label=label)
     ax.set(
         xlabel=r"Peak HM " + solarMassUnits,
-        ylabel=r"SM Scatter (dex)",
-        title="SM-HM scatter vs Peak HM",
+        ylabel=r"SM-HM Scatter (dex)",
+        title="Total Stellar Mass - Halo Mass scatter vs Peak HM",
     )
     ax.legend()
     return ax
@@ -60,7 +85,7 @@ def dm_vs_all_sm(catalog, ax=None):
         ylabel=r"SM (all) " + solarMassUnits,
         title="Total SM vs Peak HM",
     )
-    add_scatter_plot(ax, x, y)
+    add_mean_and_stddev(ax, x, y)
     return ax
 
 
@@ -75,7 +100,7 @@ def dm_vs_insitu(catalog, ax=None):
         ylabel=r"SM (insitu) " + solarMassUnits,
         title="Insitu SM vs Peak HM",
     )
-    add_scatter_plot(ax, x, y)
+    add_mean_and_stddev(ax, x, y)
     return ax
 
 
@@ -90,7 +115,7 @@ def dm_vs_exsitu(catalog, ax=None):
         ylabel=r"SM (exsitu) " + solarMassUnits,
         title="Exsitu SM vs Peak HM",
     )
-    add_scatter_plot(ax, x, y)
+    add_mean_and_stddev(ax, x, y)
     return ax
 
 

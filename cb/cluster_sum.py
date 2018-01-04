@@ -29,3 +29,21 @@ def get_n(n, total_sats):
         return int(np.ceil(n * total_sats))
     # Return n (at most the total_sats) if it is a number
     return min(n, total_sats)
+
+
+def get_number_satellites(centrals, satellites, min_mass):
+    richness = np.zeros(len(centrals), int)
+    for i, central in enumerate(centrals):
+        sats = satellites[np.searchsorted(
+            satellites["upid"], central["id"], side="left"):np.searchsorted(
+                satellites["upid"], central["id"], side="right")]
+        sats = sats[::-1]
+
+        for j in range(len(sats)):
+            if sats[j]["icl"] + sats[j]["sm"] < min_mass:
+                richness[i] = j
+                break
+        else:
+            richness[i] = len(sats)
+
+    return richness

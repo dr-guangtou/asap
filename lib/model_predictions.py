@@ -12,9 +12,11 @@ def total_stellar_mass_including_satellites(gals,
                                             colname,
                                             hostid='halo_hostid'):
     """
-    Sum up all the stellar mass in each host halo, including mass bound up in satellites.
+    Sum up all the stellar mass in each host halo, including mass bound up in
+    satellites.
 
-    Whatever quantity is stored in the ``colname`` column will be summed within each host halo.
+    Whatever quantity is stored in the ``colname`` column will be summed within
+    each host halo.
 
     Parameters
     -----------
@@ -24,19 +26,20 @@ def total_stellar_mass_including_satellites(gals,
         So make sure ``gals`` is sorted in the same order as results from
         when gals.sort('halo_hostid') has been called.
 
-        Usually the ``gals`` table is the output of the `value_added_mock` function
-        implemented in umachine_pyio.load_mock,
+        Usually the ``gals`` table is the output of the `value_added_mock`
+        function implemented in umachine_pyio.load_mock,
         which precomputes the ``halo_hostid`` column.
 
     colname : string
-        Name of the column storing the stellar mass-like variable to be summed over.
+        Name of the column storing the stellar mass-like variable to be summed
+        over.
         Typically this will be the name of the column storing ``sm`` + ``icl``.
 
     Returns
     -------
     total_stellar_mass : ndarray
-        Numpy array of shape (num_gals, ) storing the total amount of stellar mass
-        inside the host halo that each mock galaxy belongs to.
+        Numpy array of shape (num_gals, ) storing the total amount of stellar
+        mass inside the host halo that each mock galaxy belongs to.
     """
     #  Bounds check the input galaxy table
     msg = "Input ``gals`` table must have a ``{0}`` column"
@@ -104,8 +107,9 @@ def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz,
     Returns
     -------
     total_mass_encl : ndarray
-        Numpy array of shape (num_gals, num_bins) storing the total enclosed mass
-        in units of Msun/h within each of the num_bins cylinders surrounding each galaxy.
+        Numpy array of shape (num_gals, num_bins) storing the total enclosed
+        mass in units of Msun/h within each of the num_bins cylinders
+        surrounding each galaxy.
         This array can be used as the input to the halotools function
         `delta_sigma_from_precomputed_pairs`
     """

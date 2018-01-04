@@ -8,18 +8,18 @@ def logms_tot_from_logms_halo(logms_halo, frac_tot_by_halo, log_mass=True):
     from an input total stellar mass ``logms_halo``, in unit of log10(Msun).
 
     The variable ``logms_halo`` includes central galaxy mass and IHM,
-    and also the sum of all stellar mass in the satellites, including IHM contribution
-    to the satellites.
+    and also the sum of all stellar mass in the satellites, including IHM
+    contribution to the satellites.
 
     The variable ``frac_tot_by_halo`` can be taken directly
-    from UniverseMachine outputs, or modeled independently in some other way, such as
-    via a parameterized power law scaling.
+    from UniverseMachine outputs, or modeled independently in some other way,
+    such as via a parameterized power law scaling.
 
     Parameters
     ----------
     logms_halo : float or ndarray
-        Numpy array of shape (num_gals, ) storing the total amount of stellar mass
-        in each halo, including total satellite galaxy mass
+        Numpy array of shape (num_gals, ) storing the total amount of stellar
+        mass in each halo, including total satellite galaxy mass
 
     frac_tot_by_halo : float or ndarray
         For each model galaxy, ``frac_tot_by_halo`` stores the
@@ -31,8 +31,9 @@ def logms_tot_from_logms_halo(logms_halo, frac_tot_by_halo, log_mass=True):
     Returns
     -------
     sm100 : float or ndarray
-        Float or Numpy array of shape (num_gals, ) storing the total stellar mass
-        within 100 kpc of the halo, including BCG and IHM contributions, in units of Msun
+        Float or Numpy array of shape (num_gals, ) storing the total stellar
+        mass within 100 kpc of the halo, including BCG and IHM contributions,
+        in units of Msun
 
     Examples
     --------

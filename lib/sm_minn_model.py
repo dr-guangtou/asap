@@ -23,7 +23,8 @@ def logms_inn_cam(logms_tot_obs,
         catalog
 
     logms_inn_obs : ndarray
-        Numpy array of shape (num_gals, ) storing log10(Minn) of the HSC catalog
+        Numpy array of shape (num_gals, ) storing log10(Minn) of the HSC
+        catalog
 
     logms_tot_mod : ndarray
         Numpy array of shape (num_halos, ) storing log10(Mtot) of the
@@ -37,7 +38,8 @@ def logms_inn_cam(logms_tot_obs,
 
     logms_tot_bins  ndarray
         Numpy array of shape (num_bin_edges, ) storing the edges of the Mtot
-        bins used to discretize P(Minn | Mtot) in both data and model during CAM
+        bins used to discretize P(Minn | Mtot) in both data and model during
+        CAM
 
     sigma : float, optional
         Level of CAM scatter. Default value is zero for a perfect, monotonic

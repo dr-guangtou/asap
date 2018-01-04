@@ -1,4 +1,5 @@
-""" Functions implementing a Gaussian selection kernel on a set of points in the xy-plane
+""" Functions implementing a Gaussian selection kernel on a set of points
+in the xy-plane
 """
 import numpy as np
 
@@ -27,13 +28,15 @@ def rotate_2d(v, rot_angle_in_degrees):
     rotated_v : ndarray
         Array of shape (2, )
     """
-    return np.dot(counter_clockwise_2d_rotation_matrix(rot_angle_in_degrees), v)
+    return np.dot(counter_clockwise_2d_rotation_matrix(
+        rot_angle_in_degrees), v)
 
 
 def ellipse_distance(xpts, ypts, xc, yc, major_axis_angle, b_by_a):
     """ Calculate the distance between (xc, yc) and each point in (xpts, ypts)
     using an elliptical distance metric, with the ellipse defined by the
-    axis ``major_axis_angle`` (in degrees) and ``b_by_a`` major-to-minor axis length
+    axis ``major_axis_angle`` (in degrees) and ``b_by_a`` major-to-minor axis
+    length
     """
     major_axis = rotate_2d((1, 0), major_axis_angle)
     minor_axis = rotate_2d(major_axis, 90)
@@ -44,20 +47,23 @@ def ellipse_distance(xpts, ypts, xc, yc, major_axis_angle, b_by_a):
 
 
 def ellipse_selector(xpts, ypts, xc, yc, major_axis_angle, b_by_a, nkeep):
-    """ From an input set of points in the xy plane, select a sample of ``nkeep`` points
-    defined by the ellipse defined by the input ``major_axis_angle`` and ``b_by_a``.
+    """ From an input set of points in the xy plane, select a sample of
+    ``nkeep`` points defined by the ellipse defined by the input
+    ``major_axis_angle`` and ``b_by_a``.
 
     Parameters
     ----------
     xpts, ypts : ndarrays
-        Numpy arrays of shape (ngals, ) storing, for example, the values of M10 and M100
+        Numpy arrays of shape (ngals, ) storing, for example, the values of
+        M10 and M100
 
     xc, yc : floats
         Centroid of the ellipse
 
     major_axis_angle : float
         Angle defining the major axis direction of the ellipse.
-        Angle should be in degrees in the counter-clockwise direction off of the positive x-axis
+        Angle should be in degrees in the counter-clockwise direction off of
+            the positive x-axis
 
     b_by_a : float
         Major-to-minor axis ratio
@@ -89,26 +95,29 @@ def split_sample_along_axis_angle(xpts, ypts, xc, yc, axis_angle):
     Parameters
     ----------
     xpts, ypts : ndarrays
-        Numpy arrays of shape (ngals, ) storing, for example, the values of M10 and M100
+        Numpy arrays of shape (ngals, ) storing, for example, the values of
+        M10 and M100
 
     xc, yc : floats
         Centroid of the ellipse
 
     axis_angle : float
         Angle defining the axis direction along which the sample will be split.
-        Angle should be in degrees in the counter-clockwise direction off of the positive x-axis
+        Angle should be in degrees in the counter-clockwise direction off of
+        the positive x-axis
 
     Returns
     -------
     idx : ndarray
-        Numpy array of shape (nkeep, ) that can be used as a mask to divide the input sample
+        Numpy array of shape (nkeep, ) that can be used as a mask to divide the
+        input sample
 
     Notes
     -----
-    The output mask just directly splits the sample according to which side of the
-    line the points fall on.
-    This does *nothing* to guarantee that there will be an equal number of points
-    in the resulting subsamples.
+    The output mask just directly splits the sample according to which side of
+    the line the points fall on.
+    This does *nothing* to guarantee that there will be an equal number of
+    points in the resulting subsamples.
 
     See ellipse_selection_demo.ipynb for usage demo
     """

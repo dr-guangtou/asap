@@ -36,7 +36,8 @@ def sm_profile_from_mhalo(logmh,
         Normalization of the power law scaling between mhalo and smtot.
 
     random_scatter_in_dex : float
-        Dispersion of the log-normal random noise added to smtot at fixed mhalo.
+        Dispersion of the log-normal random noise added to smtot at fixed
+        mhalo.
 
     frac_tot_by_halo: ndarray
         Fraction of the stellar mass of (central + ICL) to the total

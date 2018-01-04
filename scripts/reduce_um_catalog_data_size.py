@@ -14,8 +14,8 @@ We will not re-run steps if the intermediate files already exist
 """
 import numpy as np
 import numpy.lib.recfunctions as np_rfn
-from io import StringIO
 import os
+import helpers
 
 full_catalog_dtype = [
         # Halo stuff
@@ -75,21 +75,9 @@ def main():
     final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final.npz"
 
     # If we have already generated the inter_file, don't do it again...
-    blockSize = 100000
     if not os.path.isfile(inter_file):
-        reduced_catalog = np.zeros(blockSize, dtype=reduced_catalog_dtype)
-        with open(data_file) as f:
-            count = 0
-            for line in f:
-                if line.startswith("#"):
-                    continue
-                row = np.loadtxt(StringIO(line), dtype=full_catalog_dtype)
-                reduced_catalog[count] = row[list(reduced_catalog.dtype.names)].copy()
-                count += 1
-                if count % blockSize == 0:
-                    reduced_catalog.resize(len(reduced_catalog) + blockSize)
-                    print(count)
-        np.save(inter_file, reduced_catalog[:count])
+        reduced_catalog = helpers.reduce_cols(data_file, full_catalog_dtype, reduced_catalog_dtype)
+        np.save(inter_file, reduced_catalog)
         del reduced_catalog
     else:
         print("Skipping reducing cols, file already exists")

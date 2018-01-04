@@ -1,4 +1,4 @@
-""" Module storing a few frequently used
+"""Module storing a few frequently used
 derived quantities from the mock galaxies, like the
 total stellar mass in each halo, and the lensing signal precomputation.
 """
@@ -8,7 +8,9 @@ from halotools.utils import group_member_generator
 from halotools.mock_observables import total_mass_enclosed_per_cylinder
 
 
-def total_stellar_mass_including_satellites(gals, colname, hostid='halo_hostid'):
+def total_stellar_mass_including_satellites(gals,
+                                            colname,
+                                            hostid='halo_hostid'):
     """
     Sum up all the stellar mass in each host halo, including mass bound up in satellites.
 
@@ -40,13 +42,13 @@ def total_stellar_mass_including_satellites(gals, colname, hostid='halo_hostid')
     msg = "Input ``gals`` table must have a ``{0}`` column"
     assert colname in list(gals.keys()), msg.format(colname)
 
-    msg = ("Input ``gals`` table must have a %s column\n" % hostid
+    msg = ("Input ``gals`` table must have a %s column\n" % hostid +
            "This column is pre-computed by the `value_added_mock` function" +
            "in the `umachine_pyio` package\n")
     assert hostid in list(gals.keys()), msg
 
     msg = ("Input ``gals`` table must be pre-sorted in ascending order " +
-           "of ``halo_hostid`` column\n"
+           "of ``halo_hostid`` column\n" +
            "You must call np.sort(gals) prior to calling this function.\n")
     assert np.all(np.diff(gals[hostid]) >= 0), msg
 
@@ -66,7 +68,8 @@ def total_stellar_mass_including_satellites(gals, colname, hostid='halo_hostid')
 
 
 def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz,
-        particle_masses, downsampling_factor, rp_bins, period):
+                             particle_masses, downsampling_factor, rp_bins,
+                             period):
     """
     Calculate the precomputed array to be used as
     the Delta Sigma kernels in a lensing MCMC.

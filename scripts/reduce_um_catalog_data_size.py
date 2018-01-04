@@ -45,7 +45,7 @@ full_catalog_dtype = [
         ("ssfr", "float64"), # observed SSFR
         ("sm_hm", "float64"), # SMHM ratio
         ("obs_uv", "float64"), # Observed UV Magnitude (M_1500 AB)
-]  # yapf: disable
+] # yapf: disable
 
 reduced_catalog_dtype = [
         # Halo stuff
@@ -59,7 +59,7 @@ reduced_catalog_dtype = [
         ("sm", "float64"), # True stellar mass (Msun) (This is mass in stars)
         ("icl", "float64"), # True intracluster stellar mass (Msun) (This is mass in gas/dust)
         ("sfr", "float64"), # True star formation rate (Msun/yr)
-]  # yapf: disable
+] # yapf: disable
 
 data_dir = "/home/christopher/Data/data/universe_machine/"
 
@@ -84,8 +84,7 @@ def main():
                 if line.startswith("#"):
                     continue
                 row = np.loadtxt(StringIO(line), dtype=full_catalog_dtype)
-                reduced_catalog[count] = row[list(
-                    reduced_catalog.dtype.names)].copy()
+                reduced_catalog[count] = row[list(reduced_catalog.dtype.names)].copy()
                 count += 1
                 if count % blockSize == 0:
                     reduced_catalog.resize(len(reduced_catalog) + blockSize)
@@ -113,17 +112,13 @@ def main():
             "total_stellar_mass",
             satellite_catalog["sm"] + satellite_catalog["icl"],
             usemask=False)
-        satellite_catalog = np.sort(
-            satellite_catalog, order=["upid", "total_stellar_mass", "id"])
+        satellite_catalog = np.sort(satellite_catalog, order=["upid", "total_stellar_mass", "id"])
         # Remove the total stellar mass field and save the catalog
         satellite_catalog = satellite_catalog[list(original_cols)]
-        np.savez(
-            final_file, centrals=central_catalog, satellites=satellite_catalog)
+        np.savez(final_file, centrals=central_catalog, satellites=satellite_catalog)
         del reduced_catalog, central_catalog, central_ids, satellite_catalog
     else:
-        print(
-            "Skipping removing small parent halos and their satellites, file already exists"
-        )
+        print("Skipping removing small parent halos and their satellites, file already exists")
 
 
 if __name__ == "__main__":

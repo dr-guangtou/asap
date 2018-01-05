@@ -194,6 +194,11 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
         smf_low -= (smf * add_err)
         smf_upp += (smf * add_err)
 
+    # Make sure the SMF is above zero
+    smf = np.where(smf <= 0.0, 1E-8, smf)
+    smf_low = np.where(smf_low <= 0.0, 1E-9, smf_low)
+    smf_upp = np.where(smf_upp <= 0.0, 5E-8, smf_upp)
+
     # Left and right edges of the mass bins
     bins_0 = mass_bins[0:-1]
     bins_1 = mass_bins[1:]

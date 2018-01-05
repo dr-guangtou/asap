@@ -38,13 +38,15 @@ um_smdpl_pchunks = pd.read_csv(um_smdpl_ptbl, usecols=[0, 1, 2],
                                index_col=False,
                                chunksize=chunksize)
 um_smdpl_pdframe = pd.concat(um_smdpl_pchunks)
-um_smdpl_precord = um_smdpl_pdframe.to_records(index=False)
+um_smdpl_parray = um_smdpl_pdframe.values.ravel().view(
+    dtype=particle_table_dtype
+)
 
 # Downsample
 np.random.seed(2018)
-um_smdpl_ptl_ds1 = np.random.choice(um_smdpl_precord, int(n_ds1),
+um_smdpl_ptl_ds1 = np.random.choice(um_smdpl_parray, int(n_ds1),
                                     replace=False)
-um_smdpl_ptl_ds2 = np.random.choice(um_smdpl_precord, int(n_ds2),
+um_smdpl_ptl_ds2 = np.random.choice(um_smdpl_parray, int(n_ds2),
                                     replace=False)
 
 np.save(um_smdpl_ptbl_out1, um_smdpl_ptl_ds1)

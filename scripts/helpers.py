@@ -1,6 +1,7 @@
 import numpy as np
 from io import StringIO
 
+
 # Read a text file, convert it to a numpy array, reducing the number of columns
 def reduce_cols(data_file, full_dtype, reduced_dtype, blockSize=100000):
     reduced_catalog = np.zeros(blockSize, dtype=reduced_dtype)

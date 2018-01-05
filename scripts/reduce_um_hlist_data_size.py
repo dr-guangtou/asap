@@ -113,6 +113,8 @@ full_hlist_dtype = [
 
 
 data_dir = "/home/christopher/Data/data/universe_machine/"
+
+
 def main():
     data_file = data_dir + "hlist_0.71240.list"
     # Reduce the number of colunms and save as a numpy array
@@ -121,7 +123,6 @@ def main():
     final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final.npz"
     # final final DB
     final_extended_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_extended.npz"
-
 
     # If we have already generated the inter_file, don't do it again...
     if not os.path.isfile(inter_file):
@@ -147,10 +148,10 @@ def main():
         result = result_df.to_records()
         result = result.view(result.dtype.descr, np.ndarray)
         del result_df
-        np.savez(final_extended_file,
-                centrals=result[result["upid"] == -1],
-                satellites=result[result["upid"] != -1]
-        )
+        np.savez(
+            final_extended_file,
+            centrals=result[result["upid"] == -1],
+            satellites=result[result["upid"] != -1])
     else:
         print("Skipping combining data, file already exists")
 

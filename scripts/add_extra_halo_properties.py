@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Script that takes universe machine hlist (halo list) and merges some info from it with
-the info we have from the catalog. We do this in two steps.
-1) Convert to a numpy array and throw away unneeded cols.
-2) Join onto the catalog data using the ID.
+Adds extra information about halos on the the universe machine data output from
+scripts/reduce_um_catalog_data_size.py.
+1) This is given the output from scripts/reduce_um_catalog_data_size.py and a hlist from the
+    same snapshot.
+2) We convert the hlist data into a numpy array, dropping columns we don't need.
+3) We join this extra data onto the ouptut of the first script using the halo id as the key.
 
 We do not have data in the hlist for satellites with really long IDs (>=1000008162600955). In
-there cases we have nans in the data set.
+these cases we have nans in the data set.
 
 TODO: Work out why we don't have the data for some of the halos.
 """

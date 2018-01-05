@@ -15,7 +15,7 @@ import numpy as np
 # Input table
 um_dir = '/Users/song/astro5/massive/dr16a/um2/um2_new'
 um_smdpl_dir = os.path.join(um_dir, 'um_smdpl')
-um_smdpl_ptbl = os.path.join(um_smdpl_dir, 'particles_0.712400_demo.txt')
+um_smdpl_ptbl = os.path.join(um_smdpl_dir, 'particles_0.712400.txt')
 
 # Output files
 n_ds1 = 1E7

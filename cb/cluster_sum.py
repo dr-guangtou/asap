@@ -33,10 +33,10 @@ def get_n(n, total_sats):
 
 def get_richness(halos, satellites, min_mass):
     richness = np.zeros(len(halos), int)
-    for i, halo in enumerate(halos):
+    for i, central in enumerate(halos):
         sats = satellites[np.searchsorted(
-            satellites["upid"], halo["id"], side="left"):np.searchsorted(
-                satellites["upid"], halo["id"], side="right")]
+            satellites["upid"], central["id"], side="left"):np.searchsorted(
+                satellites["upid"], central["id"], side="right")]
         sats = sats[::-1]
 
         for j in range(len(sats)):

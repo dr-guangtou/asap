@@ -26,29 +26,45 @@ def add_mean_and_stddev(ax, x, y, label=None):
         zorder=3)  # https://github.com/matplotlib/matplotlib/issues/1622
 
 
-def richness_vs_scatter(binned_halos, satellites, min_mass_for_richness, labels = None):
+def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
-    label = None
 
-    for i, current_halos in enumerate(binned_halos):
-        stellar_masses = np.log10(current_halos["icl"] + current_halos["sm"])
-        richness = cluster_sum.get_richness(current_halos, satellites, min_mass_for_richness)
-        bins = np.arange(np.min(richness), np.max(richness))
-        # mean, _, _ = scipy.stats.binned_statistic(richness, stellar_masses, statistic="mean", bins=bins)
-        std, _, _ = scipy.stats.binned_statistic(richness, stellar_masses, statistic=np.std, bins=bins)
+    halo_masses = np.log10(centrals["mp"])
+    stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
+    smhm = stellar_masses / halo_masses
+    richnesses = cluster_sum.get_richness(centrals, satellites, min_mass_for_richness)
 
-        # ax.plot(richness, stellar_masses, linestyle="None", marker="o", markersize=0.1)
-        bin_midpoints = bins[:-1] + np.diff(bins) / 2
-        if labels is not None:
-            label = labels[i]
-        ax.plot(bin_midpoints, std, label=label)
-    ax.set(
-        xlabel=r"Richness (# of satellites with total SM > {})".format(np.log10(min_mass_for_richness)),
-        ylabel=r"SM-HM Scatter (dex)",
-        title="Total Stellar Mass - Halo Mass scatter at fixed halo mass vs Richness",
+    bins = 16
+    heat, x_edge, y_edge, bin_number = scipy.stats.binned_statistic_2d(
+            halo_masses,
+            richnesses,
+            smhm,
+            bins=bins,
+            statistic="std",
     )
-    ax.legend()
+    image = ax.imshow(
+            heat.T, # WHY???
+            origin="lower",
+            extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]],
+            aspect="auto",
+    )
+    cbar = fig.colorbar(image)
+
+    # Lets also get a sense of how much data we have in each bin
+    fig2, ax2 = plt.subplots()
+    x_ind, y_ind = np.unravel_index(bin_number,
+                                (len(x_edge) + 1, len(y_edge) + 1))
+    bin_counts, _, _= np.histogram2d(x_ind, y_ind, bins=bins)
+    bin_counts = np.log10(bin_counts)
+    image = ax2.imshow(
+            bin_counts.T,
+            origin="lower",
+            extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]],
+            aspect="auto",
+    )
+
+    cbar = fig2.colorbar(image)
     return ax
 
 

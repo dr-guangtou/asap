@@ -152,24 +152,36 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     return ax
 
 
-def dm_vs_all_sm_error(catalogs, labels=None):
+def dm_vs_all_sm_error(catalogs, labels=None, flip_axis=False):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
     label = None
     for i, catalog in enumerate(catalogs):
-        x = np.log10(catalog["mp"])
-        y = np.log10(catalog["icl"] + catalog["sm"])
+        if flip_axis:
+            x = np.log10(catalog["icl"] + catalog["sm"])
+            y = (np.log10(catalog["icl"] + catalog["sm"])) / np.log10(catalog["mp"])
+        else:
+            x = np.log10(catalog["mp"])
+            y = (np.log10(catalog["icl"] + catalog["sm"])) / np.log10(catalog["mp"])
+
         bins = np.arange(np.min(x), np.max(x), 0.2)
-        std, _, _ = scipy.stats.binned_statistic(x, y, statistic=np.std, bins=bins)
+        std, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=bins)
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
         if labels is not None:
             label = labels[i]
         ax.plot(bin_midpoints, std, label=label)
-    ax.set(
-        xlabel=r"log $M_{vir}$" + solarMassUnits,
-        ylabel=r"SM-HM Scatter (dex)",
-        title="Stellar Mass - Halo Mass scatter at varying halo masses with various numbers of sats",
-    )
+    if flip_axis:
+        ax.set(
+            xlabel=r"log $M_{*}$" + solarMassUnits,
+            ylabel=r"SM-HM Scatter (dex)",
+            title="Stellar Mass - Halo Mass scatter at fixed stellar masses with various numbers of sats",
+        )
+    else:
+        ax.set(
+            xlabel=r"log $M_{vir}$" + solarMassUnits,
+            ylabel=r"SM-HM Scatter (dex)",
+            title="Stellar Mass - Halo Mass scatter at fixed halo masses with various numbers of sats",
+        )
     ax.legend()
     return ax
 

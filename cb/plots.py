@@ -152,17 +152,19 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     return ax
 
 
-def dm_vs_all_sm_error(catalogs, labels=None, flip_axis=False):
+def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
     label = None
     for i, catalog in enumerate(catalogs):
-        if flip_axis:
+        smhm_ratio = (catalog["icl"] + catalog["sm"]) / catalog["mp"]
+        y = np.log10(smhm_ratio)
+        if x_axis == "sm":
             x = np.log10(catalog["icl"] + catalog["sm"])
-            y = (np.log10(catalog["icl"] + catalog["sm"])) / np.log10(catalog["mp"])
-        else:
+        elif x_axis == "hm":
             x = np.log10(catalog["mp"])
-            y = (np.log10(catalog["icl"] + catalog["sm"])) / np.log10(catalog["mp"])
+        else:
+            raise Exception("x_axis must be 'sm' or 'hm', got {}".format(x_axis))
 
         bins = np.arange(np.min(x), np.max(x), 0.2)
         std, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=bins)
@@ -170,17 +172,17 @@ def dm_vs_all_sm_error(catalogs, labels=None, flip_axis=False):
         if labels is not None:
             label = labels[i]
         ax.plot(bin_midpoints, std, label=label)
-    if flip_axis:
+    if x_axis == "sm":
         ax.set(
-            xlabel=r"log $M_{*}$" + solarMassUnits,
-            ylabel=r"SM-HM Scatter (dex)",
-            title="Stellar Mass - Halo Mass scatter at fixed stellar masses with various numbers of sats",
+            xlabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
+            ylabel=r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$",
+            title="Scatter in Total Stellar Mass - Peak Halo Mass Ratio",
         )
-    else:
+    elif x_axis == "hm":
         ax.set(
-            xlabel=r"log $M_{vir}$" + solarMassUnits,
-            ylabel=r"SM-HM Scatter (dex)",
-            title="Stellar Mass - Halo Mass scatter at fixed halo masses with various numbers of sats",
+            xlabel=r"$M_{vir,peak}\ [log\ M_{vir,peak}/M_{\odot}]$",
+            ylabel=r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$",
+            title="Scatter in Total Stellar Mass - Peak Halo Mass Ratio",
         )
     ax.legend()
     return ax

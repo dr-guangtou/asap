@@ -67,14 +67,15 @@ class HscBoxbin(HscDsigma):
     Mtot and Minn.
     """
 
-    def setBinId(self, bin_id):
-        """Set the bin id for the box."""
+    def __init__(self, dsigma_output, bin_id,
+                 low_mtot, upp_mtot, low_minn, upp_minn):
+        """Initialize a boxbin deltaSigma measurement."""
+        HscDsigma.__init__(self, dsigma_output)
+
+        # Set the bin id for the box
         self.bin_id = bin_id
 
-    def setMassLimits(self,
-                      low_mtot, upp_mtot,
-                      low_minn, upp_minn):
-        """Set the lower and upper mass limits for both Mtot and Minn."""
+        # Set the lower and upper mass limits for both Mtot and Minn.
         self.low_mtot = low_mtot
         self.upp_mtot = upp_mtot
 

@@ -25,7 +25,7 @@ class HscDsigma(object):
 
     def __init__(self, dsigma_output):
         """Load the result file."""
-        msg = '# Can not find the Swot result file !'
+        msg = '# Can not find %s !' % dsigma_output
         assert os.path.isfile(dsigma_output), msg
 
         # Read the file

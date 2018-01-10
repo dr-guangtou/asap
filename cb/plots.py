@@ -64,6 +64,58 @@ def age_vs_scatter(centrals):
     return ax
 
 
+def mm_vs_scatter(centrals):
+    fig, ax = plt.subplots()
+    fig.set_size_inches(18.5, 10.5)
+
+    # Define the basic quantities we are interested in
+    halo_masses = np.log10(centrals["mp"])
+    smhm_ratio = np.log10(
+            (centrals["icl"] + centrals["sm"]) / centrals["mp"]
+    )
+    mm = centrals["scale_of_last_MM"]
+    print(len(np.unique(mm)))
+    print(np.min(mm), np.max(mm))
+
+    # Bin based on halo mass on the x axis and concentration on the y axis
+    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
+    x_bin_edges = np.arange(
+            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+            np.max(halo_masses) + 0.2, # to ensure that the last point is included
+            0.2)
+    y_bin_edges = np.linspace(np.min(mm), np.max(mm), num = 16 + 1)
+    binned_stats = scipy.stats.binned_statistic_2d(
+            halo_masses,
+            mm,
+            smhm_ratio,
+            bins=[x_bin_edges, y_bin_edges],
+            statistic="std",
+    )
+
+    # Invalidate bins that don't have many members
+    binned_stats = invalidate_unoccupied_bins(binned_stats)
+    # binned_stats.statistic[binned_stats.statistic == 0] = -np.inf
+
+    # Plot and add labels, colorbar, etc
+    image = ax.imshow(
+            binned_stats.statistic.T,
+            origin="lower",
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+            aspect="auto",
+    )
+    ax.set(
+            xticks=binned_stats.x_edge[::2],
+            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
+            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
+            yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
+            xlabel=m_vir_x_axis,
+            ylabel=r"Concentration",
+            title="SMHM Ratio Scatter binned by Concentration and $M_{vir,peak}$",
+    )
+    fig.colorbar(image, label=smhm_ratio_scatter)
+    return ax
+
+
 def concentration_vs_scatter(centrals):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
@@ -111,8 +163,6 @@ def concentration_vs_scatter(centrals):
     )
     fig.colorbar(image, label=smhm_ratio_scatter)
     return ax
-
-
 
 def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     fig, ax = plt.subplots()

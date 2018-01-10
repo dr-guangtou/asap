@@ -31,7 +31,7 @@ from stellar_mass_function import compute_smf, \
 from model_predictions import total_stellar_mass_including_satellites, \
     precompute_lensing_pairs
 from full_mass_profile_model import sm_profile_from_mhalo
-from swot_weak_lensing import SwotWL
+from swot_weak_lensing import SwotWL, SwotBoxbin
 from load_mdpl2_mock import value_added_mdpl2_mock
 # from convergence import convergence_check
 
@@ -879,7 +879,7 @@ class UMMassProfModel():
             msg = ("# Cannot find the WL profile "
                    "for bin %s : %s" % (idx, wl_file))
             assert os.path.isfile(wl_file), msg
-            wl_box = boxBinWL(wl_file)
+            wl_box = SwotBoxbin(wl_file)
             # Including the WL calibration error
             wl_box.sig /= self.obs_wl_calib
 
@@ -2230,26 +2230,3 @@ class UMMassProfModel():
         pickle_file.close()
 
         return None
-
-
-class boxBinWL(SwotWL):
-    """
-    Class for HSC weak lensing profile within a box defined by
-    Mtot and Minn.
-    """
-
-    def setBinId(self, bin_id):
-        """
-        Set the bin id for the box.
-        """
-        self.bin_id = bin_id
-
-    def setMassLimits(self, low_mtot, upp_mtot, low_minn, upp_minn):
-        """
-        Set the lower and upper mass limits for both Mtot and Minn.
-        """
-        self.low_mtot = low_mtot
-        self.upp_mtot = upp_mtot
-
-        self.low_minn = low_minn
-        self.upp_minn = upp_minn

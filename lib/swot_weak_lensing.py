@@ -91,3 +91,26 @@ class SwotWL(object):
         self.r_sig = self.r * self.sig
         self.r_err_w = self.r * self.err_w
         self.r_err_s = self.r * self.err_s
+
+
+class SwotBoxbin(SwotWL):
+    """
+    Class for HSC weak lensing profile within a box defined by
+    Mtot and Minn.
+    """
+
+    def setBinId(self, bin_id):
+        """
+        Set the bin id for the box.
+        """
+        self.bin_id = bin_id
+
+    def setMassLimits(self, low_mtot, upp_mtot, low_minn, upp_minn):
+        """
+        Set the lower and upper mass limits for both Mtot and Minn.
+        """
+        self.low_mtot = low_mtot
+        self.upp_mtot = upp_mtot
+
+        self.low_minn = low_minn
+        self.upp_minn = upp_minn

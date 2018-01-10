@@ -6,7 +6,7 @@ import cluster_sum
 
 solarMassUnits = r"($M_{\odot}$)"
 m_vir_x_axis = r"$M_{vir,peak}\ [log\ M_{vir,peak}/M_{\odot}]$"
-smhm_ratio_scatte = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
+smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
@@ -68,37 +68,48 @@ def concentration_vs_scatter(centrals):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
 
+    # Define the basic quantities we are interested in
     halo_masses = np.log10(centrals["mp"])
     smhm_ratio = np.log10(
             (centrals["icl"] + centrals["sm"]) / centrals["mp"]
     )
     concentrations = centrals["rvir"] / centrals["rs"]
 
-    x_bin_edges = np.linspace(np.min(halo_masses), np.max(halo_masses), num=16 + 1)
-    y_bin_edges = np.geomspace(np.min(concentrations), np.max(concentrations), num = 16 + 1)
-    heat, x_edge, y_edge, _ = scipy.stats.binned_statistic_2d(
+    # Bin based on halo mass on the x axis and concentration on the y axis
+    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
+    x_bin_edges = np.arange(
+            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+            np.max(halo_masses) + 0.2, # to ensure that the last point is included
+            0.2)
+    y_bin_edges = np.around(np.geomspace(np.min(concentrations), np.max(concentrations), num = 16 + 1), decimals=1)
+    binned_stats = scipy.stats.binned_statistic_2d(
             halo_masses,
             concentrations,
             smhm_ratio,
             bins=[x_bin_edges, y_bin_edges],
             statistic="std",
     )
-    heat[heat == 0] = -np.inf
+
+    # Invalidate bins that don't have many members
+    binned_stats = invalidate_unoccupied_bins(binned_stats)
+
+    # Plot and add labels, colorbar, etc
     image = ax.imshow(
-            heat.T,
+            binned_stats.statistic.T,
             origin="lower",
-            extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]],
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
             aspect="auto",
     )
     ax.set(
-            xticks=x_bin_edges,
-            yticks=np.linspace(np.min(y_bin_edges), np.max(y_bin_edges), num=16 + 1),
-            yticklabels=["{0:.2f}".format(i) for i in y_bin_edges],
-            xlabel=r"log $M_{vir}$" + solarMassUnits,
+            xticks=binned_stats.x_edge[::2],
+            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
+            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
+            yticklabels=["{0:.1f}".format(i) for i in binned_stats.y_edge],
+            xlabel=m_vir_x_axis,
             ylabel=r"Concentration",
-            title="SMHM variance in HM and concentration bins",
+            title="SMHM Ratio Scatter binned by Concentration and $M_{vir,peak}$",
     )
-    fig.colorbar(image, label="SMHM variance")
+    fig.colorbar(image, label=smhm_ratio_scatter)
     return ax
 
 
@@ -117,8 +128,6 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     # Bin based on halo mass on the x axis and richness on the y axis
     # Manually set up the bin edges because it is a bit tricky
     # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
-    # x_bin_edges = np.linspace(np.min(halo_masses), np.max(halo_masses), num=16 + 1)
-    # x_bin_edges = np.arange(np.min(halo_masses), np.max(halo_masses), 0.2)
     x_bin_edges = np.arange(
             np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
             np.max(halo_masses) + 0.2, # to ensure that the last point is included
@@ -162,7 +171,7 @@ def invalidate_unoccupied_bins(binned_stats):
 
     # Could do this better by doing some resampling and only keeping if it is well defined
     # Though I'm not sure we have the data here to make that easy...
-    binned_stats.statistic[bin_counts < 7] = -np.inf
+    binned_stats.statistic[bin_counts < 5] = -np.inf
     return binned_stats
 
 def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):

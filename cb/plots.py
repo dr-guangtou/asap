@@ -5,6 +5,8 @@ import scipy.stats
 import cluster_sum
 
 solarMassUnits = r"($M_{\odot}$)"
+m_vir_x_axis = r"$M_{vir,peak}\ [log\ M_{vir,peak}/M_{\odot}]$"
+smhm_ratio_scatte = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
@@ -67,8 +69,9 @@ def concentration_vs_scatter(centrals):
     fig.set_size_inches(18.5, 10.5)
 
     halo_masses = np.log10(centrals["mp"])
-    stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
-    smhm = stellar_masses / halo_masses
+    smhm_ratio = np.log10(
+            (centrals["icl"] + centrals["sm"]) / centrals["mp"]
+    )
     concentrations = centrals["rvir"] / centrals["rs"]
 
     x_bin_edges = np.linspace(np.min(halo_masses), np.max(halo_masses), num=16 + 1)
@@ -76,7 +79,7 @@ def concentration_vs_scatter(centrals):
     heat, x_edge, y_edge, _ = scipy.stats.binned_statistic_2d(
             halo_masses,
             concentrations,
-            smhm,
+            smhm_ratio,
             bins=[x_bin_edges, y_bin_edges],
             statistic="std",
     )
@@ -104,53 +107,63 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
 
+    # Define the basic quantities we are interested in
     halo_masses = np.log10(centrals["mp"])
-    stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
-    smhm = stellar_masses / halo_masses
+    smhm_ratio = np.log10(
+            (centrals["icl"] + centrals["sm"]) / centrals["mp"]
+    )
     richnesses = cluster_sum.get_richness(centrals, satellites, min_mass_for_richness)
 
-    x_bin_edges = np.linspace(np.min(halo_masses), np.max(halo_masses), num=16 + 1)
+    # Bin based on halo mass on the x axis and richness on the y axis
+    # Manually set up the bin edges because it is a bit tricky
+    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
+    # x_bin_edges = np.linspace(np.min(halo_masses), np.max(halo_masses), num=16 + 1)
+    # x_bin_edges = np.arange(np.min(halo_masses), np.max(halo_masses), 0.2)
+    x_bin_edges = np.arange(
+            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+            np.max(halo_masses) + 0.2, # to ensure that the last point is included
+            0.2)
     y_bin_edges = np.array([0, 1, 2, 4, 8, 16, 32, 64])
-    heat, x_edge, y_edge, bin_number = scipy.stats.binned_statistic_2d(
+    binned_stats = scipy.stats.binned_statistic_2d(
             halo_masses,
             richnesses,
-            smhm,
+            smhm_ratio,
             bins=[x_bin_edges, y_bin_edges],
             statistic="std",
     )
-    heat[heat == 0] = -np.inf
+
+    # Invalidate bins that don't have many members
+    binned_stats = invalidate_unoccupied_bins(binned_stats)
+
+    # Plot and add labels, colorbar, etc
     image = ax.imshow(
-            heat.T, # WHY???
+            binned_stats.statistic.T, # Still don't know why this is Transposed
             origin="lower",
-            extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]],
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
             aspect="auto",
     )
     ax.set(
-            xticks=x_bin_edges,
+            xticks=binned_stats.x_edge[::2],
+            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(0, 64, num=8),
-            yticklabels=["{0:.2f}".format(i) for i in y_bin_edges],
-            xlabel=r"log $M_{vir}$" + solarMassUnits,
-            ylabel=r"Richness",
-            title="SMHM variance in HM and Richness bins",
+            yticklabels=["{0:.0f}".format(i) for i in binned_stats.y_edge],
+            xlabel=m_vir_x_axis,
+            ylabel=r"$Richness\ [N_{sats}(log\ M_{*}/M_{\odot} > 10.8)]$",
+            title="SMHM Ratio Scatter binned by Richness and $M_{vir,peak}$",
     )
-    fig.colorbar(image, label="SMHM variance")
-
-    # Lets also get a sense of how much data we have in each bin
-    fig2, ax2 = plt.subplots()
-    x_ind, y_ind = np.unravel_index(bin_number,
-                                (len(x_edge) + 1, len(y_edge) + 1))
-    bin_counts, _, _= np.histogram2d(x_ind, y_ind, bins=[len(x_bin_edges)-1, len(y_bin_edges)-1])
-    bin_counts = np.log10(bin_counts)
-    image = ax2.imshow(
-            bin_counts.T,
-            origin="lower",
-            extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]],
-            aspect="auto",
-    )
-
-    fig2.colorbar(image)
+    fig.colorbar(image, label=smhm_ratio_scatter)
     return ax
 
+def invalidate_unoccupied_bins(binned_stats):
+    x_ind, y_ind = np.unravel_index(binned_stats.binnumber, (len(binned_stats.x_edge) + 1, len(binned_stats.y_edge) + 1))
+    bin_counts, _, _ = np.histogram2d(x_ind, y_ind, bins=[len(binned_stats.x_edge)-1, len(binned_stats.y_edge)-1])
+
+    # Could sum things here to find the next extents (if we remove some data at the high or low end our graph looks a bit silly.
+
+    # Could do this better by doing some resampling and only keeping if it is well defined
+    # Though I'm not sure we have the data here to make that easy...
+    binned_stats.statistic[bin_counts < 7] = -np.inf
+    return binned_stats
 
 def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     fig, ax = plt.subplots()
@@ -180,8 +193,8 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
         )
     elif x_axis == "hm":
         ax.set(
-            xlabel=r"$M_{vir,peak}\ [log\ M_{vir,peak}/M_{\odot}]$",
-            ylabel=r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$",
+            xlabel=m_vir_x_axis,
+            ylabel=smhm_ratio_scatter,
             title="Scatter in Total Stellar Mass - Peak Halo Mass Ratio",
         )
     ax.legend()

@@ -18,7 +18,7 @@ def logms_inn_cam(logms_tot_obs,
 
     Parameters
     ----------
-    logms_tot_obs : ndarray
+                ndarray
         Numpy array of shape (num_gals, ) storing log10(Mtot) of the HSC
         catalog
 
@@ -69,7 +69,7 @@ def logms_inn_cam(logms_tot_obs,
         data_mask_ibin = (logms_tot_obs >= low) & (logms_tot_obs < high)
         num_gals_ibin = np.count_nonzero(data_mask_ibin)
         assert num_gals_ibin > num_required_gals_per_massbin, msg2.format(
-                num_gals_ibin, low, high)
+            num_gals_ibin, low, high)
         logms_inn_ibin = logms_inn_obs[data_mask_ibin]
 
         model_mask_ibin = ((logms_tot_mod >= low) &
@@ -79,6 +79,6 @@ def logms_inn_cam(logms_tot_obs,
         if num_halos_ibin > 0:
             sec_haloprop_ibin = secondary_haloprop[model_mask_ibin]
             logms_inn_mod[model_mask_ibin] = conditional_abunmatch(
-                    sec_haloprop_ibin, logms_inn_ibin, sigma=sigma)
+                sec_haloprop_ibin, logms_inn_ibin, sigma=sigma)
 
     return logms_inn_mod

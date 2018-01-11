@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import plotly.graph_objs as go
 import scipy.stats
 import cluster_sum
 
@@ -266,44 +265,3 @@ def dm_vs_sm(catalog, ax=None):
     ax.fill_between(bin_midpoints, mean-(2*std), mean-(3*std), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(bin_midpoints, mean+(2*std), mean+(3*std), alpha=0.125, facecolor="tab:blue")
     return ax
-
-def add_mean_and_stddev(ax, x, y, label=None):
-    bins = np.arange(np.min(x), np.max(x), 0.2)
-    mean, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=bins)
-    std, _, _ = scipy.stats.binned_statistic(x, y, statistic=np.std, bins=bins)
-
-    bin_midpoints = bins[:-1] + np.diff(bins) / 2
-    ax.errorbar(
-        bin_midpoints,
-        mean,
-        yerr=std,
-        linestyle="None",
-        marker=".",
-        label=label,
-        zorder=3)  # https://github.com/matplotlib/matplotlib/issues/1622
-
-def plotly_stuff(data, y_cols):
-    scatters = [
-        go.Scatter(
-            visible=False,
-            x=data[i]["mp"],
-            y=np.sum(np.array([data[i][col] for col in y_cols]), axis=0),
-            mode='markers',
-        ) for i in range(len(data))
-    ]
-    scatters[0]["visible"] = True
-
-    steps = []
-    for i in range(len(data)):
-        steps.append({
-            "method": "restyle",
-            "args": ["visible", [i == j for j in range(len(data))]]
-        })
-    sliders = [{"active": 0, "steps": steps}]
-
-    layout = go.Layout(
-        xaxis=dict(type='log', range=[11.9, 16]),
-        yaxis=dict(type='log', range=[9, 14]),
-        sliders=sliders,
-    )
-    return go.Figure(data=scatters, layout=layout)

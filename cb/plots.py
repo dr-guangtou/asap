@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
+import scipy.optimize
 import cluster_sum
 
 solarMassUnits = r"($M_{\odot}$)"
@@ -247,37 +248,66 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
 def dm_vs_sm(catalog, ax=None):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
-    x = np.log10(catalog["mp"])
-    y = np.log10(catalog["icl"] + catalog["sm"])
+    x = np.log10(catalog["icl"] + catalog["sm"])
+    # x = np.log10(0.1*catalog["icl"] + catalog["sm"])
+    y = np.log10(catalog["m"])
 
     # Find various stats on our data
-    bins = np.arange(np.min(x), np.max(x), 0.2)
-    bin_midpoints = bins[:-1] + np.diff(bins) / 2
-    mean, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=bins)
-    std, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=bins)
+    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
+    sm_bin_midpoints = sm_bin_edges[:-1] + np.diff(sm_bin_edges) / 2
+    mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
+    std_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=sm_bin_edges)
 
     # Plot data and colored error regions
-    ax.plot(bin_midpoints, mean, marker="o")
-    ax.fill_between(bin_midpoints, mean-std, mean+std, alpha=0.5, facecolor="tab:blue")
-    ax.fill_between(bin_midpoints, mean-std, mean-(2*std), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(bin_midpoints, mean+std, mean+(2*std), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(bin_midpoints, mean-(2*std), mean-(3*std), alpha=0.125, facecolor="tab:blue")
-    ax.fill_between(bin_midpoints, mean+(2*std), mean+(3*std), alpha=0.125, facecolor="tab:blue")
+    ax.plot(sm_bin_midpoints, mean_hm, marker="o")
+    ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm+std_hm, alpha=0.5, facecolor="tab:blue")
+    ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm-(2*std_hm), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(sm_bin_midpoints, mean_hm+std_hm, mean_hm+(2*std_hm), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(sm_bin_midpoints, mean_hm-(2*std_hm), mean_hm-(3*std_hm), alpha=0.125, facecolor="tab:blue")
+    ax.fill_between(sm_bin_midpoints, mean_hm+(2*std_hm), mean_hm+(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.set(
-        xlabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
-        ylabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
+        xlabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
+        ylabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
     )
 
-    # Fit the functional form from https://arxiv.org/pdf/1103.2077.pdf
+    # Plot with the default values from the paper
     m1 = 12.73
     sm0 = 11.04
     beta = 0.47
     delta = 0.60
     gamma = 1.96
-    usm = mean / sm0 # unitless stellar mass is sm / characteristic mass
-    mh = (m1 +
+    # mh = f_shmr(sm_bin_midpoints, m1, sm0, beta, delta, gamma)
+    # ax.plot(sm_bin_midpoints, mh)
+
+    # Now try fit
+    popt, pcov = scipy.optimize.curve_fit(
+            f_shmr,
+            sm_bin_midpoints,
+            mean_hm,
+            p0=[m1, sm0, beta, delta, gamma],
+            # bounds=(
+            #     [5, sm0, beta-1e-9, -np.inf, -np.inf],
+            #     [m1, 13, beta+1e-9, np.inf, np.inf],
+            # ),
+            # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
+            # smo will be larger for a similar reason as ^
+            # beta should be unchanged - it only affects the low mass end
+            # delta has large freedom
+    )
+    print(m1, sm0, beta, delta, gamma)
+    print(popt)
+    print(np.sqrt(np.diag(pcov)))
+    # print(f_shmr(sm_bin_midpoints, m1, sm0, beta, delta, gamma))
+    # print(f_shmr(sm_bin_midpoints, *popt))
+    ax.plot(sm_bin_midpoints, f_shmr(sm_bin_midpoints, *popt))
+
+    return ax
+
+# The functional form from https://arxiv.org/pdf/1103.2077.pdf
+# This is the fitting function
+def f_shmr(stellar_masses, m1, sm0, beta, delta, gamma):
+    usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
+    return (m1 +
         beta * usm +
         ((usm**delta) / (1 + usm**-gamma)) -
-        1/2)
-    ax.plot(bin_midpoints, mh)
-    return ax
+        0.5)

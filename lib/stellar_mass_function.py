@@ -56,16 +56,14 @@ def compute_smf(sm_array, volume, nb, sm_min, sm_max,
     if not smf_only:
         if return_bins:
             return x, smf, err, bin_edges
-        else:
-            return x, smf, err
-    else:
-        # For bootstrap run
-        return smf
+        return x, smf, err
+    # For bootstrap run
+    return smf
 
 
 def bootstrap_resample(X, n_boots=1000):
-    """
-    Bootstrap resample an array_like.
+    """Bootstrap resample an array_like.
+
     Borrowed from: http://nbviewer.jupyter.org/gist/aflaxman/6871948
 
     Parameters
@@ -86,7 +84,8 @@ def bootstrap_resample(X, n_boots=1000):
 
 
 def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
-                  n_boots=1000, sm_err=None, resample_err=False):
+                  n_boots=1000, sm_err=None,
+                  resample_err=False):
     """
     Parameters
     ----------
@@ -142,7 +141,7 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
 
 
 def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
-                      add_err=None, n_boots=5000):
+                      add_err=None, n_boots=5000, bootstrap=True):
     """Estimate the observed SMF and bootstrap errors.
 
     Parameters
@@ -182,7 +181,10 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
     mass_cen, smf_s, smf_err, smf_b, mass_bins = smf_boot
 
     # Median values
-    smf = np.nanmedian(smf_b, axis=0)
+    if n_boots == 1:
+        smf = smf_s
+    else:
+        smf = np.nanmedian(smf_b, axis=0)
     # 1-sigma errors
     smf_low = np.nanpercentile(smf_b, 16, axis=0,
                                interpolation='midpoint')
@@ -208,7 +210,6 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
     smf_table['logm_0'] = bins_0
     smf_table['logm_1'] = bins_1
     smf_table['smf'] = smf
-    smf_table['smf_single'] = smf_s
     smf_table['smf_err'] = smf_err
     smf_table['smf_low'] = smf_low
     smf_table['smf_upp'] = smf_upp

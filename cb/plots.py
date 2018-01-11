@@ -12,6 +12,8 @@ smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
+fit = []
+
 def age_vs_scatter(centrals):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
@@ -249,7 +251,6 @@ def dm_vs_sm(catalog, ax=None):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
     x = np.log10(catalog["icl"] + catalog["sm"])
-    # x = np.log10(0.1*catalog["icl"] + catalog["sm"])
     y = np.log10(catalog["m"])
 
     # Find various stats on our data
@@ -270,17 +271,30 @@ def dm_vs_sm(catalog, ax=None):
         ylabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
     )
 
-    # Plot with the default values from the paper
+    popt = get_fit(catalog)
+    ax.plot(sm_bin_midpoints, f_shmr(sm_bin_midpoints, *popt))
+
+    return ax, popt
+
+def get_fit(catalog):
+    x = np.log10(catalog["icl"] + catalog["sm"])
+    y = np.log10(catalog["m"])
+
+    # Find various stats on our data
+    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
+    sm_bin_midpoints = sm_bin_edges[:-1] + np.diff(sm_bin_edges) / 2
+    mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
+    std_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=sm_bin_edges)
+
+    # Start with the default values from the paper
     m1 = 12.73
     sm0 = 11.04
     beta = 0.47
     delta = 0.60
     gamma = 1.96
-    # mh = f_shmr(sm_bin_midpoints, m1, sm0, beta, delta, gamma)
-    # ax.plot(sm_bin_midpoints, mh)
 
     # Now try fit
-    popt, pcov = scipy.optimize.curve_fit(
+    popt, _ = scipy.optimize.curve_fit(
             f_shmr,
             sm_bin_midpoints,
             mean_hm,
@@ -296,12 +310,8 @@ def dm_vs_sm(catalog, ax=None):
     )
     print(m1, sm0, beta, delta, gamma)
     print(popt)
-    print(np.sqrt(np.diag(pcov)))
-    # print(f_shmr(sm_bin_midpoints, m1, sm0, beta, delta, gamma))
-    # print(f_shmr(sm_bin_midpoints, *popt))
-    ax.plot(sm_bin_midpoints, f_shmr(sm_bin_midpoints, *popt))
+    return popt
 
-    return ax
 
 # The functional form from https://arxiv.org/pdf/1103.2077.pdf
 # This is the fitting function

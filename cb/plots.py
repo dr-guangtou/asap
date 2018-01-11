@@ -11,8 +11,6 @@ smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
-
-
 def age_vs_scatter(centrals):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
@@ -247,8 +245,8 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
 
 
 def dm_vs_sm(catalog, ax=None):
-    if ax is None:
-        _, ax = plt.subplots()
+    fig, ax = plt.subplots()
+    fig.set_size_inches(18.5, 10.5)
     x = np.log10(catalog["mp"])
     y = np.log10(catalog["icl"] + catalog["sm"])
 
@@ -258,10 +256,28 @@ def dm_vs_sm(catalog, ax=None):
     mean, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=bins)
     std, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=bins)
 
+    # Plot data and colored error regions
     ax.plot(bin_midpoints, mean, marker="o")
     ax.fill_between(bin_midpoints, mean-std, mean+std, alpha=0.5, facecolor="tab:blue")
     ax.fill_between(bin_midpoints, mean-std, mean-(2*std), alpha=0.25, facecolor="tab:blue")
     ax.fill_between(bin_midpoints, mean+std, mean+(2*std), alpha=0.25, facecolor="tab:blue")
     ax.fill_between(bin_midpoints, mean-(2*std), mean-(3*std), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(bin_midpoints, mean+(2*std), mean+(3*std), alpha=0.125, facecolor="tab:blue")
+    ax.set(
+        xlabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
+        ylabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
+    )
+
+    # Fit the functional form from https://arxiv.org/pdf/1103.2077.pdf
+    m1 = 12.73
+    sm0 = 11.04
+    beta = 0.47
+    delta = 0.60
+    gamma = 1.96
+    usm = mean / sm0 # unitless stellar mass is sm / characteristic mass
+    mh = (m1 +
+        beta * usm +
+        ((usm**delta) / (1 + usm**-gamma)) -
+        1/2)
+    ax.plot(bin_midpoints, mh)
     return ax

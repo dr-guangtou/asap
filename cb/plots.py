@@ -12,20 +12,7 @@ smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
-def add_mean_and_stddev(ax, x, y, label=None):
-    bins = np.arange(np.min(x), np.max(x), 0.2)
-    mean, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=bins)
-    std, _, _ = scipy.stats.binned_statistic(x, y, statistic=np.std, bins=bins)
 
-    bin_midpoints = bins[:-1] + np.diff(bins) / 2
-    ax.errorbar(
-        bin_midpoints,
-        mean,
-        yerr=std,
-        linestyle="None",
-        marker=".",
-        label=label,
-        zorder=3)  # https://github.com/matplotlib/matplotlib/issues/1622
 
 def age_vs_scatter(centrals):
     fig, ax = plt.subplots()
@@ -260,50 +247,40 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     return ax
 
 
-def dm_vs_all_sm(catalog, ax=None):
+def dm_vs_sm(catalog, ax=None):
     if ax is None:
         _, ax = plt.subplots()
     x = np.log10(catalog["mp"])
     y = np.log10(catalog["icl"] + catalog["sm"])
-    ax.plot(x, y, linestyle="None", marker="o", markersize=0.1)
-    ax.set(
-        xlabel=r"Peak HM " + solarMassUnits,
-        ylabel=r"SM (all) " + solarMassUnits,
-        title="Total SM vs Peak HM",
-    )
-    add_mean_and_stddev(ax, x, y)
+
+    # Find various stats on our data
+    bins = np.arange(np.min(x), np.max(x), 0.2)
+    bin_midpoints = bins[:-1] + np.diff(bins) / 2
+    mean, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=bins)
+    std, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=bins)
+
+    ax.plot(bin_midpoints, mean, marker="o")
+    ax.fill_between(bin_midpoints, mean-std, mean+std, alpha=0.5, facecolor="tab:blue")
+    ax.fill_between(bin_midpoints, mean-std, mean-(2*std), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(bin_midpoints, mean+std, mean+(2*std), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(bin_midpoints, mean-(2*std), mean-(3*std), alpha=0.125, facecolor="tab:blue")
+    ax.fill_between(bin_midpoints, mean+(2*std), mean+(3*std), alpha=0.125, facecolor="tab:blue")
     return ax
 
+def add_mean_and_stddev(ax, x, y, label=None):
+    bins = np.arange(np.min(x), np.max(x), 0.2)
+    mean, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=bins)
+    std, _, _ = scipy.stats.binned_statistic(x, y, statistic=np.std, bins=bins)
 
-def dm_vs_insitu(catalog, ax=None):
-    if ax is None:
-        _, ax = plt.subplots()
-    x = np.log10(catalog["mp"])
-    y = np.log10(catalog["sm"])
-    ax.plot(x, y, linestyle="None", marker="o", markersize=0.1)
-    ax.set(
-        xlabel=r"Peak HM " + solarMassUnits,
-        ylabel=r"SM (insitu) " + solarMassUnits,
-        title="Insitu SM vs Peak HM",
-    )
-    add_mean_and_stddev(ax, x, y)
-    return ax
-
-
-def dm_vs_exsitu(catalog, ax=None):
-    if ax is None:
-        _, ax = plt.subplots()
-    x = np.log10(catalog["mp"])
-    y = np.log10(catalog["icl"], where=catalog["icl"] > 0)
-    ax.plot(x, y, linestyle="None", marker="o", markersize=0.1)
-    ax.set(
-        xlabel=r"Peak HM " + solarMassUnits,
-        ylabel=r"SM (exsitu) " + solarMassUnits,
-        title="Exsitu SM vs Peak HM",
-    )
-    add_mean_and_stddev(ax, x, y)
-    return ax
-
+    bin_midpoints = bins[:-1] + np.diff(bins) / 2
+    ax.errorbar(
+        bin_midpoints,
+        mean,
+        yerr=std,
+        linestyle="None",
+        marker=".",
+        label=label,
+        zorder=3)  # https://github.com/matplotlib/matplotlib/issues/1622
 
 def plotly_stuff(data, y_cols):
     scatters = [

@@ -5,8 +5,8 @@ import scipy.optimize
 import cluster_sum
 
 solarMassUnits = r"($M_{\odot}$)"
-m_vir_x_axis = r"$M_{vir,peak}\ [log\ M_{vir,peak}/M_{\odot}]$"
-smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$"
+m_vir_x_axis = r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$"
+smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir}]$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
@@ -216,17 +216,21 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     fig.set_size_inches(18.5, 10.5)
     label = None
     for i, catalog in enumerate(catalogs):
-        smhm_ratio = (catalog["icl"] + catalog["sm"]) / catalog["mp"]
-        y = np.log10(smhm_ratio)
+        # Scatter on HM given SM bins
         if x_axis == "sm":
             x = np.log10(catalog["icl"] + catalog["sm"])
+            y = np.log10(catalog["m"])
+            y_diff = y - f_shmr_inverse(x, *get_fit(catalog))
+        # Scatter on SM given HM bins
         elif x_axis == "hm":
-            x = np.log10(catalog["mp"])
+            x = np.log10(catalog["m"])
+            y = np.log10(catalog["icl"] + catalog["sm"])
+            y_diff = y - f_shmr(x, *get_fit(catalog))
         else:
             raise Exception("x_axis must be 'sm' or 'hm', got {}".format(x_axis))
 
         bins = np.arange(np.min(x), np.max(x), 0.2)
-        std, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=bins)
+        std, _, _ = scipy.stats.binned_statistic(x, y_diff, statistic="std", bins=bins)
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
         if labels is not None:
             label = labels[i]
@@ -234,7 +238,7 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     if x_axis == "sm":
         ax.set(
             xlabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
-            ylabel=r"$\sigma\ [log\ M_{*}/M_{vir,peak}]$",
+            ylabel=r"$\sigma\ [log\ M_{vir}/M_{\odot}]$",
             title="Scatter in Total Stellar Mass - Peak Halo Mass Ratio",
         )
     elif x_axis == "hm":
@@ -272,10 +276,12 @@ def dm_vs_sm(catalog, ax=None):
     )
 
     popt = get_fit(catalog)
-    ax.plot(sm_bin_midpoints, f_shmr(sm_bin_midpoints, *popt))
+    ax.plot(sm_bin_midpoints, f_shmr_inverse(sm_bin_midpoints, *popt))
 
     return ax, popt
 
+# Returns the parameters needed to fit SM (on the x axis) to HM (on the y axis)
+# Uses the functional form in the paper...
 def get_fit(catalog):
     x = np.log10(catalog["icl"] + catalog["sm"])
     y = np.log10(catalog["m"])
@@ -295,7 +301,7 @@ def get_fit(catalog):
 
     # Now try fit
     popt, _ = scipy.optimize.curve_fit(
-            f_shmr,
+            f_shmr_inverse,
             sm_bin_midpoints,
             mean_hm,
             p0=[m1, sm0, beta, delta, gamma],
@@ -315,9 +321,33 @@ def get_fit(catalog):
 
 # The functional form from https://arxiv.org/pdf/1103.2077.pdf
 # This is the fitting function
-def f_shmr(stellar_masses, m1, sm0, beta, delta, gamma):
+# f_shmr finds SM given HM. As the inverse, this find HM given SM
+def f_shmr_inverse(stellar_masses, m1, sm0, beta, delta, gamma):
     usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
     return (m1 +
         beta * usm +
         ((usm**delta) / (1 + usm**-gamma)) -
         0.5)
+
+# http://www.wolframalpha.com/input/?i=d%2Fdx+B*log10(x%2FS)+%2B+((x%2FS)%5Ed)+%2F+(1+%2B+(x%2FS)%5E-g)+-+0.5
+def f_shmr_inverse_der(stellar_masses, m1, sm0, beta, delta, gamma):
+    usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
+    denom = sm0 * ((usm**-gamma) +1)
+    return ((beta / (stellar_masses * np.log(10))) +
+        ((delta * usm**(delta - 1)) / denom)
+        ((gamma * usm**(delta - gamma - 1)) / np.power(denom, 2)))
+
+
+# Given a list of halo masses, find the expected stellar mass
+# Does this by guessing stellar masses and plugging them into the inverse
+# Scipy is so sick . . .
+def f_shmr(halo_masses, m1, sm0, beta, delta, gamma):
+    def f(stellar_masses_guess):
+        return np.sum(np.power(
+                    f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses, 2
+                ))
+    return scipy.optimize.minimize(
+            f,
+            halo_masses-1.6,
+            bounds=np.array([halo_masses-8, halo_masses]).T,
+    ).x

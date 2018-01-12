@@ -350,23 +350,36 @@ def f_shmr_inverse_der(stellar_masses, sm0, beta, delta, gamma):
 # Does this by guessing stellar masses and plugging them into the inverse
 # Scipy is so sick . . .
 def f_shmr(halo_masses, m1, sm0, beta, delta, gamma):
+    # Function to minimize
     def f(stellar_masses_guess):
-        return np.power(f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma), 2)
+        return np.sum(
+                np.power(
+                    f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses,
+                    2,
+                )
+        )
+    # Gradient of the function to minimize
     def f_der(stellar_masses_guess):
-        return 2*(stellar_masses_guess, m1, sm0, beta, delta, gamma)*f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma)
+        return 2 * f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma) * (
+                f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses
+        )
 
-    stellar_masses = np.zeros_like(halo_masses)
+    print(f_shmr_inverse_der(halo_masses, sm0, beta, delta, gamma)[:10])
+    print(f_der(halo_masses))
 
-    for i, hm in enumerate(halo_masses):
-        stellar_masses[i] = scipy.optimize.minimize_scalar(f, hm).x
-    # x = scipy.optimize.minimize(
-    #         f,
-    #         halo_masses)
-    #         # method="BFGS",
-    #         # jac=f_der,
-    #         # options={
-    #         #     "gtol": 1e-6,
-    #         # },
-    #         # jac=False,
-    # # )
-    return stellar_masses
+    # SO the issue here is that the derivative is tiny tiny tiny because we are moving in log space on halo masses
+    # but in linear space on the stellar masses
+    # So the gradient is tiny and it stops immediately
+    # We need to have all these functions work in linear space for everything
+    x = scipy.optimize.minimize(
+            f,
+            halo_masses,
+            method="BFGS",
+            jac=f_der,
+            # options={
+            #     "gtol": 1e-17,
+            # },
+            # jac=False,
+    )
+    print(x)
+    return x.x

@@ -18,36 +18,47 @@ def age_vs_scatter(centrals):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
 
-    halo_masses = np.log10(centrals["mp"])
-    stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
-    smhm = stellar_masses / halo_masses
-    age = centrals["Halfmass_Scale"]
+    # Define the basic quantities we are interested in
+    halo_masses = np.log10(centrals["m"])
+    smhm_ratio = np.log10(
+            (centrals["icl"] + centrals["sm"]) / centrals["m"]
+    )
+    ages = centrals["Halfmass_Scale"]
 
-    x_bin_edges = np.linspace(np.min(halo_masses), np.max(halo_masses), num=16 + 1)
-    y_bin_edges = np.geomspace(np.min(age), np.max(age), num = 16 + 1)
-    heat, x_edge, y_edge, _ = scipy.stats.binned_statistic_2d(
+    # Bin based on halo mass on the x axis and age on the y axis
+    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
+    x_bin_edges = np.arange(
+            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+            np.max(halo_masses) + 0.2, # to ensure that the last point is included
+            0.2)
+    y_bin_edges = np.linspace(np.min(ages), np.max(ages), num = 16 + 1)
+    binned_stats = scipy.stats.binned_statistic_2d(
             halo_masses,
-            age,
-            smhm,
+            ages,
+            smhm_ratio,
             bins=[x_bin_edges, y_bin_edges],
             statistic="std",
     )
-    heat[heat == 0] = -np.inf
+
+    # Invalidate bins that don't have many members
+    binned_stats = invalidate_unoccupied_bins(binned_stats)
+
+    # Plot and add labels, colorbar, etc
     image = ax.imshow(
-            heat.T,
+            binned_stats.statistic.T,
             origin="lower",
-            extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]],
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
             aspect="auto",
     )
     ax.set(
-            xticks=x_bin_edges,
-            yticks=np.linspace(np.min(y_bin_edges), np.max(y_bin_edges), num=16 + 1),
-            yticklabels=["{0:.2f}".format(i) for i in y_bin_edges],
-            xlabel=r"log $M_{vir}$" + solarMassUnits,
-            ylabel=r"Scale factor at half mass",
-            title="SMHM variance in HM and age bins",
+            xticks=binned_stats.x_edge[::2],
+            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
+            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
+            yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
+            xlabel=m_vir_x_axis,
+            ylabel=r"Scale factor when halo is at half its current mass",
     )
-    fig.colorbar(image, label="SMHM variance")
+    fig.colorbar(image, label=smhm_ratio_scatter)
     return ax
 
 
@@ -56,13 +67,11 @@ def mm_vs_scatter(centrals):
     fig.set_size_inches(18.5, 10.5)
 
     # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["mp"])
+    halo_masses = np.log10(centrals["m"])
     smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["mp"]
+            (centrals["icl"] + centrals["sm"]) / centrals["m"]
     )
     mm = centrals["scale_of_last_MM"]
-    print(len(np.unique(mm)))
-    print(np.min(mm), np.max(mm))
 
     # Bin based on halo mass on the x axis and concentration on the y axis
     # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
@@ -81,7 +90,6 @@ def mm_vs_scatter(centrals):
 
     # Invalidate bins that don't have many members
     binned_stats = invalidate_unoccupied_bins(binned_stats)
-    # binned_stats.statistic[binned_stats.statistic == 0] = -np.inf
 
     # Plot and add labels, colorbar, etc
     image = ax.imshow(
@@ -96,8 +104,7 @@ def mm_vs_scatter(centrals):
             yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
             yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
             xlabel=m_vir_x_axis,
-            ylabel=r"Concentration",
-            title="SMHM Ratio Scatter binned by Concentration and $M_{vir,peak}$",
+            ylabel=r"Scale factor at last major merger",
     )
     fig.colorbar(image, label=smhm_ratio_scatter)
     return ax
@@ -108,9 +115,9 @@ def concentration_vs_scatter(centrals):
     fig.set_size_inches(18.5, 10.5)
 
     # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["mp"])
+    halo_masses = np.log10(centrals["m"])
     smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["mp"]
+            (centrals["icl"] + centrals["sm"]) / centrals["m"]
     )
     concentrations = centrals["rvir"] / centrals["rs"]
 

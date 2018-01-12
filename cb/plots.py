@@ -292,32 +292,27 @@ def get_fit(catalog):
     mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
 
     # Start with the default values from the paper
-    m1 = 12.73
-    sm0 = 11.04
+    m1 = 10**12.73
+    sm0 = 10**11.04
     beta = 0.47
     delta = 0.60
     gamma = 1.96
 
-    print(mean_hm) # should be in log
-    print(np.power(10, sm_bin_midpoints))
     # Now try fit
     popt, _ = scipy.optimize.curve_fit(
             f_shmr_inverse,
-            # np.power(10, sm_bin_midpoints), # This expects stellar mass NOT IN LOG!
             sm_bin_midpoints,
             mean_hm,
             p0=[m1, sm0, beta, delta, gamma],
             bounds=(
-                [0.1, sm0-7, beta-1e-9, -np.inf, -np.inf],
-                [m1+1000, sm0+7, beta+1e-9, np.inf, np.inf],
+                [m1/1e7, sm0/1e7, beta-1e-2, 0, gamma-1e-2],
+                [m1*1e7, sm0*1e7, beta+1e-2, 10, gamma+1e-2],
             ),
             # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
-            # smo will be larger for a similar reason as ^
+            # sm0 will be larger for a similar reason as ^
             # beta should be unchanged - it only affects the low mass end
             # delta has large freedom
     )
-    print(m1, sm0, beta, delta, gamma)
-    print(popt)
     return popt
 
 
@@ -325,19 +320,23 @@ def get_fit(catalog):
 # This is the fitting function
 # f_shmr finds SM given HM. As the inverse, this find HM given SM
 def f_shmr_inverse(stellar_masses, m1, sm0, beta, delta, gamma):
-    usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
-    return (np.log10(m1) +
-        (beta * np.log10(usm)) +
-        ((np.power(usm, delta)) / (1 + np.power(usm, -gamma))) -
-        0.5)
+    if np.max(stellar_masses) > 100:
+        raise Exception("You are probably not passing log masses!")
+
+    usm = np.power(10, stellar_masses) / sm0 # unitless stellar mass is sm / characteristic mass
+    return (np.log10(m1) + (beta * np.log10(usm)) + ((np.power(usm, delta)) / (1 + np.power(usm, -gamma))) - 0.5)
 
 # http://www.wolframalpha.com/input/?i=d%2Fdx+B*log10(x%2FS)+%2B+((x%2FS)%5Ed)+%2F+(1+%2B+(x%2FS)%5E-g)+-+0.5
 def f_shmr_inverse_der(stellar_masses, sm0, beta, delta, gamma):
+    if np.max(stellar_masses) > 100:
+        raise Exception("You are probably not passing log masses to der!")
+
+    stellar_masses = np.power(10, stellar_masses)
     usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
-    denom = sm0 * ((usm**-gamma) +1)
+    denom = (usm**-gamma) + 1
     return ((beta / (stellar_masses * np.log(10))) +
-        ((delta * np.power(usm, delta - 1)) / denom) +
-        ((gamma * np.power(usm, delta - gamma - 1)) / np.power(denom, 2)))
+        ((delta * np.power(usm, delta - 1)) / (sm0 * denom)) +
+        ((gamma * np.power(usm, delta - gamma - 1)) / (sm0 * np.power(denom, 2))))
 
 
 # Given a list of halo masses, find the expected stellar mass
@@ -345,18 +344,22 @@ def f_shmr_inverse_der(stellar_masses, sm0, beta, delta, gamma):
 # Scipy is so sick . . .
 def f_shmr(halo_masses, m1, sm0, beta, delta, gamma):
     def f(stellar_masses_guess):
-        return np.sum(np.power(
-                    f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses, 2
-                ))
+        return np.power(f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma), 2)
     def f_der(stellar_masses_guess):
-        return f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma)
+        return 2*(stellar_masses_guess, m1, sm0, beta, delta, gamma)*f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma)
 
-    x = scipy.optimize.minimize(
-            f,
-            halo_masses-1.6,
-            method="BFGS",
-            jac=f_der,
-            # bounds=np.array([halo_masses-8, halo_masses]).T,
-    )
-    print(x)
-    return x.x
+    stellar_masses = np.zeros_like(halo_masses)
+
+    for i, hm in enumerate(halo_masses):
+        stellar_masses[i] = scipy.optimize.minimize_scalar(f, hm).x
+    # x = scipy.optimize.minimize(
+    #         f,
+    #         halo_masses)
+    #         # method="BFGS",
+    #         # jac=f_der,
+    #         # options={
+    #         #     "gtol": 1e-6,
+    #         # },
+    #         # jac=False,
+    # # )
+    return stellar_masses

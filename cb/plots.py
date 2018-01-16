@@ -314,8 +314,8 @@ def get_fit(catalog):
             mean_hm, # log
             p0=[m1, sm0, beta, delta, gamma],
             bounds=(
-                [m1/1e7, sm0/1e7, beta-1e-2, 0, gamma-1e-2],
-                [m1*1e7, sm0*1e7, beta+1e-2, 10, gamma+1e-2],
+                [m1/1e7, sm0/1e7, 0, 0, 0],
+                [m1*1e7, sm0*1e7, 10, 10, 20],
             ),
             # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
             # sm0 will be larger for a similar reason as ^

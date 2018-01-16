@@ -258,7 +258,7 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     return ax
 
 
-def dm_vs_sm(catalog, ax=None):
+def dm_vs_sm(catalog, fit=None, ax=None):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
     x = np.log10(catalog["icl"] + catalog["sm"])
@@ -282,10 +282,10 @@ def dm_vs_sm(catalog, ax=None):
         ylabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
     )
 
-    popt = get_fit(catalog)
-    ax.plot(sm_bin_midpoints, f_shmr_inverse(sm_bin_midpoints, *popt))
+    if fit is not None:
+        ax.plot(sm_bin_midpoints, f_shmr_inverse(sm_bin_midpoints, *fit))
 
-    return ax, popt
+    return ax
 
 # Returns the parameters needed to fit SM (on the x axis) to HM (on the y axis)
 # Uses the functional form in the paper...
@@ -308,8 +308,8 @@ def get_fit(catalog):
     # Now try fit
     popt, _ = scipy.optimize.curve_fit(
             f_shmr_inverse,
-            sm_bin_midpoints,
-            mean_hm,
+            sm_bin_midpoints, # log
+            mean_hm, # log
             p0=[m1, sm0, beta, delta, gamma],
             bounds=(
                 [m1/1e7, sm0/1e7, beta-1e-2, 0, gamma-1e-2],
@@ -322,26 +322,31 @@ def get_fit(catalog):
     )
     return popt
 
-
 # The functional form from https://arxiv.org/pdf/1103.2077.pdf
 # This is the fitting function
 # f_shmr finds SM given HM. As the inverse, this find HM given SM
-def f_shmr_inverse(stellar_masses, m1, sm0, beta, delta, gamma):
-    if np.max(stellar_masses) > 100:
+def f_shmr_inverse(log_stellar_masses, m1, sm0, beta, delta, gamma):
+    if np.max(log_stellar_masses) > 100:
         raise Exception("You are probably not passing log masses!")
 
-    usm = np.power(10, stellar_masses) / sm0 # unitless stellar mass is sm / characteristic mass
-    return (np.log10(m1) + (beta * np.log10(usm)) + ((np.power(usm, delta)) / (1 + np.power(usm, -gamma))) - 0.5)
+    stellar_masses = np.power(10, log_stellar_masses)
 
+    usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
+    log_halo_mass = np.log10(m1) + (beta * np.log10(usm)) + ((np.power(usm, delta)) / (1 + np.power(usm, -gamma))) - 0.5
+    return log_halo_mass
+
+# d log10(halo_mass) / d log10(stellar_mass)
 # http://www.wolframalpha.com/input/?i=d%2Fdx+B*log10(x%2FS)+%2B+((x%2FS)%5Ed)+%2F+(1+%2B+(x%2FS)%5E-g)+-+0.5
-def f_shmr_inverse_der(stellar_masses, sm0, beta, delta, gamma):
-    if np.max(stellar_masses) > 100:
+# https://math.stackexchange.com/questions/504997/derivative-with-respect-to-logx
+def f_shmr_inverse_der(log_stellar_masses, sm0, beta, delta, gamma):
+    if np.max(log_stellar_masses) > 100:
         raise Exception("You are probably not passing log masses to der!")
 
-    stellar_masses = np.power(10, stellar_masses)
+    stellar_masses = np.power(10, log_stellar_masses)
     usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
     denom = (usm**-gamma) + 1
-    return ((beta / (stellar_masses * np.log(10))) +
+    return stellar_masses * np.log(10) * (
+        (beta / (stellar_masses * np.log(10))) +
         ((delta * np.power(usm, delta - 1)) / (sm0 * denom)) +
         ((gamma * np.power(usm, delta - gamma - 1)) / (sm0 * np.power(denom, 2))))
 
@@ -360,26 +365,18 @@ def f_shmr(halo_masses, m1, sm0, beta, delta, gamma):
         )
     # Gradient of the function to minimize
     def f_der(stellar_masses_guess):
-        return 2 * f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma) * (
-                f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses
+        return 2 * (
+                (f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses) *
+                f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma)
         )
 
-    print(f_shmr_inverse_der(halo_masses, sm0, beta, delta, gamma)[:10])
-    print(f_der(halo_masses))
-
-    # SO the issue here is that the derivative is tiny tiny tiny because we are moving in log space on halo masses
-    # but in linear space on the stellar masses
-    # So the gradient is tiny and it stops immediately
-    # We need to have all these functions work in linear space for everything
     x = scipy.optimize.minimize(
             f,
-            halo_masses,
-            method="BFGS",
+            halo_masses - 2,
+            method="CG",
             jac=f_der,
-            # options={
-            #     "gtol": 1e-17,
-            # },
-            # jac=False,
+            tol=1e-12, # roughly seems to be as far as we go without loss of precision
     )
-    print(x)
+    if not x.success:
+        raise Exception("Failure to invert {}".format(x.message))
     return x.x

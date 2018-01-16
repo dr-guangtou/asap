@@ -354,25 +354,27 @@ def f_shmr_inverse_der(log_stellar_masses, sm0, beta, delta, gamma):
 # Given a list of halo masses, find the expected stellar mass
 # Does this by guessing stellar masses and plugging them into the inverse
 # Scipy is so sick . . .
-def f_shmr(halo_masses, m1, sm0, beta, delta, gamma):
+def f_shmr(log_halo_masses, m1, sm0, beta, delta, gamma):
+    if np.max(log_halo_masses) > 100:
+        raise Exception("You are probably not passing log halo masses!")
     # Function to minimize
     def f(stellar_masses_guess):
         return np.sum(
                 np.power(
-                    f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses,
+                    f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - log_halo_masses,
                     2,
                 )
         )
     # Gradient of the function to minimize
     def f_der(stellar_masses_guess):
         return 2 * (
-                (f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - halo_masses) *
+                (f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - log_halo_masses) *
                 f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma)
         )
 
     x = scipy.optimize.minimize(
             f,
-            halo_masses - 2,
+            log_halo_masses - 2,
             method="CG",
             jac=f_der,
             tol=1e-12, # roughly seems to be as far as we go without loss of precision

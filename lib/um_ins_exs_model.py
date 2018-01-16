@@ -210,7 +210,7 @@ class InsituExsituModel(object):
         if 'obs_wl_sample' in kwargs.keys():
             obs_wl_sample = kwargs['obs_wl_sample']
         else:
-            obs_wl_sample = 's16a_wide2_massive_boxbin1'
+            obs_wl_sample = 's16a_wide2_massive_boxbin3'
         if verbose:
             print("# Input weak lensing profile sample: %s" % obs_wl_sample)
 
@@ -489,9 +489,9 @@ class InsituExsituModel(object):
                 self.param_ini = kwargs['param_ini']
                 assert len(self.param_ini) == self.mcmc_ndims
             else:
-                self.param_ini = [0.7551, 1.4931,
-                                  -0.0824, 1.2737,
-                                  0.7, 0.05]
+                self.param_ini = [0.5901, 3.8482,
+                                  -0.095, 0.80,
+                                  0.9, 0.1]
             # Lower bounds
             if 'param_low' in kwargs.keys():
                 self.param_low = kwargs['param_low']
@@ -504,7 +504,7 @@ class InsituExsituModel(object):
                 self.param_upp = kwargs['param_upp']
                 assert len(self.param_upp) == self.mcmc_ndims
             else:
-                self.param_upp = [1.0, 8.0, 0.0, 1.6, 1.0, 1.0]
+                self.param_upp = [1.0, 8.0, 0.0, 1.6, 1.0, 0.3]
 
             # Step to randomize the initial guesses
             if 'param_sig' in kwargs.keys():
@@ -757,7 +757,7 @@ class InsituExsituModel(object):
 
     def umSingleWL(self, mock_use, mass_encl_use, obs_prof,
                    logms_mod_tot, logms_mod_inn,
-                   um_wl_min_ngal=2, verbose=False):
+                   um_wl_min_ngal=15, verbose=False):
         """Individual WL profile for UM galaxies."""
         bin_mask = ((logms_mod_tot >= obs_prof.low_mtot) &
                     (logms_mod_tot <= obs_prof.upp_mtot) &
@@ -769,7 +769,8 @@ class InsituExsituModel(object):
 
         if np.sum(bin_mask) <= um_wl_min_ngal:
             # TODO: using zero or NaN ?
-            wl_prof = np.zeros(len(self.obs_wl_dsigma[0].r))
+            # wl_prof = np.zeros(len(self.obs_wl_dsigma[0].r))
+            wl_prof = np.full(len(self.obs_wl_dsigma[0].r), 0.0)
             if verbose:
                 print("# Not enough UM galaxy "
                       "in bin %d !" % obs_prof.bin_id)
@@ -785,7 +786,7 @@ class InsituExsituModel(object):
         return wl_prof
 
     def umPredictWL(self, logms_mod_tot, logms_mod_inn, mask_mtot,
-                    um_wl_min_ngal=2, verbose=False):
+                    um_wl_min_ngal=15, verbose=False):
         """WL profiles to compare with observations.
 
         Parameters
@@ -1057,20 +1058,28 @@ class InsituExsituModel(object):
 
         if self.mcmc_wl_only is False:
             #  SMF for Mto t
-            smf_mtot_invsigma2 = (
-                1.0 / (
-                    (self.obs_smf_tot['smf_upp'] -
-                     self.obs_smf_tot['smf']) ** 2 +
-                    (um_smf_tot['smf_err'] ** 2)
-                )
+            # smf_mtot_invsigma2 = (
+            #     1.0 / (
+            #        (self.obs_smf_tot['smf_upp'] -
+            #         self.obs_smf_tot['smf']) ** 2 +
+            #        (um_smf_tot['smf_err'] ** 2)
+            #    )
+            # )
+
+            smf_mtot_var = (
+                (self.obs_smf_tot['smf_upp'] -
+                 self.obs_smf_tot['smf']) ** 2
             )
 
             lnlike_smf = (
                 -0.5 * (
-                    np.nansum((self.obs_smf_tot['smf'] -
-                               um_smf_tot['smf']) ** 2 *
-                              smf_mtot_invsigma2 -
-                              np.log(smf_mtot_invsigma2))
+                    np.nansum(
+                        (self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
+                        smf_mtot_var
+                    ) +
+                    np.nansum(
+                        np.log(2 * np.pi * smf_mtot_var)
+                    )
                 )
             )
         else:
@@ -1084,18 +1093,26 @@ class InsituExsituModel(object):
         if self.mcmc_smf_only is False:
             lnlike_wl = 0.0
             for ii in range(self.obs_wl_n_bin):
-                wl_invsigma2 = (
-                    1.0 / (
-                        (self.obs_wl_dsigma[ii].err_w ** 2) +
-                        (np.sqrt(um_wl_profs[ii] ** 2))
-                    )
+                # wl_invsigma2 = (
+                #     1.0 / (
+                #         (self.obs_wl_dsigma[ii].err_w ** 2) +
+                #         (np.sqrt(um_wl_profs[ii] ** 2))
+                #     )
+                # )
+
+                wl_var = (
+                    self.obs_wl_dsigma[ii].err_w ** 2
                 )
 
                 lnlike_wl += (
                     -0.5 * (
-                        np.nansum((self.obs_wl_dsigma[ii].sig -
-                                   um_wl_profs[ii]) ** 2 * wl_invsigma2 -
-                                  np.log(wl_invsigma2))
+                        np.nansum(
+                            (self.obs_wl_dsigma[ii].sig -
+                             um_wl_profs[ii]) ** 2 / wl_var
+                        ) +
+                        np.nansum(
+                            np.log(2 * np.pi * wl_var)
+                        )
                     )
                 )
         else:
@@ -1106,7 +1123,7 @@ class InsituExsituModel(object):
         elif self.mcmc_wl_only:
             return lnlike_wl
         else:
-            return (lnlike_smf + self.mcmc_wl_weight * lnlike_wl)
+            return lnlike_smf + self.mcmc_wl_weight * lnlike_wl
 
     def mcmcInitialGuess(self):
         """Initial guesses for the MCMC run."""
@@ -1204,6 +1221,7 @@ class InsituExsituModel(object):
             print("#------------------------------------------------------")
             print("#  Best ln(Probability): %11.5f" %
                   np.nanmax(self.mcmc_lnprob))
+            print(self.mcmc_samples[np.argmax(self.mcmc_lnprob)])
             print("#------------------------------------------------------")
             for param_stats in self.mcmc_params_stats:
                 print(param_stats)

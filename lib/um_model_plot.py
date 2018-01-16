@@ -342,7 +342,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         n_col = 4
         n_row = int(np.ceil(obs_wl_n_bin / 4.0))
 
-    fig = plt.figure(figsize=(3 * n_row, 3.8 * n_col))
+    fig = plt.figure(figsize=(3 * n_col, 3.8 * n_row))
     gs = gridspec.GridSpec(n_row, n_col)
     gs.update(wspace=0.0, hspace=0.00)
 
@@ -426,7 +426,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
 
         # X, Y Limits
         ax.set_xlim(0.05, 61.0)
-        ax.set_ylim(0.01, max_wl)
+        ax.set_ylim(0.01, 299.0)
 
     return fig
 

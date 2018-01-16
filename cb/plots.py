@@ -7,12 +7,11 @@ import cluster_sum
 solarMassUnits = r"($M_{\odot}$)"
 m_vir_x_axis = r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$"
 smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir}]$"
+sm_scatter = r"$\sigma\ [log\ M_{*}]$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
-
-fit = []
 
 def age_vs_scatter(centrals):
     fig, ax = plt.subplots()
@@ -158,16 +157,20 @@ def concentration_vs_scatter(centrals):
     fig.colorbar(image, label=smhm_ratio_scatter)
     return ax
 
-def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
+def richness_vs_scatter(centrals, satellites, min_mass_for_richness, fit):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
 
     # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["mp"])
-    smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["mp"]
-    )
+    halo_masses = np.log10(centrals["m"])
     richnesses = cluster_sum.get_richness(centrals, satellites, min_mass_for_richness)
+
+    predicted_stellar_masses = f_shmr(halo_masses, *fit)
+    true_stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
+    delta_stellar_masses = true_stellar_masses - predicted_stellar_masses
+    print(np.mean(delta_stellar_masses))
+    plt.hist(delta_stellar_masses)
+    return
 
     # Bin based on halo mass on the x axis and richness on the y axis
     # Manually set up the bin edges because it is a bit tricky
@@ -180,9 +183,9 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
     binned_stats = scipy.stats.binned_statistic_2d(
             halo_masses,
             richnesses,
-            smhm_ratio,
+            delta_stellar_masses,
             bins=[x_bin_edges, y_bin_edges],
-            statistic="std",
+            statistic="std", # I don't think that this is quite right...
     )
 
     # Invalidate bins that don't have many members
@@ -202,9 +205,8 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness):
             yticklabels=["{0:.0f}".format(i) for i in binned_stats.y_edge],
             xlabel=m_vir_x_axis,
             ylabel=r"$Richness\ [N_{sats}(log\ M_{*}/M_{\odot} > 10.8)]$",
-            title="SMHM Ratio Scatter binned by Richness and $M_{vir,peak}$",
     )
-    fig.colorbar(image, label=smhm_ratio_scatter)
+    fig.colorbar(image, label=sm_scatter)
     return ax
 
 def invalidate_unoccupied_bins(binned_stats):

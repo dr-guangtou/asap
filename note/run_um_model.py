@@ -18,4 +18,4 @@ um_test = InsituExsituModel(obs_dir='../data/s16a_massive_wide2/',
                             mcmc_nburnin=30,
                             mcmc_nwalkers=128)
 
-um_test.mcmcFit(multi=True)
+um_test.mcmcFit(nproc=1)

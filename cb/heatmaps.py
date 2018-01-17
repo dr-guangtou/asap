@@ -101,43 +101,16 @@ def mm_vs_scatter(centrals):
     fig.colorbar(image, label=plots.smhm_ratio_scatter)
     return ax
 
-
-def concentration_vs_scatter(centrals):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
-
-    # Define the basic quantities we are interested in
+def concentration_and_hm_vs_sm_scatter(centrals, fit):
     halo_masses = np.log10(centrals["m"])
-    smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["m"]
-    )
+    stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
     concentrations = centrals["rvir"] / centrals["rs"]
-
-    # Bin based on halo mass on the x axis and concentration on the y axis
-    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
     x_bin_edges = np.arange(
             np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
             np.max(halo_masses) + 0.2, # to ensure that the last point is included
             0.2)
     y_bin_edges = np.around(np.geomspace(np.min(concentrations), np.max(concentrations), num = 16 + 1), decimals=1)
-    binned_stats = scipy.stats.binned_statistic_2d(
-            halo_masses,
-            concentrations,
-            smhm_ratio,
-            bins=[x_bin_edges, y_bin_edges],
-            statistic="std",
-    )
-
-    # Invalidate bins that don't have many members
-    binned_stats = invalidate_unoccupied_bins(binned_stats)
-
-    # Plot and add labels, colorbar, etc
-    image = ax.imshow(
-            binned_stats.statistic.T,
-            origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
-            aspect="auto",
-    )
+    fig, ax, image, binned_stats = generalised_heatmap(halo_masses, concentrations, stellar_masses, True, fit, x_bin_edges, y_bin_edges)
     ax.set(
             xticks=binned_stats.x_edge[::2],
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
@@ -145,10 +118,31 @@ def concentration_vs_scatter(centrals):
             yticklabels=["{0:.1f}".format(i) for i in binned_stats.y_edge],
             xlabel=plots.m_vir_x_axis,
             ylabel=r"Concentration",
-            title="SMHM Ratio Scatter binned by Concentration and $M_{vir,peak}$",
     )
-    fig.colorbar(image, label=plots.smhm_ratio_scatter)
+    fig.colorbar(image, label=plots.sm_scatter)
     return ax
+
+def concentration_and_sm_vs_hm_scatter(centrals, fit):
+    halo_masses = np.log10(centrals["m"])
+    stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
+    concentrations = centrals["rvir"] / centrals["rs"]
+    x_bin_edges = np.arange(
+            np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
+            np.max(stellar_masses) + 0.2, # to ensure that the last point is included
+            0.2)
+    y_bin_edges = np.around(np.geomspace(np.min(concentrations), np.max(concentrations), num = 16 + 1), decimals=1)
+    fig, ax, image, binned_stats = generalised_heatmap(stellar_masses, concentrations, halo_masses, False, fit, x_bin_edges, y_bin_edges)
+    ax.set(
+            xticks=binned_stats.x_edge[::2],
+            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
+            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
+            yticklabels=["{0:.1f}".format(i) for i in binned_stats.y_edge],
+            xlabel=plots.m_star_x_axis,
+            ylabel=r"Concentration",
+    )
+    fig.colorbar(image, label=plots.hm_scatter)
+    return ax
+
 
 def richness_and_hm_vs_sm_scatter(centrals, satellites, min_mass_for_richness, fit):
     stellar_masses = np.log10(centrals["icl"] + centrals["sm"])

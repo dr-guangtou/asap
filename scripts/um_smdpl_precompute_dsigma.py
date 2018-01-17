@@ -81,9 +81,9 @@ def precompute_wl_smdpl(um_mock, sim_particles, um_min_mvir=None,
 
 
 # Input table
-um_smdpl_dir = '/Users/song/astro5/massive/dr16a/um2/um2_new'
+um_smdpl_dir = '/Users/song/data/massive/dr16a/um2/um2_new'
 um_smdpl_ptbl = os.path.join(um_smdpl_dir,
-                             'um_smdpl_particles_0.7124_10m.npy')
+                             'um_smdpl_particles_0.7124_50m.npy')
 um_smdpl_gtbl = os.path.join(um_smdpl_dir,
                              'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy')
 
@@ -93,7 +93,7 @@ um_mock = Table(np.load(um_smdpl_gtbl))
 # Output file
 um_smdpl_precompute = os.path.join(
     um_smdpl_dir,
-    'um_smdpl_0.7124_new_vagc_mpeak_11.5_10m_r_0.08_50_22bins.npy'
+    'um_smdpl_0.7124_new_vagc_mpeak_11.5_50m_r_0.08_50_22bins.npy'
     )
 
 # Run precompute

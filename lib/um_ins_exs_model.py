@@ -405,6 +405,11 @@ class InsituExsituModel(object):
         else:
             self.um_wl_nbin = 22
 
+        if 'um_wl_add_stellar' in kwargs.keys():
+            self.um_wl_add_stellar = kwargs['um_wl_add_stellar']
+        else:
+            self.um_wl_add_stellar = False
+
         if 'um_mtot_nbin' in kwargs.keys():
             self.um_mtot_nbin = kwargs['um_mtot_nbin']
         else:
@@ -652,7 +657,7 @@ class InsituExsituModel(object):
 
         # Add the point source term
         if mstar_lin is not None:
-            ds_phys_msun_pc2 += (
+            ds_phys_msun_pc2[0] += (
                 mstar_lin / 1e12 / (np.pi * (rp_phys ** 2.0))
                 )
 
@@ -756,7 +761,8 @@ class InsituExsituModel(object):
 
     def umSingleWL(self, mock_use, mass_encl_use, obs_prof,
                    logms_mod_tot, logms_mod_inn,
-                   um_wl_min_ngal=15, verbose=False):
+                   um_wl_min_ngal=15, verbose=False,
+                   add_stellar=False):
         """Individual WL profile for UM galaxies."""
         bin_mask = ((logms_mod_tot >= obs_prof.low_mtot) &
                     (logms_mod_tot <= obs_prof.upp_mtot) &
@@ -765,7 +771,10 @@ class InsituExsituModel(object):
 
         # "Point source" term for the central galaxy
         # TODO: more appropriate way to add stellar mass component?
-        mstar_lin = np.nanmedian(10.0 * logms_mod_tot[bin_mask])
+        if add_stellar:
+            mstar_lin = np.nanmedian(10.0 * logms_mod_tot[bin_mask])
+        else:
+            mstar_lin = None
 
         if np.sum(bin_mask) <= um_wl_min_ngal:
             # TODO: using zero or NaN ?
@@ -785,7 +794,8 @@ class InsituExsituModel(object):
         return wl_prof
 
     def umPredictWL(self, logms_mod_tot, logms_mod_inn, mask_mtot,
-                    um_wl_min_ngal=15, verbose=False):
+                    um_wl_min_ngal=15, verbose=False,
+                    add_stellar=False):
         """WL profiles to compare with observations.
 
         Parameters
@@ -811,7 +821,7 @@ class InsituExsituModel(object):
         return [self.umSingleWL(mock_use, mass_encl_use, obs_prof,
                                 logms_mod_tot, logms_mod_inn,
                                 um_wl_min_ngal=um_wl_min_ngal,
-                                verbose=verbose)
+                                verbose=verbose, add_stellar=add_stellar)
                 for obs_prof in self.obs_wl_dsigma]
 
     def umPredictModel(self, parameters,
@@ -863,7 +873,8 @@ class InsituExsituModel(object):
 
         um_wl_profs = self.umPredictWL(logms_mod_tot_all[mask_mtot],
                                        logms_mod_inn,
-                                       mask_mtot)
+                                       mask_mtot,
+                                       add_stellar=self.um_wl_add_stellar)
 
         if plotSMF:
             um_smf_tot_all = get_smf_bootstrap(logms_mod_tot_all,
@@ -1057,14 +1068,6 @@ class InsituExsituModel(object):
 
         if self.mcmc_wl_only is False:
             #  SMF for Mto t
-            # smf_mtot_invsigma2 = (
-            #     1.0 / (
-            #        (self.obs_smf_tot['smf_upp'] -
-            #         self.obs_smf_tot['smf']) ** 2 +
-            #        (um_smf_tot['smf_err'] ** 2)
-            #    )
-            # )
-
             smf_mtot_var = (
                 (self.obs_smf_tot['smf_upp'] -
                  self.obs_smf_tot['smf']) ** 2
@@ -1092,13 +1095,6 @@ class InsituExsituModel(object):
         if self.mcmc_smf_only is False:
             lnlike_wl = 0.0
             for ii in range(self.obs_wl_n_bin):
-                # wl_invsigma2 = (
-                #     1.0 / (
-                #         (self.obs_wl_dsigma[ii].err_s ** 2) +
-                #         (np.sqrt(um_wl_profs[ii] ** 2))
-                #     )
-                # )
-
                 wl_var = (
                     self.obs_wl_dsigma[ii].err_s ** 2
                 )
@@ -1146,7 +1142,7 @@ class InsituExsituModel(object):
                    zip(*np.percentile(self.mcmc_samples,
                                       [16, 50, 84], axis=0)))
 
-    def mcmcFit(self, verbose=True, multi=False, **kwargs):
+    def mcmcFit(self, verbose=True, nproc=1, **kwargs):
         """
         Peform an MCMC fit to the wp data using the power-law model.
 
@@ -1157,7 +1153,7 @@ class InsituExsituModel(object):
         # Setup the initial condition
         self.mcmcInitialGuess()
 
-        if multi:
+        if nproc > 1:
             from multiprocessing import Pool
             from contextlib import closing
 
@@ -1165,7 +1161,8 @@ class InsituExsituModel(object):
                 mcmc_sampler = emcee.EnsembleSampler(
                     self.mcmc_nwalkers,
                     self.mcmc_ndims,
-                    self.lnProb
+                    self.lnProb,
+                    pool=pool
                     )
 
                 # Burn-in

@@ -481,8 +481,7 @@ class InsituExsituModel(object):
                                 r'$a_{\sigma \log M_{\star}}$',
                                 r'$b_{\sigma \log M_{\star}}$',
                                 r'$\mathrm{frac}_{\mathrm{in-situ}}$',
-                                r'$\mathrm{frac}_{\mathrm{ex-situ}}$'
-                                ]
+                                r'$\mathrm{frac}_{\mathrm{ex-situ}}$']
 
             # Initial values
             if 'param_ini' in kwargs.keys():
@@ -765,12 +764,12 @@ class InsituExsituModel(object):
                     (logms_mod_inn <= obs_prof.upp_mtot))
 
         # "Point source" term for the central galaxy
+        # TODO: more appropriate way to add stellar mass component?
         mstar_lin = np.nanmedian(10.0 * logms_mod_tot[bin_mask])
 
         if np.sum(bin_mask) <= um_wl_min_ngal:
             # TODO: using zero or NaN ?
-            # wl_prof = np.zeros(len(self.obs_wl_dsigma[0].r))
-            wl_prof = np.full(len(self.obs_wl_dsigma[0].r), 0.0)
+            wl_prof = np.zeros(len(self.obs_wl_dsigma[0].r))
             if verbose:
                 print("# Not enough UM galaxy "
                       "in bin %d !" % obs_prof.bin_id)
@@ -1095,13 +1094,13 @@ class InsituExsituModel(object):
             for ii in range(self.obs_wl_n_bin):
                 # wl_invsigma2 = (
                 #     1.0 / (
-                #         (self.obs_wl_dsigma[ii].err_w ** 2) +
+                #         (self.obs_wl_dsigma[ii].err_s ** 2) +
                 #         (np.sqrt(um_wl_profs[ii] ** 2))
                 #     )
                 # )
 
                 wl_var = (
-                    self.obs_wl_dsigma[ii].err_w ** 2
+                    self.obs_wl_dsigma[ii].err_s ** 2
                 )
 
                 lnlike_wl += (
@@ -1147,7 +1146,7 @@ class InsituExsituModel(object):
                    zip(*np.percentile(self.mcmc_samples,
                                       [16, 50, 84], axis=0)))
 
-    def mcmcFit(self, verbose=True, **kwargs):
+    def mcmcFit(self, verbose=True, multi=False, **kwargs):
         """
         Peform an MCMC fit to the wp data using the power-law model.
 
@@ -1155,25 +1154,42 @@ class InsituExsituModel(object):
 
         -----------
         """
-        # Setup the sampler
-        if verbose:
-            print("# Setup the sampler ...")
-        self.mcmc_sampler = emcee.EnsembleSampler(
-            self.mcmc_nwalkers, self.mcmc_ndims,
-            self.lnProb
-            )
-
         # Setup the initial condition
-        if verbose:
-            print("# Setup the initial guesses ...")
         self.mcmcInitialGuess()
 
-        # Burn-in
-        if verbose:
-            print("# Phase: Burn-in ...")
-        self.mcmc_burnin_result = self.mcmc_sampler.run_mcmc(
-             self.mcmc_position, self.mcmc_nburnin
-             )
+        if multi:
+            from multiprocessing import Pool
+            from contextlib import closing
+
+            with closing(Pool(processes=4)) as pool:
+                mcmc_sampler = emcee.EnsembleSampler(
+                    self.mcmc_nwalkers,
+                    self.mcmc_ndims,
+                    self.lnProb
+                    )
+
+                # Burn-in
+                if verbose:
+                    print("# Phase: Burn-in ...")
+                self.mcmc_burnin_result = mcmc_sampler.run_mcmc(
+                     self.mcmc_position, self.mcmc_nburnin,
+                     progress=True
+                    )
+        else:
+            mcmc_sampler = emcee.EnsembleSampler(
+                self.mcmc_nwalkers,
+                self.mcmc_ndims,
+                self.lnProb
+                )
+
+            # Burn-in
+            if verbose:
+                print("# Phase: Burn-in ...")
+            self.mcmc_burnin_result = mcmc_sampler.run_mcmc(
+                 self.mcmc_position, self.mcmc_nburnin,
+                 progress=True
+                 )
+
         mcmc_burnin_position, _, mcmc_burnin_state = self.mcmc_burnin_result
 
         #  Pickle the results
@@ -1181,43 +1197,45 @@ class InsituExsituModel(object):
                              self.mcmc_burnin_result)
 
         #  Pickle the chain
-        self.mcmc_burnin_chain = self.mcmc_sampler.chain
+        self.mcmc_burnin_chain = mcmc_sampler.chain
         self.mcmcSaveChains(self.mcmc_burnin_chain_file,
                             self.mcmc_burnin_chain)
 
         # Rest the chains
-        self.mcmc_sampler.reset()
+        mcmc_sampler.reset()
 
         # MCMC run
         if verbose:
             print("# Phase: MCMC run ...")
-        self.mcmc_run_result = self.mcmc_sampler.run_mcmc(
-            mcmc_burnin_position, self.mcmc_nsamples,
+        self.mcmc_run_result = mcmc_sampler.run_mcmc(
+            mcmc_burnin_position,
+            self.mcmc_nsamples,
             rstate0=mcmc_burnin_state)
+
         #  Pickle the result
         self.mcmcSaveResults(self.mcmc_run_file,
                              self.mcmc_run_result)
-        self.mcmc_run_chain = self.mcmc_sampler.chain
+        self.mcmc_run_chain = mcmc_sampler.chain
         self.mcmcSaveChains(self.mcmc_run_chain_file,
                             self.mcmc_run_chain)
 
         if verbose:
             print("# Get MCMC samples and best-fit parameters ...")
         # Get the MCMC samples
-        self.mcmc_samples = self.mcmc_sampler.chain[:, :, :].reshape(
+        self.mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
             (-1, self.mcmc_ndims)
             )
         #  Save the samples
         np.savez(self.mcmc_run_samples_file, data=self.mcmc_samples)
 
-        self.mcmc_lnprob = self.mcmc_sampler.lnprobability.reshape(-1, 1)
+        self.mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
 
         # Get the best-fit parameters and the 1-sigma error
         self.mcmc_params_stats = self.mcmcGetParameters()
         if verbose:
             print("#------------------------------------------------------")
             print("#  Mean acceptance fraction",
-                  np.mean(self.mcmc_sampler.acceptance_fraction))
+                  np.mean(mcmc_sampler.acceptance_fraction))
             print("#------------------------------------------------------")
             print("#  Best ln(Probability): %11.5f" %
                   np.nanmax(self.mcmc_lnprob))

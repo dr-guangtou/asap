@@ -169,8 +169,8 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness, fit):
     true_stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
     delta_stellar_masses = true_stellar_masses - predicted_stellar_masses
     print(np.mean(delta_stellar_masses))
-    plt.hist(delta_stellar_masses)
-    return
+    # plt.hist(delta_stellar_masses)
+    # return
 
     # Bin based on halo mass on the x axis and richness on the y axis
     # Manually set up the bin edges because it is a bit tricky
@@ -207,6 +207,39 @@ def richness_vs_scatter(centrals, satellites, min_mass_for_richness, fit):
             ylabel=r"$Richness\ [N_{sats}(log\ M_{*}/M_{\odot} > 10.8)]$",
     )
     fig.colorbar(image, label=sm_scatter)
+    return ax
+
+
+# This takes some mass on the x axis, some quantity on the y axis and plots the scatter in the other mass
+# as color
+def generalised_heatplot(x_masses, y_quantity, other_masses, x_is_halo, fit, x_bin_edges, y_bin_edges)
+    fig, ax = plt.subplots()
+
+    x_masses = np.log10(x_masses)
+    if x_is_halo:
+        predicted_other_masses = f_shmr(x_masses *fit)
+    else:
+        predicted_other_masses = f_shmr_inverse(x_masses, *fit)
+    delta_other_masses = other_masses - predicted_other_masses
+
+    binned_stats = scipy.stats.binned_statistic_2d(
+            x_masses,
+            y_quantity,
+            delta_other_masses,
+            bins=[x_bin_edges, y_bin_edges],
+            statistic="std", # I don't think that this is quite right...
+    )
+
+    # Invalidate bins that don't have many members
+    binned_stats = invalidate_unoccupied_bins(binned_stats)
+
+    # Plot and add labels, colorbar, etc
+    image = ax.imshow(
+            binned_stats.statistic.T, # Still don't know why this is Transposed
+            origin="lower",
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+            aspect="auto",
+    )
     return ax
 
 def invalidate_unoccupied_bins(binned_stats):
@@ -260,6 +293,7 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     return ax
 
 
+# HM (y axis) at fixed SM (x axis)
 def dm_vs_sm(catalog, fit=None, ax=None):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
@@ -289,6 +323,36 @@ def dm_vs_sm(catalog, fit=None, ax=None):
 
     return ax
 
+# SM (y axis) at fixed HM (x axis)
+def sm_vs_dm(catalog, fit=None, ax=None):
+    fig, ax = plt.subplots()
+    fig.set_size_inches(18.5, 10.5)
+    y = np.log10(catalog["icl"] + catalog["sm"])
+    x = np.log10(catalog["m"])
+
+    # Find various stats on our data
+    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
+    hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
+    mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
+    std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)
+
+    # Plot data and colored error regions
+    ax.plot(hm_bin_midpoints, mean_sm, marker="o")
+    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.5, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
+    ax.set(
+        xlabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
+        ylabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
+    )
+
+    if fit is not None:
+        ax.plot(hm_bin_midpoints, f_shmr(hm_bin_midpoints, *fit))
+
+    return ax
+
 # Returns the parameters needed to fit SM (on the x axis) to HM (on the y axis)
 # Uses the functional form in the paper...
 def get_fit(catalog):
@@ -312,6 +376,39 @@ def get_fit(catalog):
             f_shmr_inverse,
             sm_bin_midpoints, # log
             mean_hm, # log
+            p0=[m1, sm0, beta, delta, gamma],
+            bounds=(
+                [m1/1e7, sm0/1e7, 0, 0, 0],
+                [m1*1e7, sm0*1e7, 10, 10, 20],
+            ),
+            # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
+            # sm0 will be larger for a similar reason as ^
+            # beta should be unchanged - it only affects the low mass end
+            # delta has large freedom
+    )
+    return popt
+
+def get_fit_2(catalog):
+    y = np.log10(catalog["icl"] + catalog["sm"])
+    x = np.log10(catalog["m"])
+
+    # Find various stats on our data
+    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
+    hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
+    mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
+
+    # Start with the default values from the paper
+    m1 = 10**12.73
+    sm0 = 10**11.04
+    beta = 0.47
+    delta = 0.60
+    gamma = 1.96
+
+    # Now try fit
+    popt, _ = scipy.optimize.curve_fit(
+            f_shmr,
+            hm_bin_midpoints, # log
+            mean_sm, # log
             p0=[m1, sm0, beta, delta, gamma],
             bounds=(
                 [m1/1e7, sm0/1e7, 0, 0, 0],

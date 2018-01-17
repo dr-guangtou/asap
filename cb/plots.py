@@ -2,256 +2,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 import scipy.optimize
-import cluster_sum
+
+import smhm_fit
 
 solarMassUnits = r"($M_{\odot}$)"
-m_vir_x_axis = r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$"
 smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir}]$"
+
+m_vir_x_axis = r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$"
+m_star_x_axis = r"$M_{*}\ [log\ M_{*}/M_{\odot}]$"
 sm_scatter = r"$\sigma\ [log\ M_{*}]$"
+hm_scatter = r"$\sigma\ [log\ M_{vir}]$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
-
-def age_vs_scatter(centrals):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
-
-    # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["m"])
-    smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["m"]
-    )
-    ages = centrals["Halfmass_Scale"]
-
-    # Bin based on halo mass on the x axis and age on the y axis
-    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
-    x_bin_edges = np.arange(
-            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
-            np.max(halo_masses) + 0.2, # to ensure that the last point is included
-            0.2)
-    y_bin_edges = np.linspace(np.min(ages), np.max(ages), num = 16 + 1)
-    binned_stats = scipy.stats.binned_statistic_2d(
-            halo_masses,
-            ages,
-            smhm_ratio,
-            bins=[x_bin_edges, y_bin_edges],
-            statistic="std",
-    )
-
-    # Invalidate bins that don't have many members
-    binned_stats = invalidate_unoccupied_bins(binned_stats)
-
-    # Plot and add labels, colorbar, etc
-    image = ax.imshow(
-            binned_stats.statistic.T,
-            origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
-            aspect="auto",
-    )
-    ax.set(
-            xticks=binned_stats.x_edge[::2],
-            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
-            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
-            yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
-            xlabel=m_vir_x_axis,
-            ylabel=r"Scale factor when halo is at half its current mass",
-    )
-    fig.colorbar(image, label=smhm_ratio_scatter)
-    return ax
-
-
-def mm_vs_scatter(centrals):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
-
-    # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["m"])
-    smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["m"]
-    )
-    mm = centrals["scale_of_last_MM"]
-
-    # Bin based on halo mass on the x axis and concentration on the y axis
-    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
-    x_bin_edges = np.arange(
-            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
-            np.max(halo_masses) + 0.2, # to ensure that the last point is included
-            0.2)
-    y_bin_edges = np.linspace(np.min(mm), np.max(mm), num = 16 + 1)
-    binned_stats = scipy.stats.binned_statistic_2d(
-            halo_masses,
-            mm,
-            smhm_ratio,
-            bins=[x_bin_edges, y_bin_edges],
-            statistic="std",
-    )
-
-    # Invalidate bins that don't have many members
-    binned_stats = invalidate_unoccupied_bins(binned_stats)
-
-    # Plot and add labels, colorbar, etc
-    image = ax.imshow(
-            binned_stats.statistic.T,
-            origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
-            aspect="auto",
-    )
-    ax.set(
-            xticks=binned_stats.x_edge[::2],
-            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
-            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
-            yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
-            xlabel=m_vir_x_axis,
-            ylabel=r"Scale factor at last major merger",
-    )
-    fig.colorbar(image, label=smhm_ratio_scatter)
-    return ax
-
-
-def concentration_vs_scatter(centrals):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
-
-    # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["m"])
-    smhm_ratio = np.log10(
-            (centrals["icl"] + centrals["sm"]) / centrals["m"]
-    )
-    concentrations = centrals["rvir"] / centrals["rs"]
-
-    # Bin based on halo mass on the x axis and concentration on the y axis
-    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
-    x_bin_edges = np.arange(
-            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
-            np.max(halo_masses) + 0.2, # to ensure that the last point is included
-            0.2)
-    y_bin_edges = np.around(np.geomspace(np.min(concentrations), np.max(concentrations), num = 16 + 1), decimals=1)
-    binned_stats = scipy.stats.binned_statistic_2d(
-            halo_masses,
-            concentrations,
-            smhm_ratio,
-            bins=[x_bin_edges, y_bin_edges],
-            statistic="std",
-    )
-
-    # Invalidate bins that don't have many members
-    binned_stats = invalidate_unoccupied_bins(binned_stats)
-
-    # Plot and add labels, colorbar, etc
-    image = ax.imshow(
-            binned_stats.statistic.T,
-            origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
-            aspect="auto",
-    )
-    ax.set(
-            xticks=binned_stats.x_edge[::2],
-            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
-            yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
-            yticklabels=["{0:.1f}".format(i) for i in binned_stats.y_edge],
-            xlabel=m_vir_x_axis,
-            ylabel=r"Concentration",
-            title="SMHM Ratio Scatter binned by Concentration and $M_{vir,peak}$",
-    )
-    fig.colorbar(image, label=smhm_ratio_scatter)
-    return ax
-
-def richness_vs_scatter(centrals, satellites, min_mass_for_richness, fit):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
-
-    # Define the basic quantities we are interested in
-    halo_masses = np.log10(centrals["m"])
-    richnesses = cluster_sum.get_richness(centrals, satellites, min_mass_for_richness)
-
-    predicted_stellar_masses = f_shmr(halo_masses, *fit)
-    true_stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
-    delta_stellar_masses = true_stellar_masses - predicted_stellar_masses
-    print(np.mean(delta_stellar_masses))
-    # plt.hist(delta_stellar_masses)
-    # return
-
-    # Bin based on halo mass on the x axis and richness on the y axis
-    # Manually set up the bin edges because it is a bit tricky
-    # Calculate the std-dev (scatter) of the smhm_ratio in each 2d bin
-    x_bin_edges = np.arange(
-            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
-            np.max(halo_masses) + 0.2, # to ensure that the last point is included
-            0.2)
-    y_bin_edges = np.array([0, 1, 2, 4, 8, 16, 32, 64])
-    binned_stats = scipy.stats.binned_statistic_2d(
-            halo_masses,
-            richnesses,
-            delta_stellar_masses,
-            bins=[x_bin_edges, y_bin_edges],
-            statistic="std", # I don't think that this is quite right...
-    )
-
-    # Invalidate bins that don't have many members
-    binned_stats = invalidate_unoccupied_bins(binned_stats)
-
-    # Plot and add labels, colorbar, etc
-    image = ax.imshow(
-            binned_stats.statistic.T, # Still don't know why this is Transposed
-            origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
-            aspect="auto",
-    )
-    ax.set(
-            xticks=binned_stats.x_edge[::2],
-            xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
-            yticks=np.linspace(0, 64, num=8),
-            yticklabels=["{0:.0f}".format(i) for i in binned_stats.y_edge],
-            xlabel=m_vir_x_axis,
-            ylabel=r"$Richness\ [N_{sats}(log\ M_{*}/M_{\odot} > 10.8)]$",
-    )
-    fig.colorbar(image, label=sm_scatter)
-    return ax
-
-
-# This takes some mass on the x axis, some quantity on the y axis and plots the scatter in the other mass
-# as color
-def generalised_heatplot(x_masses, y_quantity, other_masses, x_is_halo, fit, x_bin_edges, y_bin_edges)
-    fig, ax = plt.subplots()
-
-    x_masses = np.log10(x_masses)
-    if x_is_halo:
-        predicted_other_masses = f_shmr(x_masses *fit)
-    else:
-        predicted_other_masses = f_shmr_inverse(x_masses, *fit)
-    delta_other_masses = other_masses - predicted_other_masses
-
-    binned_stats = scipy.stats.binned_statistic_2d(
-            x_masses,
-            y_quantity,
-            delta_other_masses,
-            bins=[x_bin_edges, y_bin_edges],
-            statistic="std", # I don't think that this is quite right...
-    )
-
-    # Invalidate bins that don't have many members
-    binned_stats = invalidate_unoccupied_bins(binned_stats)
-
-    # Plot and add labels, colorbar, etc
-    image = ax.imshow(
-            binned_stats.statistic.T, # Still don't know why this is Transposed
-            origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
-            aspect="auto",
-    )
-    return ax
-
-def invalidate_unoccupied_bins(binned_stats):
-    x_ind, y_ind = np.unravel_index(binned_stats.binnumber, (len(binned_stats.x_edge) + 1, len(binned_stats.y_edge) + 1))
-    bin_counts, _, _ = np.histogram2d(x_ind, y_ind, bins=[len(binned_stats.x_edge)-1, len(binned_stats.y_edge)-1])
-
-    # Could sum things here to find the next extents (if we remove some data at the high or low end our graph looks a bit silly.
-
-    # Could do this better by doing some resampling and only keeping if it is well defined
-    # Though I'm not sure we have the data here to make that easy...
-    binned_stats.statistic[bin_counts < 5] = -np.inf
-    return binned_stats
 
 def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
     fig, ax = plt.subplots()
@@ -262,12 +26,12 @@ def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
         if x_axis == "sm":
             x = np.log10(catalog["icl"] + catalog["sm"])
             y = np.log10(catalog["m"])
-            y_diff = y - f_shmr_inverse(x, *get_fit(catalog))
+            y_diff = y - smhm_fit.f_shmr_inverse(x, *smhm_fit.get_fit(catalog))
         # Scatter on SM given HM bins
         elif x_axis == "hm":
             x = np.log10(catalog["m"])
             y = np.log10(catalog["icl"] + catalog["sm"])
-            y_diff = y - f_shmr(x, *get_fit(catalog))
+            y_diff = y - smhm_fit.f_shmr(x, *smhm_fit.get_fit(catalog))
         else:
             raise Exception("x_axis must be 'sm' or 'hm', got {}".format(x_axis))
 
@@ -319,7 +83,7 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     )
 
     if fit is not None:
-        ax.plot(sm_bin_midpoints, f_shmr_inverse(sm_bin_midpoints, *fit))
+        ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit))
 
     return ax
 
@@ -349,135 +113,6 @@ def sm_vs_dm(catalog, fit=None, ax=None):
     )
 
     if fit is not None:
-        ax.plot(hm_bin_midpoints, f_shmr(hm_bin_midpoints, *fit))
+        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit))
 
     return ax
-
-# Returns the parameters needed to fit SM (on the x axis) to HM (on the y axis)
-# Uses the functional form in the paper...
-def get_fit(catalog):
-    x = np.log10(catalog["icl"] + catalog["sm"])
-    y = np.log10(catalog["m"])
-
-    # Find various stats on our data
-    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
-    sm_bin_midpoints = sm_bin_edges[:-1] + np.diff(sm_bin_edges) / 2
-    mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
-
-    # Start with the default values from the paper
-    m1 = 10**12.73
-    sm0 = 10**11.04
-    beta = 0.47
-    delta = 0.60
-    gamma = 1.96
-
-    # Now try fit
-    popt, _ = scipy.optimize.curve_fit(
-            f_shmr_inverse,
-            sm_bin_midpoints, # log
-            mean_hm, # log
-            p0=[m1, sm0, beta, delta, gamma],
-            bounds=(
-                [m1/1e7, sm0/1e7, 0, 0, 0],
-                [m1*1e7, sm0*1e7, 10, 10, 20],
-            ),
-            # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
-            # sm0 will be larger for a similar reason as ^
-            # beta should be unchanged - it only affects the low mass end
-            # delta has large freedom
-    )
-    return popt
-
-def get_fit_2(catalog):
-    y = np.log10(catalog["icl"] + catalog["sm"])
-    x = np.log10(catalog["m"])
-
-    # Find various stats on our data
-    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
-    hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
-    mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
-
-    # Start with the default values from the paper
-    m1 = 10**12.73
-    sm0 = 10**11.04
-    beta = 0.47
-    delta = 0.60
-    gamma = 1.96
-
-    # Now try fit
-    popt, _ = scipy.optimize.curve_fit(
-            f_shmr,
-            hm_bin_midpoints, # log
-            mean_sm, # log
-            p0=[m1, sm0, beta, delta, gamma],
-            bounds=(
-                [m1/1e7, sm0/1e7, 0, 0, 0],
-                [m1*1e7, sm0*1e7, 10, 10, 20],
-            ),
-            # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
-            # sm0 will be larger for a similar reason as ^
-            # beta should be unchanged - it only affects the low mass end
-            # delta has large freedom
-    )
-    return popt
-
-# The functional form from https://arxiv.org/pdf/1103.2077.pdf
-# This is the fitting function
-# f_shmr finds SM given HM. As the inverse, this find HM given SM
-def f_shmr_inverse(log_stellar_masses, m1, sm0, beta, delta, gamma):
-    if np.max(log_stellar_masses) > 100:
-        raise Exception("You are probably not passing log masses!")
-
-    stellar_masses = np.power(10, log_stellar_masses)
-
-    usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
-    log_halo_mass = np.log10(m1) + (beta * np.log10(usm)) + ((np.power(usm, delta)) / (1 + np.power(usm, -gamma))) - 0.5
-    return log_halo_mass
-
-# d log10(halo_mass) / d log10(stellar_mass)
-# http://www.wolframalpha.com/input/?i=d%2Fdx+B*log10(x%2FS)+%2B+((x%2FS)%5Ed)+%2F+(1+%2B+(x%2FS)%5E-g)+-+0.5
-# https://math.stackexchange.com/questions/504997/derivative-with-respect-to-logx
-def f_shmr_inverse_der(log_stellar_masses, sm0, beta, delta, gamma):
-    if np.max(log_stellar_masses) > 100:
-        raise Exception("You are probably not passing log masses to der!")
-
-    stellar_masses = np.power(10, log_stellar_masses)
-    usm = stellar_masses / sm0 # unitless stellar mass is sm / characteristic mass
-    denom = (usm**-gamma) + 1
-    return stellar_masses * np.log(10) * (
-        (beta / (stellar_masses * np.log(10))) +
-        ((delta * np.power(usm, delta - 1)) / (sm0 * denom)) +
-        ((gamma * np.power(usm, delta - gamma - 1)) / (sm0 * np.power(denom, 2))))
-
-
-# Given a list of halo masses, find the expected stellar mass
-# Does this by guessing stellar masses and plugging them into the inverse
-# Scipy is so sick . . .
-def f_shmr(log_halo_masses, m1, sm0, beta, delta, gamma):
-    if np.max(log_halo_masses) > 100:
-        raise Exception("You are probably not passing log halo masses!")
-    # Function to minimize
-    def f(stellar_masses_guess):
-        return np.sum(
-                np.power(
-                    f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - log_halo_masses,
-                    2,
-                )
-        )
-    # Gradient of the function to minimize
-    def f_der(stellar_masses_guess):
-        return 2 * (
-                (f_shmr_inverse(stellar_masses_guess, m1, sm0, beta, delta, gamma) - log_halo_masses) *
-                f_shmr_inverse_der(stellar_masses_guess, sm0, beta, delta, gamma)
-        )
-
-    x = scipy.optimize.minimize(
-            f,
-            log_halo_masses - 2,
-            method="CG",
-            jac=f_der,
-            tol=1e-12, # roughly seems to be as far as we go without loss of precision
-    )
-    if not x.success:
-        raise Exception("Failure to invert {}".format(x.message))
-    return x.x

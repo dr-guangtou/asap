@@ -1157,18 +1157,19 @@ class InsituExsituModel(object):
             from multiprocessing import Pool
             from contextlib import closing
 
-            with closing(Pool(processes=4)) as pool:
+            with closing(Pool(processes=nproc)) as pool:
                 mcmc_sampler = emcee.EnsembleSampler(
                     self.mcmc_nwalkers,
                     self.mcmc_ndims,
                     self.lnProb,
+                    move=emcee.moves.StretchMove(a=4),
                     pool=pool
                     )
 
                 # Burn-in
                 if verbose:
                     print("# Phase: Burn-in ...")
-                self.mcmc_burnin_result = mcmc_sampler.run_mcmc(
+                mcmc_burnin_result = mcmc_sampler.run_mcmc(
                      self.mcmc_position, self.mcmc_nburnin,
                      progress=True
                     )
@@ -1182,21 +1183,21 @@ class InsituExsituModel(object):
             # Burn-in
             if verbose:
                 print("# Phase: Burn-in ...")
-            self.mcmc_burnin_result = mcmc_sampler.run_mcmc(
+            mcmc_burnin_result = mcmc_sampler.run_mcmc(
                  self.mcmc_position, self.mcmc_nburnin,
                  progress=True
                  )
 
-        mcmc_burnin_position, _, mcmc_burnin_state = self.mcmc_burnin_result
+        mcmc_burnin_position, _, mcmc_burnin_state = mcmc_burnin_result
 
         #  Pickle the results
         self.mcmcSaveResults(self.mcmc_burnin_file,
-                             self.mcmc_burnin_result)
+                             mcmc_burnin_result)
 
         #  Pickle the chain
-        self.mcmc_burnin_chain = mcmc_sampler.chain
+        mcmc_burnin_chain = mcmc_sampler.chain
         self.mcmcSaveChains(self.mcmc_burnin_chain_file,
-                            self.mcmc_burnin_chain)
+                            mcmc_burnin_chain)
 
         # Rest the chains
         mcmc_sampler.reset()
@@ -1204,45 +1205,48 @@ class InsituExsituModel(object):
         # MCMC run
         if verbose:
             print("# Phase: MCMC run ...")
-        self.mcmc_run_result = mcmc_sampler.run_mcmc(
+        mcmc_run_result = mcmc_sampler.run_mcmc(
             mcmc_burnin_position,
             self.mcmc_nsamples,
-            rstate0=mcmc_burnin_state)
+            rstate0=mcmc_burnin_state,
+            progress=True
+            )
 
         #  Pickle the result
         self.mcmcSaveResults(self.mcmc_run_file,
-                             self.mcmc_run_result)
-        self.mcmc_run_chain = mcmc_sampler.chain
+                             mcmc_run_result)
+        mcmc_run_chain = mcmc_sampler.chain
         self.mcmcSaveChains(self.mcmc_run_chain_file,
-                            self.mcmc_run_chain)
+                            mcmc_run_chain)
 
         if verbose:
             print("# Get MCMC samples and best-fit parameters ...")
         # Get the MCMC samples
-        self.mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
+        mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
             (-1, self.mcmc_ndims)
             )
         #  Save the samples
-        np.savez(self.mcmc_run_samples_file, data=self.mcmc_samples)
+        np.savez(self.mcmc_run_samples_file, data=mcmc_samples)
 
-        self.mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
+        mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
 
         # Get the best-fit parameters and the 1-sigma error
-        self.mcmc_params_stats = self.mcmcGetParameters()
+        mcmc_params_stats = self.mcmcGetParameters()
         if verbose:
             print("#------------------------------------------------------")
             print("#  Mean acceptance fraction",
                   np.mean(mcmc_sampler.acceptance_fraction))
             print("#------------------------------------------------------")
             print("#  Best ln(Probability): %11.5f" %
-                  np.nanmax(self.mcmc_lnprob))
-            print(self.mcmc_samples[np.argmax(self.mcmc_lnprob)])
+                  np.nanmax(mcmc_lnprob))
+            mcmc_best = mcmc_samples[np.argmax(mcmc_lnprob)]
+            print(mcmc_best)
             print("#------------------------------------------------------")
-            for param_stats in self.mcmc_params_stats:
+            for param_stats in mcmc_params_stats:
                 print(param_stats)
             print("#------------------------------------------------------")
 
-        return None
+        return mcmc_best, mcmc_params_stats
 
     def mcmcCornerPlot(self):
         """

@@ -40,10 +40,10 @@ def ellipse_distance(xpts, ypts, xc, yc, major_axis_angle, b_by_a):
     """
     major_axis = rotate_2d((1, 0), major_axis_angle)
     minor_axis = rotate_2d(major_axis, 90)
-    pts = np.vstack((xpts-xc, ypts-yc)).T
+    pts = np.vstack((xpts - xc, ypts - yc)).T
     a = np.dot(pts, major_axis)
     b = np.dot(pts, minor_axis)
-    return np.sqrt(a**2 + b_by_a*b**2)
+    return np.sqrt(a ** 2 + b_by_a * b ** 2)
 
 
 def ellipse_selector(xpts, ypts, xc, yc, major_axis_angle, b_by_a, nkeep):
@@ -123,9 +123,27 @@ def split_sample_along_axis_angle(xpts, ypts, xc, yc, axis_angle):
     """
     splitting_axis = rotate_2d((1, 0), axis_angle)
     if splitting_axis[0] != 0:
-        slope = splitting_axis[1]/splitting_axis[0]
-        b = yc - slope*xc
-        ycut = slope*xpts + b
+        slope = (splitting_axis[1] / splitting_axis[0])
+        b = (yc - slope * xc)
+        ycut = (slope * xpts + b)
         return ypts > ycut
     else:
         return xpts > xc
+
+
+def ellipse_split_2d(x_arr, y_arr, x_cen, y_cen, pa, ba,
+                     nsample=300):
+    """Select and split samples in an elliptical region."""
+    dist_ellip = ellipse_distance(x_arr, y_arr, x_cen, y_cen,
+                                  pa, ba)
+    idx_sorted_dist_ellip = np.argsort(dist_ellip)
+
+    min_dist_ellip = dist_ellip[idx_sorted_dist_ellip[nsample - 1]]
+
+    splitting_mask = split_sample_along_axis_angle(
+        x_arr, y_arr, x_cen, y_cen, pa)
+
+    group1_mask = (splitting_mask & (dist_ellip <= min_dist_ellip))
+    group2_mask = (~splitting_mask & (dist_ellip <= min_dist_ellip))
+
+    return group1_mask, group2_mask

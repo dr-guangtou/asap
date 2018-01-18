@@ -8,16 +8,71 @@ import smhm_fit
 solarMassUnits = r"($M_{\odot}$)"
 smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir}]$"
 
-m_vir_x_axis = r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$"
-m_star_x_axis = r"$M_{*}\ [log\ M_{*}/M_{\odot}]$"
-sm_scatter = r"$\sigma\ [log\ M_{*}]$"
-hm_scatter = r"$\sigma\ [log\ M_{vir}]$"
+m_vir_x_axis = r"$log\ M_{vir}$"
+hm_scatter = r"$\sigma_{log\ M_{vir}}$"
+
+def m_star_x_axis(n_sats):
+    return r"$log\ M_{*}^{" + str(n_sats) + "}$"
+def sm_scatter(n_sats):
+    return r"$\sigma_{log\ M_{*}^{" + str(n_sats) + "}}$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
-def dm_vs_all_sm_error(catalogs, x_axis, labels=None, ):
+# central_catalogs look like: {label1: {data: [ ], fit: [ ]}, label2: ...}
+def hm_vs_sm_scatter(central_catalogs, ax = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(18.5, 10.5)
+
+    for k, v in central_catalogs.items():
+        halo_masses = np.log10(v["data"]["m"])
+        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+        predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v["fit"])
+        delta_stellar_masses = stellar_masses - predicted_stellar_masses
+
+        bins = np.arange(
+                np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+                np.max(halo_masses) + 0.2, # to ensure that the last point is included
+                0.2)
+        bin_midpoints = bins[:-1] + np.diff(bins) / 2
+        std, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=bins)
+        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+    ax.set(
+        xlabel=m_vir_x_axis,
+        ylabel=sm_scatter,
+    )
+    ax.legend()
+    return ax
+
+def sm_vs_hm_scatter(central_catalogs, ax = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(18.5, 10.5)
+
+    for k, v in central_catalogs.items():
+        halo_masses = np.log10(v["data"]["m"])
+        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
+        delta_halo_masses = halo_masses - predicted_halo_masses
+
+        bins = np.arange(
+                np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
+                np.max(stellar_masses) + 0.2, # to ensure that the last point is included
+                0.2)
+        bin_midpoints = bins[:-1] + np.diff(bins) / 2
+        std, _, _ = scipy.stats.binned_statistic(stellar_masses, delta_halo_masses, statistic="std", bins=bins)
+        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+    ax.set(
+        xlabel=m_star_x_axis,
+        ylabel=hm_scatter,
+    )
+    ax.legend()
+    return ax
+
+
+def dm_vs_all_sm_error(catalogs, x_axis, labels=None):
     fig, ax = plt.subplots()
     fig.set_size_inches(18.5, 10.5)
     label = None

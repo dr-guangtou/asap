@@ -291,7 +291,7 @@ class UMMassProfModel():
         if ('obs_dir' in kwargs.keys()):
             self.obs_dir = kwargs['obs_dir']
         else:
-            self.obs_dir = '../data'
+            self.obs_dir = 'Data'
 
         if ('obs_cat' in kwargs.keys()):
             self.obs_cat = kwargs['obs_cat']
@@ -471,7 +471,7 @@ class UMMassProfModel():
         if ('um_dir' in kwargs.keys()):
             self.um_dir = kwargs['um_dir']
         else:
-            self.um_dir = '../data'
+            self.um_dir = 'Data'
 
         if ('um_model' in kwargs.keys()):
             self.um_model = kwargs['um_model']

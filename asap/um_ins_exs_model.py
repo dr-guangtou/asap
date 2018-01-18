@@ -210,7 +210,7 @@ class InsituExsituModel(object):
         if 'obs_wl_sample' in kwargs.keys():
             obs_wl_sample = kwargs['obs_wl_sample']
         else:
-            obs_wl_sample = 's16a_wide2_massive_boxbin3'
+            obs_wl_sample = 's16a_wide2_massive_boxbin3_default'
         if verbose:
             print("# Input weak lensing profile sample: %s" % obs_wl_sample)
 
@@ -1150,6 +1150,12 @@ class InsituExsituModel(object):
 
         -----------
         """
+        # TODO Should use HDF5 file to save everything
+        import h5py
+        hfile_name = 'um_smdpl_m100_m10_mcmc.h5'
+        hfile = h5py.File(hfilename, "a")
+
+
         # Setup the initial condition
         self.mcmcInitialGuess()
 
@@ -1201,6 +1207,8 @@ class InsituExsituModel(object):
 
         # Rest the chains
         mcmc_sampler.reset()
+
+        conv_crit = 3
 
         # MCMC run
         if verbose:

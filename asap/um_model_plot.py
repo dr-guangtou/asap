@@ -346,8 +346,6 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     gs = gridspec.GridSpec(n_row, n_col)
     gs.update(wspace=0.0, hspace=0.00)
 
-    max_wl = np.nanmax(np.asarray(um_wl_profs)) * 1.4
-
     for ii in range(obs_wl_n_bin):
 
         ax = plt.subplot(gs[ii])
@@ -426,7 +424,71 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
 
         # X, Y Limits
         ax.set_xlim(0.05, 61.0)
-        ax.set_ylim(0.01, 299.0)
+        ax.set_ylim(0.01, 399.0)
+
+    return fig
+
+
+def plot_best_fit_scatter_relation(sigms_a, sigms_b, min_scatter=0.02):
+    """Log Mh v.s. sig(Log Ms_tot)."""
+    fig = plt.figure(figsize=(6, 6))
+    fig.subplots_adjust(left=0.19, right=0.995,
+                        bottom=0.13, top=0.995,
+                        wspace=0.00, hspace=0.00)
+    ax1 = fig.add_subplot(111)
+    ax1.grid(linestyle='--', linewidth=2, alpha=0.4, zorder=0)
+
+    for tick in ax1.xaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+    for tick in ax1.yaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+
+    logmh_cen = np.linspace(11.5, 15.0, 1000)
+    sig_ms = sigms_a * np.asarray(logmh_cen) + sigms_b
+    sig_ms = np.where(sig_ms <= min_scatter, min_scatter, sig_ms)
+
+    ax1.plot(logmh_cen, sig_ms,
+             linewidth=4.0, linestyle='--', alpha=0.8)
+
+    ax1.text(0.25, 0.09, r"$a=%5.2f\ b=%5.2f$" % (sigms_a, sigms_b),
+             verticalalignment='bottom',
+             horizontalalignment='center',
+             fontsize=20,
+             transform=ax1.transAxes)
+
+    ax1.set_xlabel(r'$\log M_{\mathrm{vir}}$', fontsize=25)
+    ax1.set_ylabel(r'$\sigma_{\log M_{\star, \rm Total}}$',
+                   fontsize=28)
+
+    return fig
+
+
+def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
+    """Log Mh v.s. Log Ms_tot."""
+    fig = plt.figure(figsize=(6, 6))
+    fig.subplots_adjust(left=0.19, right=0.995,
+                        bottom=0.13, top=0.995,
+                        wspace=0.00, hspace=0.00)
+    ax1 = fig.add_subplot(111)
+    ax1.grid(linestyle='--', linewidth=2, alpha=0.4, zorder=0)
+
+    for tick in ax1.xaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+    for tick in ax1.yaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+
+    logmh_cen = np.linspace(11.5, 15.0, 50)
+    ax1.plot(logmh_cen, shmr_a * logmh_cen + shmr_b,
+             linewidth=5.0, linestyle='--', alpha=0.8)
+
+    ax1.text(0.75, 0.09, r"$a=%5.2f\ b=%5.2f$" % (shmr_a, shmr_b),
+             verticalalignment='bottom',
+             horizontalalignment='center',
+             fontsize=20,
+             transform=ax1.transAxes)
+
+    ax1.set_xlabel(r'$\log M_{\mathrm{vir}}$', fontsize=25)
+    ax1.set_ylabel(r'$\log M_{\star, \rm Total}$', fontsize=25)
 
     return fig
 

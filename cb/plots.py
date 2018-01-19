@@ -8,7 +8,7 @@ import smhm_fit
 solarMassUnits = r"($M_{\odot}$)"
 smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir}]$"
 
-m_vir_x_axis = r"$log\ M_{vir}$"
+m_vir_x_axis = r"$log\ M_{vir}/h$"
 hm_scatter = r"$\sigma_{log\ M_{vir}}$"
 
 def m_star_x_axis(n_sats):
@@ -52,8 +52,8 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
-        halo_masses = np.log10(v["data"]["m"])
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+        halo_masses = np.log10(v["data"]["m"])
         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
         delta_halo_masses = halo_masses - predicted_halo_masses
 
@@ -72,45 +72,39 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
     return ax
 
 
-def dm_vs_all_sm_error(catalogs, x_axis, labels=None):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
-    label = None
-    for i, catalog in enumerate(catalogs):
-        # Scatter on HM given SM bins
-        if x_axis == "sm":
-            x = np.log10(catalog["icl"] + catalog["sm"])
-            y = np.log10(catalog["m"])
-            y_diff = y - smhm_fit.f_shmr_inverse(x, *smhm_fit.get_fit(catalog))
-        # Scatter on SM given HM bins
-        elif x_axis == "hm":
-            x = np.log10(catalog["m"])
-            y = np.log10(catalog["icl"] + catalog["sm"])
-            y_diff = y - smhm_fit.f_shmr(x, *smhm_fit.get_fit(catalog))
-        else:
-            raise Exception("x_axis must be 'sm' or 'hm', got {}".format(x_axis))
+def sanity_check_scatter(sc_centrals, hc_centrals):
+    log_halo_masses = np.log10(hc_centrals["data"]["m"])
 
-        bins = np.arange(np.min(x), np.max(x), 0.2)
-        std, _, _ = scipy.stats.binned_statistic(x, y_diff, statistic="std", bins=bins)
-        bin_midpoints = bins[:-1] + np.diff(bins) / 2
-        if labels is not None:
-            label = labels[i]
-        ax.plot(bin_midpoints, std, label=label)
-    if x_axis == "sm":
-        ax.set(
-            xlabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
-            ylabel=r"$\sigma\ [log\ M_{vir}/M_{\odot}]$",
-            title="Scatter in Total Stellar Mass - Peak Halo Mass Ratio",
-        )
-    elif x_axis == "hm":
-        ax.set(
-            xlabel=m_vir_x_axis,
-            ylabel=smhm_ratio_scatter,
-            title="Scatter in Total Stellar Mass - Peak Halo Mass Ratio",
-        )
+    hm_bins = np.arange(np.floor(np.min(log_halo_masses)), np.max(log_halo_masses), 0.2)
+    sm_bins = smhm_fit.f_shmr(hm_bins, *hc_centrals["fit"])
+    sm_bin_midpoints = sm_bins[:-1] + np.diff(sm_bins) / 2
+
+    # calculate SM scatter at fixed HM
+    halo_masses = np.log10(hc_centrals["data"]["m"])
+    stellar_masses = np.log10(hc_centrals["data"]["icl"] + hc_centrals["data"]["sm"])
+    predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *hc_centrals["fit"])
+    delta_stellar_masses = stellar_masses - predicted_stellar_masses
+    std_sm, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=hm_bins)
+
+    # calculate HM scatter at fixed SM
+    stellar_masses = np.log10(sc_centrals["data"]["icl"] + sc_centrals["data"]["sm"])
+    halo_masses = np.log10(sc_centrals["data"]["m"])
+    predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *sc_centrals["fit"])
+    delta_halo_masses = halo_masses - predicted_halo_masses
+    std_hm, _, _ = scipy.stats.binned_statistic(stellar_masses, delta_halo_masses, statistic="std", bins=sm_bins)
+
+    # calculate derivative at the center of the bins
+    d_hm_d_sm = smhm_fit.f_shmr_inverse_der(sm_bin_midpoints, *sc_centrals["fit"][1:])
+
+    _, ax = plt.subplots()
+    ax.plot(sm_bin_midpoints, std_hm / std_sm, label=r"$\sigma_{hm}/\sigma_{sm}$")
+    ax.plot(sm_bin_midpoints, d_hm_d_sm, label=r"$dlog_{hm}/dlog_{sm}$")
+    ax.set(
+            xlabel="Stellar Mass",
+    )
     ax.legend()
-    return ax
 
+    return ax
 
 # HM (y axis) at fixed SM (x axis)
 def dm_vs_sm(catalog, fit=None, ax=None):

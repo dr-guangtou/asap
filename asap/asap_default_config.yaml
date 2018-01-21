@@ -1,0 +1,8 @@
+# HSC data part
+obs_dir: '../data/s16a_massive_wide2'
+obs_cat: 's16a_wide2_massive_fsps1_imgsub_use_short.fits'
+obs_wl_sample: 's16a_wide2_massive_boxbin3_default'
+
+# Cosmology
+obs_h0: 0.70
+obs_omega_m: 0.307

@@ -1152,9 +1152,9 @@ class InsituExsituModel(object):
         -----------
         """
         # TODO Should use HDF5 file to save everything
-        import h5py
-        hfile_name = 'um_smdpl_m100_m10_mcmc.h5'
-        hfile = h5py.File(hfilename, "a")
+        # import h5py
+        # hfile_name = 'um_smdpl_m100_m10_mcmc.h5'
+        # hfile = h5py.File(hfilename, "a")
 
         # Setup the initial condition
         self.mcmcInitialGuess()
@@ -1208,7 +1208,7 @@ class InsituExsituModel(object):
         # Rest the chains
         mcmc_sampler.reset()
 
-        conv_crit = 3
+        # conv_crit = 3
 
         # MCMC run
         if verbose:

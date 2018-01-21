@@ -1155,7 +1155,6 @@ class InsituExsituModel(object):
         hfile_name = 'um_smdpl_m100_m10_mcmc.h5'
         hfile = h5py.File(hfilename, "a")
 
-
         # Setup the initial condition
         self.mcmcInitialGuess()
 

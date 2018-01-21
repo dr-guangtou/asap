@@ -11,8 +11,7 @@ from sm_mtot_model import logms_tot_from_logms_halo
 
 
 def sigma_logms_from_logmh(logMhalo, sigms_a, sigms_b,
-                           min_scatter=0.01,
-                           max_scatter=0.6):
+                           min_scatter=0.01):
     """Scatter of stellar mass at fixed halo mass.
 
     Assuming a simple log-log linear relation.
@@ -36,10 +35,9 @@ def sigma_logms_from_logmh(logMhalo, sigms_a, sigms_b,
         Default: 0.05
 
     """
-    logSigMs = sigms_a * np.asarray(logMhalo) + sigms_b
+    logSigMs = sigms_a * (np.asarray(logMhalo) - 15.3) + sigms_b
 
     logSigMs = np.where(logSigMs <= min_scatter, min_scatter, logSigMs)
-    logSigMs = np.where(logSigMs >= max_scatter, max_scatter, logSigMs)
 
     return logSigMs
 

@@ -33,7 +33,8 @@ def plot_logmh_sig_logms_tot(logmh_cen, sig_logms_tot,
     for tick in ax1.yaxis.get_major_ticks():
         tick.label.set_fontsize(20)
 
-    ax1.plot(logmh_cen, sigms_a * np.asarray(logmh_cen) + sigms_b,
+    ax1.plot(logmh_cen,
+             sigms_a * (np.asarray(logmh_cen) - 15.3) + sigms_b,
              linewidth=3.0, linestyle='--', alpha=0.5)
     ax1.scatter(logmh_cen, sig_logms_tot, s=70, alpha=0.8,
                 edgecolor='k')
@@ -346,21 +347,18 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     gs = gridspec.GridSpec(n_row, n_col)
     gs.update(wspace=0.0, hspace=0.00)
 
-    for ii in range(obs_wl_n_bin):
+    y_min_arr = np.array(
+        [np.nanmin(prof.sig) for prof in obs_wl_dsigma])
+    y_min_arr = np.where(y_min_arr <= 0.0, np.nan, y_min_arr)
+    y_max_arr = np.array(
+        [np.nanmax(prof.sig) for prof in obs_wl_dsigma])
+    y_min = np.nanmin(y_min_arr) * 0.2
+    y_max = np.nanmax(y_max_arr) * 1.8
+    print(y_min, y_max)
 
+    for ii in range(obs_wl_n_bin):
         ax = plt.subplot(gs[ii])
         ax.loglog()
-
-        if ii % n_col != 0:
-            ax.yaxis.set_major_formatter(NullFormatter())
-        else:
-            ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$',
-                          size=20)
-        if ii % n_row != 0:
-            ax.xaxis.set_major_formatter(NullFormatter())
-        else:
-            ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$',
-                          size=20)
 
         ax.grid(linestyle='--', linewidth=1, alpha=0.3, zorder=0)
 
@@ -423,8 +421,21 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                     color='royalblue')
 
         # X, Y Limits
-        ax.set_xlim(0.05, 61.0)
-        ax.set_ylim(0.01, 399.0)
+        x_min = np.min(obs_prof.r) * 0.3
+        x_max = np.max(obs_prof.r) * 1.9
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+
+        if ii % n_col != 0:
+            ax.yaxis.set_major_formatter(NullFormatter())
+        else:
+            ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$',
+                          size=20)
+        if (ii + 1) % n_col != 0:
+            ax.xaxis.set_major_formatter(NullFormatter())
+        else:
+            ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$',
+                          size=20)
 
     return fig
 
@@ -443,8 +454,8 @@ def plot_best_fit_scatter_relation(sigms_a, sigms_b, min_scatter=0.02):
     for tick in ax1.yaxis.get_major_ticks():
         tick.label.set_fontsize(20)
 
-    logmh_cen = np.linspace(11.5, 15.0, 1000)
-    sig_ms = sigms_a * np.asarray(logmh_cen) + sigms_b
+    logmh_cen = np.linspace(11.5, 15.4, 1000)
+    sig_ms = sigms_a * (np.asarray(logmh_cen) - 15.3) + sigms_b
     sig_ms = np.where(sig_ms <= min_scatter, min_scatter, sig_ms)
 
     ax1.plot(logmh_cen, sig_ms,

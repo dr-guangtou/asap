@@ -493,9 +493,9 @@ class InsituExsituModel(object):
                 self.param_ini = kwargs['param_ini']
                 assert len(self.param_ini) == self.mcmc_ndims
             else:
-                self.param_ini = [0.5901, 3.8482,
-                                  -0.095, 0.80,
-                                  0.9, 0.1]
+                self.param_ini = [0.5972, 3.6872,
+                                  -0.060, 0.0057,
+                                  0.81, 0.17]
             # Lower bounds
             if 'param_low' in kwargs.keys():
                 self.param_low = kwargs['param_low']
@@ -508,14 +508,14 @@ class InsituExsituModel(object):
                 self.param_upp = kwargs['param_upp']
                 assert len(self.param_upp) == self.mcmc_ndims
             else:
-                self.param_upp = [1.0, 8.0, 0.0, 1.6, 1.0, 0.3]
+                self.param_upp = [1.0, 8.0, 0.0, 0.2, 1.0, 0.3]
 
             # Step to randomize the initial guesses
             if 'param_sig' in kwargs.keys():
                 self.param_sig = kwargs['param_sig']
                 assert len(self.param_sig) == self.mcmc_ndims
             else:
-                self.param_sig = [0.2, 0.3, 0.1, 0.2, 0.3, 0.3]
+                self.param_sig = [0.1, 0.2, 0.05, 0.002, 0.3, 0.3]
 
         else:
             raise Exception("# Wrong model! Has to be 'simple' or `frac1`")
@@ -1095,15 +1095,16 @@ class InsituExsituModel(object):
         if self.mcmc_smf_only is False:
             lnlike_wl = 0.0
             for ii in range(self.obs_wl_n_bin):
-                wl_var = (
-                    self.obs_wl_dsigma[ii].err_s ** 2
-                )
+                wl_obs = self.obs_wl_dsigma[ii].sig
+                wl_obs_err = self.obs_wl_dsigma[ii].err_s
+                wl_um = um_wl_profs[ii]
+
+                wl_var = (wl_obs_err[:-2] ** 2)
 
                 lnlike_wl += (
                     -0.5 * (
                         np.nansum(
-                            (self.obs_wl_dsigma[ii].sig -
-                             um_wl_profs[ii]) ** 2 / wl_var
+                            (wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var
                         ) +
                         np.nansum(
                             np.log(2 * np.pi * wl_var)

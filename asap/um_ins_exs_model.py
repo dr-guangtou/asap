@@ -1025,7 +1025,7 @@ class InsituExsituModel(object):
 
         return lp + self.lnLike(param_tuple)
 
-    def wlLikelihood(self, index, um_wl_profs):
+    def wlLikelihood(self, index, um_wl_profs, chi2=False):
         """Calculate the likelihood for WL profile."""
         wl_obs = self.obs_wl_dsigma[index].sig
         wl_obs_err = self.obs_wl_dsigma[index].err_s
@@ -1033,14 +1033,93 @@ class InsituExsituModel(object):
 
         wl_var = (wl_obs_err[:-2] ** 2)
 
-        lnlike_wl = -0.5 * (
-                np.nansum(
-                    ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
-                    + np.log(2 * np.pi * wl_var)
+        if chi2 is False:
+            lnlike_wl = -0.5 * (
+                    np.nansum(
+                        ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
+                        + np.log(2 * np.pi * wl_var)
+                    )
                 )
+        else:
+            lnlike_wl = np.nansum(
+                        ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
+                        )
             )
 
         return lnlike_wl
+
+    def reducedChi2(self, param_tuple):
+        """Reduced chi2 of a UM model.
+
+        Parameters
+        ----------
+
+        theta : tuple
+            Input parameters = (shmr_a, shmr_b, sigms_a, sigms_b)
+
+        wl_weight : float, optional
+            Noive weighting for WL profiles when adding the likelihood.
+            Default: 1.0
+
+        smf_only : boolen, optional
+            Only fit the SMF.
+            Default: False
+
+        wl_only : boolen, optional
+            Only fit the WL profiles.
+            Default: False
+
+        """
+        # Unpack the input parameters
+        parameters = list(param_tuple)
+        n_param = len(parameters)
+
+        # Generate the model predictions
+        (um_smf_tot,
+         um_smf_inn,
+         um_wl_profs,
+         logms_mod_inn,
+         logms_mod_tot,
+         logms_mod_halo,
+         mask_mtot,
+         um_mock_use) = self.umPredictModel(parameters,
+                                            constant_bin=False)
+
+        # Check SMF
+        msg = '# UM and observed SMFs should have the same size!'
+        assert len(um_smf_inn) == len(self.obs_smf_inn), msg
+        assert len(um_smf_tot) == len(self.obs_smf_tot), msg
+
+        if self.mcmc_wl_only is False:
+            #  SMF for Mto t
+            smf_mtot_var = (
+                (self.obs_smf_tot['smf_upp'] -
+                 self.obs_smf_tot['smf']) ** 2
+            )
+
+            chi2_smf = (
+                    np.nansum(
+                        ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
+                         smf_mtot_var)
+                    )
+                )
+        else:
+            chi2_smf = 0.0
+
+        # print("lnLikelihood for SMF: %f" % lnlike_smf)
+
+        # Check WL profiles
+        msg = '# UM and observed WL profiles should have the same size!'
+        assert len(um_wl_profs) == len(self.obs_wl_dsigma)
+        assert len(um_wl_profs[0] == len(self.obs_wl_dsigma[0].r))
+
+        if self.mcmc_smf_only is False:
+            chi2_wl = np.nansum([self.wlLikelihood(ii, um_wl_profs, chi2=True)
+                                   for ii in range(self.obs_wl_n_bin)])
+        else:
+            chi2_wl = 0.0
+
+        return (chi2_smf + self.mcmc_wl_weight * chi2_wl) / n_param
 
     def lnLike(self, param_tuple):
         """Log likelihood of a UM model.
@@ -1248,32 +1327,6 @@ class InsituExsituModel(object):
             print("#------------------------------------------------------")
 
         return mcmc_best, mcmc_params_stats, mcmc_samples
-
-    def mcmcCornerPlot(self, mcmc_samples):
-        """
-        Show the corner plot of the MCMC samples.
-        """
-        import corner
-        from palettable.colorbrewer.sequential import OrRd_9
-        ORG = OrRd_9.mpl_colormap
-
-        fig = corner.corner(
-            mcmc_samples,
-            bins=25, color=ORG(0.7),
-            smooth=1, labels=self.mcmc_labels,
-            label_kwargs={'fontsize': 40},
-            quantiles=[0.16, 0.5, 0.84],
-            plot_contours=True,
-            fill_contours=True,
-            show_titles=True,
-            title_kwargs={"fontsize": 30},
-            hist_kwargs={"histtype": 'stepfilled',
-                         "alpha": 0.4,
-                         "edgecolor": "none"},
-            use_math_text=True
-            )
-
-        return fig
 
     def mcmcSaveChains(self, mcmc_chain_file, mcmc_chain, **kwargs):
         """

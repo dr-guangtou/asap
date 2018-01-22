@@ -11,9 +11,12 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import NullFormatter
 from matplotlib.ticker import MaxNLocator
 
+from scipy.ndimage.filters import gaussian_filter
+
 import corner
-from palettable.colorbrewer.sequential import OrRd_9
+from palettable.colorbrewer.sequential import OrRd_9, Greys_9
 ORG = OrRd_9.mpl_colormap
+BLK = Greys_9.mpl_colormap
 
 plt.rcParams['figure.dpi'] = 100.0
 plt.rcParams['figure.facecolor'] = 'w'
@@ -245,16 +248,15 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
     ax2.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
 
     if obs_smf_full is not None:
-        ax2.plot(obs_smf_full['logm_mean'] + 0.1,
-                 np.log10(obs_smf_full['smf']),
-                 c='mediumseagreen', alpha=0.60, zorder=0,
-                 label=r'$\mathrm{Data:\ S82}$')
-
-        ax2.scatter(obs_smf_full['logm_mean'] + 0.1,
-                    np.log10(obs_smf_full['smf']),
-                    c='seagreen', marker='s',
-                    s=10, label='__no_label__',
-                    alpha=1.0, zorder=0)
+        ax2.errorbar(obs_smf_full['logm_mean'] + 0.15,
+                     np.log10(obs_smf_full['smf']),
+                     (np.log10(obs_smf_full['smf_upp']) -
+                      np.log10(obs_smf_full['smf'])),
+                     fmt='o', color='seagreen',
+                     ecolor='seagreen',
+                     alpha=0.9, marker='s',
+                     label=r'$\mathrm{Data:\ PRIMUS}$',
+                     zorder=0)
 
     if um_smf_tot_all is not None:
         ax2.plot(um_smf_tot_all['logm_mean'],
@@ -325,8 +327,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
     if obs_smf_full is not None:
         ax2.set_ylim(np.nanmin(np.log10(obs_smf_inn[mask_inn]['smf']))
                      - 0.2,
-                     np.nanmax(np.log10(obs_smf_full['smf']))
-                     )
+                     np.nanmax(np.log10(obs_smf_full['smf'])))
     else:
         ax2.set_ylim(np.nanmin(np.log10(obs_smf_inn[mask_inn]['smf']))
                      - 0.2,
@@ -424,8 +425,8 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                     color='royalblue')
 
         # X, Y Limits
-        x_min = np.min(obs_prof.r) * 0.3
-        x_max = np.max(obs_prof.r) * 1.9
+        x_min = np.min(obs_prof.r) * 0.2
+        x_max = np.max(obs_prof.r) * 1.8
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
 
@@ -513,12 +514,12 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
         mcmc_samples,
         bins=25, color=ORG(0.7),
         smooth=1, labels=mcmc_labels,
-        label_kwargs={'fontsize': 20},
+        label_kwargs={'fontsize': 25},
         quantiles=[0.16, 0.5, 0.84],
         plot_contours=True,
         fill_contours=True,
         show_titles=True,
-        title_kwargs={"fontsize": 20},
+        title_kwargs={"fontsize": 18},
         hist_kwargs={"histtype": 'stepfilled',
                      "alpha": 0.4,
                      "edgecolor": "none"},
@@ -528,5 +529,62 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
     return fig
 
 
-def plot_mtot_minn_trend():
-    """"""
+def plot_mtot_minn_trend(
+        x_arr, y_arr, z_arr, method='count', bins=50,
+        contour=True, nticks=10, x_lim=None, y_lim=None,
+        n_contour=6,
+        xlabel=r'$\log (M_{\star,\ \mathrm{Total}}/M_{\odot})$',
+        ylabel=r'$\log (M_{\star,\ \mathrm{In\ Situ}}/M_{\odot})$',
+        title=r'$\log M_{\mathrm{Halo}}$'):
+    """Density plot."""
+    z_stats, x_edges, y_edges = binned_statistic_2d(
+        x_arr, y_arr, z_arr, method, bins=bins)
+
+    if x_lim is None:
+        x_lim = [np.nanmin(x_arr), np.nanmax(x_arr)]
+    if y_lim is None:
+        y_lim = [np.nanmin(y_arr), np.nanmax(y_arr)]
+
+    fig = plt.figure(figsize=(9, 7))
+    fig.subplots_adjust(left=0.19, right=0.995,
+                        bottom=0.13, top=0.995,
+                        wspace=0.00, hspace=0.00)
+    ax1 = fig.add_subplot(111)
+    ax1.grid(linestyle='--', linewidth=2, alpha=0.5, zorder=0)
+
+    HM = ax1.imshow(z_stats.T, origin='lower',
+                    extent=[x_edges[0], x_edges[-1],
+                            y_edges[0], y_edges[-1]],
+                    aspect='auto', interpolation='nearest',
+                    cmap=ORG)
+
+    z_min, z_max = np.nanmin(z_stats), np.nanmax(z_stats)
+
+    if contour:
+        CT = ax1.contour(x_edges[:-1], y_edges[:-1],
+                         gaussian_filter(z_stats.T, 0.2),
+                         n_contour, linewidths=2.0,
+                         colors=[BLK(0.8), BLK(0.9)],
+                         extend='neither')
+        ax1.clabel(CT, inline=1, fontsize=15)
+
+    ax1.set_xlabel(xlabel, size=25)
+    ax1.set_ylabel(ylabel, size=25)
+
+    for tick in ax1.xaxis.get_major_ticks():
+        tick.label.set_fontsize(22)
+    for tick in ax1.yaxis.get_major_ticks():
+        tick.label.set_fontsize(22)
+
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    cbar_ticks = MaxNLocator(nticks).tick_values(z_min, z_max)
+    cbar = plt.colorbar(HM, cax=cax, ticks=cbar_ticks)
+    cbar.solids.set_edgecolor("face")
+
+    ax1.text(0.6, 0.1, title, size=30, transform=ax1.transAxes)
+
+    ax1.set_xlim(x_lim)
+    ax1.set_ylim(y_lim)
+
+    return fig

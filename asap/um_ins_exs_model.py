@@ -21,6 +21,7 @@ from stellar_mass_function import get_smf_bootstrap
 from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
+from asap_utils import mcmc_save_results, mcmc_save_chains
 # from convergence import convergence_check
 
 
@@ -55,111 +56,7 @@ class InsituExsituModel(object):
 
            shmr_a, shmr_b are free parameters of this model.
 
-    Kwargs
-    ------
-    Default configuration of the model.
-
-    cosmo_h0 : float
-        Reduced Hubble constant, to setup cosmology.
-
-    cosmo_omega_m : float
-        Omega_m, to setup cosmology.
-
-    um_dir : string
-        Location of the umdir model.
-
-    um_model : string
-        Model name for UM mock catalog.
-
-    um_lbox : int or float
-        Size of the simulation box, in unit of Mpc
-
-    um_subvolumes : int
-        Number of subvolumes in UniverseMachine mock.
-
-    um_min_mvir : float
-        Minimum halo mass used in the model.
-
-    um_cat : string
-        Prepared value-added catalog for UM mocks.
-
-    um_wlcat : string
-        Pre-computed weak lensing paris using simulation.
-
-    sim_name : string
-        Name of the simulation.
-
-    sim_redshift : float or int
-        Redshift of the simulation.
-
-    wl_min_r : float
-        Minimum radius for weak lensing analysis.
-
-    wl_max_r : float
-        Maximum radius for weak lensing analysis.
-
-    wl_n_bins : int
-        Number of bins in log(R) space for weak lensing analysis.
-
-    obs_dir : string
-        Directory for the observed data.
-
-    obs_cat : string
-        File of the observed stellar mass catalog.
-
-    obs_area : float
-        Effective area of the data in unit of square degree.
-
-    obs_zmin : float
-        Minimum redshift of the obseved sample.
-
-    obs_zmax : float
-        Maximum redshift of the observed sample.
-
-    obs_mass : astropy.table
-        Astropy table for the observed stellar masses.
-
-    obs_wl_sample : string
-        Sample name for the obseved weak lensing profiles.
-
-    obs_smf_inn : string
-        File for pre-computed stellar mass function of the inner mass.
-
-    obs_smf_tot : string
-        File for pre-computed stellar mass function of the total mass.
-
-    obs_smf_full : string
-        File for pre-computed stellar mass function extended to low
-        stellar mass.
-
-    obs_minn_col : string
-        Column name for the inner stellar mass.
-
-    obs_mtot_col : string
-        Column name for the total stellar mass.
-
-    obs_smf_inn_min : float
-        Minimum inner stellar mass for SMF.
-
-    obs_smf_inn_max : float
-        Maximum inner stellar mass for SMF.
-
-    obs_smf_inn_nbin : float
-        Number of mass bins for SMF of inner stellar mass.
-
-    obs_smf_tot_min : float
-        Minimum total stellar mass for SMF.
-
-    obs_smf_tot_max : float
-        Maximum toter stellar mass for SMF.
-
-    obs_smf_tot_nbin : float
-        Number of mass bins for SMF of toter stellar mass.
-
-    obs_smf_adderr : float
-        Additional error for SMF.
     """
-
     def __init__(self, **kwargs):
         """Initialize the model."""
         # Setup the HSC data
@@ -210,7 +107,7 @@ class InsituExsituModel(object):
         if 'obs_wl_sample' in kwargs.keys():
             obs_wl_sample = kwargs['obs_wl_sample']
         else:
-            obs_wl_sample = 's16a_wide2_massive_boxbin3_default'
+            obs_wl_sample = 's16a_wide2_massive_boxbin5_default'
         if verbose:
             print("# Input weak lensing profile sample: %s" % obs_wl_sample)
 
@@ -243,7 +140,7 @@ class InsituExsituModel(object):
             smf_tot_file = os.path.join(obs_dir, kwargs['obs_smf_tot'])
         else:
             smf_tot_file = os.path.join(
-                obs_dir, 'smf', 's16a_wide2_massive_smf_m100_11.5.fits')
+                obs_dir, 'smf', 's16a_wide2_massive_smf_mmax_11.5.fits')
         if verbose:
             print("# Pre-computed SMF for total logMs: %s" % smf_tot_file)
 
@@ -257,8 +154,8 @@ class InsituExsituModel(object):
         self.obs_smf_tot_nbin = len(self.obs_smf_tot)
 
         # Total stellar mass function for comparison (optional)
-        obs_smf_full_file = os.path.join(obs_dir,
-                                         's82_total_smf_z0.15_0.43.fits')
+        smf_tot_fits = 'primus_smf_z0.3_0.4.fits'
+        obs_smf_full_file = os.path.join(obs_dir, smf_tot_fits)
         if os.path.isfile(obs_smf_full_file):
             smf_full = Table.read(obs_smf_full_file)
             smf_full[smf_full['smf'] <= 0]['smf'] = 1E-8
@@ -266,8 +163,7 @@ class InsituExsituModel(object):
             smf_full[smf_full['smf_upp'] <= 0]['smf_upp'] = 1E-7
             self.obs_smf_full = smf_full
             if verbose:
-                print("# Pre-computed full SMF: %s" %
-                      's82_total_smf_z0.15_0.43.fits')
+                print("# Pre-computed full SMF: %s" % smf_tot_fits)
         else:
             self.obs_smf_full = None
 
@@ -303,7 +199,7 @@ class InsituExsituModel(object):
         if 'obs_mtot_col' in kwargs.keys():
             obs_mtot_col = kwargs['obs_mtot_col']
         else:
-            obs_mtot_col = 'logm_100'
+            obs_mtot_col = 'logm_max'
 
         self.obs_minn = obs_mass[obs_minn_col]
         self.obs_mtot = obs_mass[obs_mtot_col]
@@ -485,8 +381,8 @@ class InsituExsituModel(object):
                                 r'$b_{\mathrm{SMHR}}$',
                                 r'$a_{\sigma \log M_{\star}}$',
                                 r'$b_{\sigma \log M_{\star}}$',
-                                r'$\mathrm{frac}_{\mathrm{in-situ}}$',
-                                r'$\mathrm{frac}_{\mathrm{ex-situ}}$']
+                                r'$\mathrm{f}_{\mathrm{in-situ}}$',
+                                r'$\mathrm{f}_{\mathrm{ex-situ}}$']
 
             # Initial values
             if 'param_ini' in kwargs.keys():
@@ -1035,16 +931,14 @@ class InsituExsituModel(object):
 
         if chi2 is False:
             lnlike_wl = -0.5 * (
-                    np.nansum(
-                        ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
-                        + np.log(2 * np.pi * wl_var)
-                    )
-                )
+                np.nansum(
+                    ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
+                    + np.log(2 * np.pi * wl_var)
+                ))
         else:
             lnlike_wl = np.nansum(
-                        ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
-                        )
-            )
+                ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
+                )
 
         return lnlike_wl
 
@@ -1053,7 +947,6 @@ class InsituExsituModel(object):
 
         Parameters
         ----------
-
         theta : tuple
             Input parameters = (shmr_a, shmr_b, sigms_a, sigms_b)
 
@@ -1098,11 +991,10 @@ class InsituExsituModel(object):
             )
 
             chi2_smf = (
-                    np.nansum(
-                        ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
-                         smf_mtot_var)
-                    )
-                )
+                np.nansum(
+                    ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
+                     smf_mtot_var)
+                ))
         else:
             chi2_smf = 0.0
 
@@ -1111,11 +1003,11 @@ class InsituExsituModel(object):
         # Check WL profiles
         msg = '# UM and observed WL profiles should have the same size!'
         assert len(um_wl_profs) == len(self.obs_wl_dsigma)
-        assert len(um_wl_profs[0] == len(self.obs_wl_dsigma[0].r))
+        assert len(um_wl_profs[0]) == len(self.obs_wl_dsigma[0].r)
 
         if self.mcmc_smf_only is False:
             chi2_wl = np.nansum([self.wlLikelihood(ii, um_wl_profs, chi2=True)
-                                   for ii in range(self.obs_wl_n_bin)])
+                                 for ii in range(self.obs_wl_n_bin)])
         else:
             chi2_wl = 0.0
 
@@ -1170,11 +1062,10 @@ class InsituExsituModel(object):
             )
 
             lnlike_smf = -0.5 * (
-                    np.nansum(
-                        ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
-                         smf_mtot_var) + np.log(2 * np.pi * smf_mtot_var)
-                    )
-                )
+                np.nansum(
+                    ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
+                     smf_mtot_var) + np.log(2 * np.pi * smf_mtot_var)
+                ))
         else:
             lnlike_smf = 0.0
 
@@ -1183,7 +1074,7 @@ class InsituExsituModel(object):
         # Check WL profiles
         msg = '# UM and observed WL profiles should have the same size!'
         assert len(um_wl_profs) == len(self.obs_wl_dsigma)
-        assert len(um_wl_profs[0] == len(self.obs_wl_dsigma[0].r))
+        assert len(um_wl_profs[0]) == len(self.obs_wl_dsigma[0].r)
 
         if self.mcmc_smf_only is False:
             lnlike_wl = np.nansum([self.wlLikelihood(ii, um_wl_profs)
@@ -1269,13 +1160,11 @@ class InsituExsituModel(object):
         mcmc_burnin_position, _, mcmc_burnin_state = mcmc_burnin_result
 
         #  Pickle the results
-        self.mcmcSaveResults(self.mcmc_burnin_file,
-                             mcmc_burnin_result)
+        mcmc_save_results(self.mcmc_burnin_file, mcmc_burnin_result)
 
         #  Pickle the chain
         mcmc_burnin_chain = mcmc_sampler.chain
-        self.mcmcSaveChains(self.mcmc_burnin_chain_file,
-                            mcmc_burnin_chain)
+        mcmc_save_chains(self.mcmc_burnin_chain_file, mcmc_burnin_chain)
 
         # Rest the chains
         mcmc_sampler.reset()
@@ -1327,36 +1216,3 @@ class InsituExsituModel(object):
             print("#------------------------------------------------------")
 
         return mcmc_best, mcmc_params_stats, mcmc_samples
-
-    def mcmcSaveChains(self, mcmc_chain_file, mcmc_chain, **kwargs):
-        """
-        Save the chain to an ascii file.
-        """
-        pickle_file = open(mcmc_chain_file, 'wb')
-        pickle.dump(mcmc_chain, pickle_file)
-        pickle_file.close()
-
-        return None
-
-    def mcmcSaveResults(self, pkl_name, mcmc_result, **kwargs):
-        """
-        Save the MCMC run results into a pickle file.
-        """
-        pkl_file = open(pkl_name, 'wb')
-        mcmc_position, mcmc_prob, mcmc_state = mcmc_result
-        pickle.dump(mcmc_position, pkl_file, -1)
-        pickle.dump(mcmc_prob, pkl_file, -1)
-        pickle.dump(mcmc_state, pkl_file, -1)
-        pkl_file.close()
-
-        return None
-
-    def mcmcLoadChains(self, mcmc_chain_file, **kwargs):
-        """
-        Save the chain to an ascii file.
-        """
-        pickle_file = open(mcmc_chain_file, 'rb')
-        self.mcmc_chain = pickle.load(pickle_file)
-        pickle_file.close()
-
-        return None

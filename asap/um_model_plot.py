@@ -11,6 +11,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import NullFormatter
 from matplotlib.ticker import MaxNLocator
 
+import corner
+from palettable.colorbrewer.sequential import OrRd_9
+ORG = OrRd_9.mpl_colormap
+
 plt.rcParams['figure.dpi'] = 100.0
 plt.rcParams['figure.facecolor'] = 'w'
 plt.rcParams['font.family'] = 'serif'
@@ -499,6 +503,27 @@ def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
 
     ax1.set_xlabel(r'$\log M_{\mathrm{vir}}$', fontsize=25)
     ax1.set_ylabel(r'$\log M_{\star, \rm Total}$', fontsize=25)
+
+    return fig
+
+
+def plot_mcmc_corner(mcmc_samples, mcmc_labels):
+    """Corner plots for MCMC samples."""
+    fig = corner.corner(
+        mcmc_samples,
+        bins=25, color=ORG(0.7),
+        smooth=1, labels=mcmc_labels,
+        label_kwargs={'fontsize': 20},
+        quantiles=[0.16, 0.5, 0.84],
+        plot_contours=True,
+        fill_contours=True,
+        show_titles=True,
+        title_kwargs={"fontsize": 20},
+        hist_kwargs={"histtype": 'stepfilled',
+                     "alpha": 0.4,
+                     "edgecolor": "none"},
+        use_math_text=True
+        )
 
     return fig
 

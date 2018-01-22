@@ -176,7 +176,7 @@ def mass_prof_model_frac1(um_mock,
                                                       log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
-    # predict the total stellar mass of galaxies (central + ICL).
+    # predict the total stellar mass of galaxies (in-situ + ex-situ).
     logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
                                                   frac_tot_by_halo,
                                                   log_mass=True)
@@ -295,8 +295,8 @@ def sm_profile_from_mhalo(logmh,
                                               log_mass=log_mass)
 
     # Only keep the ones with Ms,tot within the obseved range.
-    mask_tot = ((logms_tot >= logms_tot_bins[0]) &
-                (logms_tot <= logms_tot_bins[-1]))
+    mask_tot = ((logms_tot_mod >= logms_tot_bins[0]) &
+                (logms_tot_mod <= logms_tot_bins[-1]))
 
     # Given the modelled fraction of Ms,cen/Ms,tot from UM2,
     # predict the stellar mass in the inner region using

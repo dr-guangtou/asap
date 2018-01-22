@@ -352,9 +352,8 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     y_min_arr = np.where(y_min_arr <= 0.0, np.nan, y_min_arr)
     y_max_arr = np.array(
         [np.nanmax(prof.sig) for prof in obs_wl_dsigma])
-    y_min = np.nanmin(y_min_arr) * 0.2
-    y_max = np.nanmax(y_max_arr) * 1.8
-    print(y_min, y_max)
+    y_min = np.nanmin(y_min_arr) * 0.5
+    y_max = np.nanmax(y_max_arr) * 1.5
 
     for ii in range(obs_wl_n_bin):
         ax = plt.subplot(gs[ii])

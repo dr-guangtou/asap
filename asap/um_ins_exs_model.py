@@ -454,7 +454,7 @@ class InsituExsituModel(object):
                 self.param_ini = kwargs['param_ini']
                 assert len(self.param_ini) == self.mcmc_ndims
             else:
-                self.param_ini = [0.7551, 1.4931,
+                self.param_ini = [0.59901, 3.69888,
                                   -0.0824, 1.2737]
             # Lower bounds
             if 'param_low' in kwargs.keys():
@@ -493,15 +493,15 @@ class InsituExsituModel(object):
                 self.param_ini = kwargs['param_ini']
                 assert len(self.param_ini) == self.mcmc_ndims
             else:
-                self.param_ini = [0.5972, 3.6872,
-                                  -0.060, 0.0057,
-                                  0.81, 0.17]
+                self.param_ini = [0.599017, 3.668879,
+                                  -0.0476, 0.020,
+                                  0.80, 0.10]
             # Lower bounds
             if 'param_low' in kwargs.keys():
                 self.param_low = kwargs['param_low']
                 assert len(self.param_low) == self.mcmc_ndims
             else:
-                self.param_low = [0.2, -1.5, -0.2, 0.0, 0.3, 0.0]
+                self.param_low = [0.2, 0.0, -0.2, 0.0, 0.3, 0.0]
 
             # Upper bounds
             if 'param_upp' in kwargs.keys():
@@ -515,7 +515,7 @@ class InsituExsituModel(object):
                 self.param_sig = kwargs['param_sig']
                 assert len(self.param_sig) == self.mcmc_ndims
             else:
-                self.param_sig = [0.1, 0.2, 0.05, 0.002, 0.3, 0.3]
+                self.param_sig = [0.05, 0.1, 0.02, 0.005, 0.05, 0.05]
 
         else:
             raise Exception("# Wrong model! Has to be 'simple' or `frac1`")
@@ -1025,6 +1025,23 @@ class InsituExsituModel(object):
 
         return lp + self.lnLike(param_tuple)
 
+    def wlLikelihood(self, index, um_wl_profs):
+        """Calculate the likelihood for WL profile."""
+        wl_obs = self.obs_wl_dsigma[index].sig
+        wl_obs_err = self.obs_wl_dsigma[index].err_s
+        wl_um = um_wl_profs[index]
+
+        wl_var = (wl_obs_err[:-2] ** 2)
+
+        lnlike_wl = -0.5 * (
+                np.nansum(
+                    ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
+                    + np.log(2 * np.pi * wl_var)
+                )
+            )
+
+        return lnlike_wl
+
     def lnLike(self, param_tuple):
         """Log likelihood of a UM model.
 
@@ -1073,19 +1090,16 @@ class InsituExsituModel(object):
                  self.obs_smf_tot['smf']) ** 2
             )
 
-            lnlike_smf = (
-                -0.5 * (
+            lnlike_smf = -0.5 * (
                     np.nansum(
-                        (self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
-                        smf_mtot_var
-                    ) +
-                    np.nansum(
-                        np.log(2 * np.pi * smf_mtot_var)
+                        ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
+                         smf_mtot_var) + np.log(2 * np.pi * smf_mtot_var)
                     )
                 )
-            )
         else:
-            lnlike_smf = np.nan
+            lnlike_smf = 0.0
+
+        # print("lnLikelihood for SMF: %f" % lnlike_smf)
 
         # Check WL profiles
         msg = '# UM and observed WL profiles should have the same size!'
@@ -1093,33 +1107,12 @@ class InsituExsituModel(object):
         assert len(um_wl_profs[0] == len(self.obs_wl_dsigma[0].r))
 
         if self.mcmc_smf_only is False:
+            lnlike_wl = np.nansum([self.wlLikelihood(ii, um_wl_profs)
+                                   for ii in range(self.obs_wl_n_bin)])
+        else:
             lnlike_wl = 0.0
-            for ii in range(self.obs_wl_n_bin):
-                wl_obs = self.obs_wl_dsigma[ii].sig
-                wl_obs_err = self.obs_wl_dsigma[ii].err_s
-                wl_um = um_wl_profs[ii]
 
-                wl_var = (wl_obs_err[:-2] ** 2)
-
-                lnlike_wl += (
-                    -0.5 * (
-                        np.nansum(
-                            (wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var
-                        ) +
-                        np.nansum(
-                            np.log(2 * np.pi * wl_var)
-                        )
-                    )
-                )
-        else:
-            lnlike_wl = np.nan
-
-        if self.mcmc_smf_only:
-            return lnlike_smf
-        elif self.mcmc_wl_only:
-            return lnlike_wl
-        else:
-            return lnlike_smf + self.mcmc_wl_weight * lnlike_wl
+        return lnlike_smf + self.mcmc_wl_weight * lnlike_wl
 
     def mcmcInitialGuess(self):
         """Initial guesses for the MCMC run."""
@@ -1134,13 +1127,13 @@ class InsituExsituModel(object):
 
         return
 
-    def mcmcGetParameters(self):
+    def mcmcGetParameters(self, mcmc_samples):
         """
         Computes the 1D marginalized parameter constraints from
         self.mcmcsamples.
         """
         return map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]),
-                   zip(*np.percentile(self.mcmc_samples,
+                   zip(*np.percentile(mcmc_samples,
                                       [16, 50, 84], axis=0)))
 
     def mcmcFit(self, verbose=True, nproc=1, **kwargs):
@@ -1239,7 +1232,7 @@ class InsituExsituModel(object):
         mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
 
         # Get the best-fit parameters and the 1-sigma error
-        mcmc_params_stats = self.mcmcGetParameters()
+        mcmc_params_stats = self.mcmcGetParameters(mcmc_samples)
         if verbose:
             print("#------------------------------------------------------")
             print("#  Mean acceptance fraction",
@@ -1254,9 +1247,9 @@ class InsituExsituModel(object):
                 print(param_stats)
             print("#------------------------------------------------------")
 
-        return mcmc_best, mcmc_params_stats
+        return mcmc_best, mcmc_params_stats, mcmc_samples
 
-    def mcmcCornerPlot(self):
+    def mcmcCornerPlot(self, mcmc_samples):
         """
         Show the corner plot of the MCMC samples.
         """
@@ -1265,7 +1258,7 @@ class InsituExsituModel(object):
         ORG = OrRd_9.mpl_colormap
 
         fig = corner.corner(
-            self.mcmc_samples,
+            mcmc_samples,
             bins=25, color=ORG(0.7),
             smooth=1, labels=self.mcmc_labels,
             label_kwargs={'fontsize': 40},

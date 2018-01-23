@@ -22,7 +22,7 @@ from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_utils import mcmc_save_results, mcmc_save_chains, \
-    mcmc_initial_guess
+    mcmc_initial_guess, mcmc_samples_stats
 from asap_likelihood import asap_flat_prior
 # from convergence import convergence_check
 
@@ -1071,15 +1071,6 @@ class InsituExsituModel(object):
 
         return lnlike_smf + self.mcmc_wl_weight * lnlike_wl
 
-    def mcmcGetParameters(self, mcmc_samples):
-        """
-        Computes the 1D marginalized parameter constraints from
-        self.mcmcsamples.
-        """
-        return map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]),
-                   zip(*np.percentile(mcmc_samples,
-                                      [16, 50, 84], axis=0)))
-
     def mcmcFit(self, verbose=True, nproc=1, **kwargs):
         """Peform an MCMC fit to the wp data using the power-law model."""
         # TODO Should use HDF5 file to save everything
@@ -1168,7 +1159,7 @@ class InsituExsituModel(object):
         mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
 
         # Get the best-fit parameters and the 1-sigma error
-        mcmc_params_stats = self.mcmcGetParameters(mcmc_samples)
+        mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
         if verbose:
             print("#------------------------------------------------------")
             print("#  Mean acceptance fraction",

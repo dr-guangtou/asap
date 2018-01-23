@@ -5,7 +5,8 @@ import numpy as np
 from asap_model_prediction import asap_predict_model
 
 
-__all__ = ['asap_ln_prof', 'asap_ln_like', 'asap_flat_prior']
+__all__ = ['asap_ln_prob', 'asap_ln_like', 'asap_flat_prior',
+           'asap_dsigma_lnlike', 'asap_smf_lnlike']
 
 
 def asap_flat_prior(param_tuple, param_low, param_upp):

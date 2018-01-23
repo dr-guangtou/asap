@@ -48,16 +48,16 @@ def load_observed_data(cfg, verbose=True):
     obs_smf_inn = Table.read(cfg['smf_inn_file'])
     obs_smf_tot = Table.read(cfg['smf_tot_file'])
 
-    obs_smf_inn_min = np.nanmin(obs_smf_inn['logm_0'])
-    obs_smf_inn_max = np.nanmax(obs_smf_inn['logm_1'])
-    obs_smf_inn_nbin = len(obs_smf_inn)
+    cfg['obs_smf_inn_min'] = np.nanmin(obs_smf_inn['logm_0'])
+    cfg['obs_smf_inn_max'] = np.nanmax(obs_smf_inn['logm_1'])
+    cfg['obs_smf_inn_nbin'] = len(obs_smf_inn)
 
-    obs_smf_tot_min = np.nanmin(obs_smf_tot['logm_0'])
-    obs_smf_tot_max = np.nanmax(obs_smf_tot['logm_1'])
-    obs_smf_tot_nbin = len(obs_smf_tot)
+    cfg['obs_smf_tot_min'] = np.nanmin(obs_smf_tot['logm_0'])
+    cfg['obs_smf_tot_max'] = np.nanmax(obs_smf_tot['logm_1'])
+    cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
 
-    obs_logms_inn = obs_minn[obs_mtot >= obs_smf_tot_min]
-    obs_logms_tot = obs_mtot[obs_mtot >= obs_smf_tot_min]
+    obs_logms_inn = obs_minn[obs_mtot >= cfg['obs_smf_tot_min']]
+    obs_logms_tot = obs_mtot[obs_mtot >= cfg['obs_smf_tot_min']]
 
     if os.path.isfile(cfg['obs_smf_full_file']):
         smf_full = Table.read(cfg['obs_smf_full_file'])
@@ -73,10 +73,12 @@ def load_observed_data(cfg, verbose=True):
     if verbose:
         print("# For inner stellar mass: ")
         print("    %d bins at %5.2f < logMinn < %5.2f" %
-              (obs_smf_inn_nbin, obs_smf_inn_min, obs_smf_inn_max))
+              (cfg['obs_smf_inn_nbin'], cfg['obs_smf_inn_min'],
+               cfg['obs_smf_inn_max']))
         print("# For total stellar mass: ")
         print("    %d bins at %5.2f < logMtot < %5.2f" %
-              (obs_smf_tot_nbin, obs_smf_tot_min, obs_smf_tot_max))
+              (cfg['obs_smf_tot_nbin'], cfg['obs_smf_tot_min'],
+               cfg['obs_smf_tot_max']))
 
     obs_zmin = np.nanmin(obs_mass[cfg['obs_z_col']])
     obs_zmax = np.nanmax(obs_mass[cfg['obs_z_col']])
@@ -84,6 +86,7 @@ def load_observed_data(cfg, verbose=True):
     obs_volume = ((cfg['obs_cosmo'].comoving_volume(obs_zmax) -
                    cfg['obs_cosmo'].comoving_volume(obs_zmin)) *
                   (cfg['obs_area'] / 41254.0)).value
+    cfg['obs_volume'] = obs_volume
 
     if verbose:
         print("# The volume of the HSC data is %15.2f Mpc^3" % obs_volume)
@@ -94,15 +97,9 @@ def load_observed_data(cfg, verbose=True):
             'obs_wl_bin': obs_wl_bin, 'obs_wl_dsigma': obs_wl_dsigma,
             'obs_wl_nbin': obs_wl_n_bin,
             'obs_smf_inn': obs_smf_inn, 'obs_smf_tot': obs_smf_tot,
-            'obs_smf_inn_min': obs_smf_inn_min,
-            'obs_smf_inn_max': obs_smf_inn_max,
-            'obs_smf_tot_min': obs_smf_tot_min,
-            'obs_smf_tot_max': obs_smf_tot_max,
-            'obs_smf_inn_nbin': obs_smf_inn_nbin,
-            'obs_smf_tot_nbin': obs_smf_tot_nbin,
             'obs_smf_full': obs_smf_full,
             'obs_volume': obs_volume
-            }
+            }, cfg
 
 
 def config_observed_data(cfg, verbose=True):

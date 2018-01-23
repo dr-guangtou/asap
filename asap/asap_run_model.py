@@ -32,7 +32,7 @@ def initial_model(cfg, verbose=True):
     """Initialize the A.S.A.P model."""
     # Configuration for HSC data
     cfg = config_observed_data(cfg, verbose=verbose)
-    obs_data = load_observed_data(cfg, verbose=verbose)
+    obs_data, cfg = load_observed_data(cfg, verbose=verbose)
 
     # Configuration for UniverseMachine data.
     cfg = config_um_data(cfg, verbose=verbose)

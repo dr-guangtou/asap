@@ -267,7 +267,7 @@ class InsituExsituModel(object):
             um_wl_cat = kwargs['um_wl_cat']
         else:
             um_wl_cat = ('um_smdpl_0.7124_new_vagc_mpeak_11.5' +
-                         '_10m_r_0.08_50_22bins.npy')
+                         '_50m_r_0.08_50_22bins.npy')
 
         self.um_mock = Table(np.load(os.path.join(um_dir, um_model)))
         self.um_mass_encl = np.load(os.path.join(um_dir, um_wl_cat))

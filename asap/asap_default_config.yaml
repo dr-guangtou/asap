@@ -19,3 +19,19 @@ obs_smf_full_fits: 'primus_smf_z0.3_0.4.fits'
 obs_z_col: 'z_best'
 obs_minn_col: 'logm_10'
 obs_mtot_col: 'logm_max'
+
+# UniverseMachine
+um_dir: '../data/s16a_massive_wide2/um2'
+um_lbox: 400.0
+um_h0: 0.678
+um_omega_m: 0.307
+um_model: 'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy'
+um_wl_cat: 'um_smdpl_0.7124_new_vagc_mpeak_11.5_50m_r_0.08_50_22bins.npy'
+um_min_mvir: 11.5
+um_redshift: 0.3637
+um_wl_minr: 0.08
+um_wl_maxr: 50.0
+um_wl_nbin: 22
+um_wl_add_stellar: False
+um_mtot_nbin: 80
+um_mtot_nbin_min: 7

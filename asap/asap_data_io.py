@@ -10,7 +10,9 @@ import numpy as np
 from astropy.table import Table
 from astropy.cosmology import FlatLambdaCDM
 
-__all__ = ["parse_config", "load_observed_data", "config_observed_data"]
+__all__ = ["parse_config",
+           "load_observed_data", "config_observed_data",
+           "load_um_data", "config_um_data"]
 
 
 def parse_config(config_file):
@@ -79,8 +81,8 @@ def load_observed_data(cfg, verbose=True):
     obs_zmin = np.nanmin(obs_mass[cfg['obs_z_col']])
     obs_zmax = np.nanmax(obs_mass[cfg['obs_z_col']])
 
-    obs_volume = ((cfg['cosmo'].comoving_volume(obs_zmax) -
-                   cfg['cosmo'].comoving_volume(obs_zmin)) *
+    obs_volume = ((cfg['obs_cosmo'].comoving_volume(obs_zmax) -
+                   cfg['obs_cosmo'].comoving_volume(obs_zmin)) *
                   (cfg['obs_area'] / 41254.0)).value
 
     if verbose:
@@ -112,8 +114,8 @@ def config_observed_data(cfg, verbose=True):
     if 'obs_omega_m' in cfg.keys():
         cfg['obs_omega_m'] = 0.307
 
-    cfg['cosmo'] = FlatLambdaCDM(H0=cfg['obs_h0'] * 100,
-                                 Om0=cfg['obs_omega_m'])
+    cfg['obs_cosmo'] = FlatLambdaCDM(H0=cfg['obs_h0'] * 100,
+                                     Om0=cfg['obs_omega_m'])
     # --------------------------------------------------- #
 
     # -------------- Observed Data Related -------------- #
@@ -185,5 +187,86 @@ def config_observed_data(cfg, verbose=True):
               cfg['obs_minn_col'])
         print('# Using %s as total stellar mass.' %
               cfg['obs_mtot_col'])
+
+    return cfg
+
+
+def load_um_data(cfg, verbose=True):
+    """Load the UniverseMachine data."""
+    um_mock = Table(np.load(os.path.join(cfg['um_dir'],
+                                         cfg['um_model'])))
+    um_mass_encl = np.load(os.path.join(cfg['um_dir'],
+                                        cfg['um_wl_cat']))
+    assert len(um_mock) == len(um_mass_encl)
+
+    # Mask for central galaxies
+    mask_central = um_mock['mask_central']
+
+    return {'um_mock': um_mock, 'um_mass_encl': um_mass_encl,
+            'mask_central': mask_central}
+
+
+def config_um_data(cfg, verbose=False, **kwargs):
+    """Config the UniverseMachine data."""
+    # ---------- UniverseMachine Mock Related ----------- #
+    if 'um_dir' not in cfg.keys():
+        cfg['um_dir'] = '../data/s16a_massive_wide2/um2'
+
+    # Default model is SMDPL
+    if 'um_lbox' not in cfg.keys():
+        cfg['um_lbox'] = 400.0  # Mpc/h
+
+    if 'um_h0' not in cfg.keys():
+        cfg['um_h0'] = 0.678
+
+    if 'um_omega_m' not in cfg.keys():
+        cfg['um_omega_m'] = 0.307
+
+    cfg['um_cosmo'] = FlatLambdaCDM(H0=cfg['um_h0'] * 100.0,
+                                    Om0=cfg['um_omega_m'])
+
+    cfg['um_volume'] = np.power(cfg['um_lbox'] / cfg['um_h0'], 3)
+    if verbose:
+        print("# The volume of the UniverseMachine mock is %15.2f Mpc^3" %
+              cfg['um_volume'])
+
+    # Value added catalog
+    if 'um_model' not in cfg.keys():
+        cfg['um_model'] = 'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy'
+
+    # Precomputed weak lensing paris
+    if 'um_wl_cat' not in cfg.keys():
+        cfg['um_wl_cat'] = ('um_smdpl_0.7124_new_vagc_mpeak_11.5' +
+                            '_10m_r_0.08_50_22bins.npy')
+
+    if 'um_min_mvir' not in cfg.keys():
+        cfg['um_min_mvir'] = 11.5
+
+    if 'um_redshift' not in cfg.keys():
+        cfg['um_redshift'] = 0.3637
+
+    if 'um_wl_minr' not in cfg.keys():
+        cfg['um_wl_minr'] = 0.08
+
+    if 'um_wl_maxr' not in cfg.keys():
+        cfg['um_wl_maxr'] = 50.0
+
+    if 'um_wl_nbin' not in cfg.keys():
+        cfg['um_wl_nbin'] = 22
+
+    if 'um_wl_add_stellar' not in cfg.keys():
+        cfg['um_wl_add_stellar'] = False
+
+    if 'um_mtot_nbin' not in cfg.keys():
+        cfg['um_mtot_nbin'] = 80
+
+    if 'um_mtot_nbin_min' not in cfg.keys():
+        cfg['um_mtot_nbin_min'] = 7
+
+    if 'um_ngal_bin_min' not in cfg.keys():
+        cfg['um_min_nobj_per_bin'] = 30
+
+    if 'um_min_scatter' not in cfg.keys():
+        cfg['um_min_scatter'] = 0.01
 
     return cfg

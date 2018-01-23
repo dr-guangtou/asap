@@ -21,7 +21,8 @@ from stellar_mass_function import get_smf_bootstrap
 from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
-from asap_utils import mcmc_save_results, mcmc_save_chains
+from asap_utils import mcmc_save_results, mcmc_save_chains, \
+    mcmc_initial_guess
 # from convergence import convergence_check
 
 
@@ -1082,19 +1083,6 @@ class InsituExsituModel(object):
 
         return lnlike_smf + self.mcmc_wl_weight * lnlike_wl
 
-    def mcmcInitialGuess(self):
-        """Initialize guesses for the MCMC run."""
-        self.mcmc_position = np.zeros([self.mcmc_nwalkers,
-                                       self.mcmc_ndims])
-
-        for ii, param_0 in enumerate(self.param_ini):
-            self.mcmc_position[:, ii] = (
-                param_0 + self.param_sig[ii] *
-                np.random.randn(self.mcmc_nwalkers)
-                )
-
-        return
-
     def mcmcGetParameters(self, mcmc_samples):
         """
         Computes the 1D marginalized parameter constraints from
@@ -1105,20 +1093,16 @@ class InsituExsituModel(object):
                                       [16, 50, 84], axis=0)))
 
     def mcmcFit(self, verbose=True, nproc=1, **kwargs):
-        """
-        Peform an MCMC fit to the wp data using the power-law model.
-
-        Parameters:
-
-        -----------
-        """
+        """Peform an MCMC fit to the wp data using the power-law model."""
         # TODO Should use HDF5 file to save everything
         # import h5py
         # hfile_name = 'um_smdpl_m100_m10_mcmc.h5'
         # hfile = h5py.File(hfilename, "a")
 
         # Setup the initial condition
-        self.mcmcInitialGuess()
+        self.mcmc_position = mcmc_initial_guess(
+            self.param_ini, self.param_sig,
+            self.mcmc_nwalkers, self.mcmc_ndims)
 
         if nproc > 1:
             from multiprocessing import Pool

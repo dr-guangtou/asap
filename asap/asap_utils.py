@@ -2,6 +2,8 @@
 
 import pickle
 
+import numpy as np
+
 
 __all__ = ["mcmc_save_chains", "mcmc_save_results", "mcmc_load_chains"]
 
@@ -34,3 +36,14 @@ def mcmc_load_chains(mcmc_chain_file):
     pickle_file.close()
 
     return mcmc_chain
+
+
+def mcmc_initial_guess(param_ini, param_sig, n_walkers, n_dims):
+    """Initialize guesses for the MCMC run."""
+    mcmc_position = np.zeros([n_walkers, n_dims])
+
+    for ii, param_0 in enumerate(param_ini):
+        mcmc_position[:, ii] = (
+            param_0 + param_sig[ii] * np.random.randn(n_walkers))
+
+    return mcmc_position

@@ -22,7 +22,8 @@ from full_mass_profile_model import mass_prof_model_simple, \
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
-from asap_utils import mcmc_save_chains, mcmc_save_results
+from asap_utils import mcmc_save_chains, mcmc_save_results, \
+    mcmc_initial_guess
 from asap_model_setup import setup_model
 # from convergence import convergence_check
 
@@ -49,6 +50,11 @@ def run_asap_model(args, verbose=True):
 
     # Load the data
     cfg, obs_data, um_data = initial_model(cfg, verbose=verbose)
+
+    # Initialize the model
+    mcmc_position = mcmc_initial_guess(cfg['param_ini'], cfg['param_sig'],
+                                       cfg['mcmc_nwalkers'],
+                                       cfg['mcmc_ndims'])
 
 
 if __name__ == '__main__':

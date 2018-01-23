@@ -240,7 +240,6 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
     um_data: dict
         Dictionary for UniverseMachine data.
 
-
     constant_bin : boolen
         Whether to use constant bin size for logMs_tot or not.
 
@@ -264,31 +263,32 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
         logms_mod_tot_all[mask_mtot], logms_mod_inn, cfg)
 
     um_wl_profs = asap_predict_dsigma(
-        logms_mod_tot_all[mask_mtot], logms_mod_inn,
-        mask_mtot, add_stellar=cfg['um_wl_add_stellar'])
+        cfg, obs_data, um_data,
+        logms_mod_tot_all[mask_mtot], logms_mod_inn, mask_mtot,
+        add_stellar=cfg['um_wl_add_stellar'])
 
-    if plotSMF:
+    if show_smf:
         um_smf_tot_all = get_smf_bootstrap(logms_mod_tot_all,
-                                           self.um_volume,
+                                           cfg['um_volume'],
                                            20, 10.5, 12.5,
                                            n_boots=1)
         logms_mod_tot = logms_mod_tot_all[mask_mtot]
-        plot_mtot_minn_smf(self.obs_smf_tot, self.obs_smf_inn,
-                           self.obs_mtot, self.obs_minn,
+        plot_mtot_minn_smf(obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
+                           obs_data['obs_mtot'], obs_data['obs_minn'],
                            um_smf_tot, um_smf_inn,
-                           logms_mod_tot,
-                           logms_mod_inn,
-                           obs_smf_full=self.obs_smf_full,
+                           logms_mod_tot, logms_mod_inn,
+                           obs_smf_full=obs_data['obs_smf_full'],
                            um_smf_tot_all=um_smf_tot_all)
 
-    if plotWL:
+    if show_dsigma:
         # TODO: add halo mass information
-        plot_dsigma_profiles(self.obs_wl_dsigma,
-                             um_wl_profs,
-                             obs_mhalo=None,
-                             um_wl_mhalo=None)
+        plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
+                             um_wl_profs, obs_mhalo=None, um_wl_mhalo=None)
 
-    return (um_smf_tot, um_smf_inn, um_wl_profs,
-            logms_mod_inn, logms_mod_tot_all[mask_mtot],
-            logms_mod_halo, mask_mtot,
-            um_mock_use)
+    if return_all:
+        return (um_smf_tot, um_smf_inn, um_wl_profs,
+                logms_mod_inn, logms_mod_tot_all[mask_mtot],
+                logms_mod_halo, mask_mtot,
+                um_mock_use)
+
+    return um_smf_tot, um_smf_inn, um_wl_profs

@@ -89,4 +89,4 @@ def setup_model(cfg, verbose=True):
     cfg['mcmc_run_samples_file'] = cfg['mcmc_prefix'] + '_samples.npz'
     # --------------------------------------------------- #
 
-    return None
+    return cfg

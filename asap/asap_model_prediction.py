@@ -13,6 +13,7 @@ from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 
 
 __all__ = ['asap_predict_mass', 'asap_predict_smf',
+           'asap_single_dsigma', 'asap_um_dsigma',
            'asap_predict_dsigma', 'asap_predict_model']
 
 
@@ -93,17 +94,14 @@ def asap_predict_smf(logms_mod_tot, logms_mod_inn, cfg):
     return um_smf_tot, um_smf_inn
 
 
-def asap_predict_dsigma(cfg, um_data, mask,
-                        verbose=False, r_interp=None, mstar_lin=None):
+def asap_um_dsigma(cfg, mock_use, mass_encl_use, mask,
+                   verbose=False, r_interp=None, mstar_lin=None):
     """Weak lensing dsigma profiles using pre-computed pairs.
 
     Parameters
     ----------
     cfg : dict
         Configurations of the data and model.
-
-    um_data: dict
-        Dictionary for UniverseMachine data.
 
     mask : ndarray
         Mask array that defines the subsample.
@@ -118,8 +116,6 @@ def asap_predict_dsigma(cfg, um_data, mask,
 
     """
     um_cosmo = cfg['um_cosmo']
-    mock_use = um_data['um_mock']
-    mass_encl_use = um_data['um_mass_encl']
 
     # Radius bins
     rp_bins = np.logspace(np.log10(cfg['um_wl_minr']),
@@ -160,6 +156,68 @@ def asap_predict_dsigma(cfg, um_data, mask,
 
     return (rp_phys, ds_phys_msun_pc2)
 
+
+def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
+                       logms_mod_tot, logms_mod_inn,
+                       um_wl_min_ngal=15, verbose=False,
+                       add_stellar=False):
+    """Individual WL profile for UM galaxies."""
+    bin_mask = ((logms_mod_tot >= obs_prof.low_mtot) &
+                (logms_mod_tot <= obs_prof.upp_mtot) &
+                (logms_mod_inn >= obs_prof.low_minn) &
+                (logms_mod_inn <= obs_prof.upp_mtot))
+
+    # "Point source" term for the central galaxy
+    # TODO: more appropriate way to add stellar mass component?
+    if add_stellar:
+        mstar_lin = np.nanmedian(10.0 * logms_mod_tot[bin_mask])
+    else:
+        mstar_lin = None
+
+    if np.sum(bin_mask) <= um_wl_min_ngal:
+        wl_prof = np.zeros(len(obs_prof.r))
+        if verbose:
+            print("# Not enough UM galaxy in bin %d !" % obs_prof.bin_id)
+    else:
+        wl_rp, wl_prof = asap_um_dsigma(
+            cfg, mock_use, mass_encl_use, bin_mask,
+            r_interp=obs_prof.r, mstar_lin=mstar_lin)
+
+    return wl_prof
+
+
+def asap_predict_dsigma(cfg, obs_data, um_data,
+                        logms_mod_tot, logms_mod_inn, mask_mtot,
+                        um_wl_min_ngal=15, verbose=False,
+                        add_stellar=False):
+    """WL profiles to compare with observations.
+
+    Parameters
+    ----------
+
+    logms_mod_tot : ndarray
+        Total stellar mass (e.g. M100) predicted by UM.
+
+    logms_mod_inn : ndarray
+        Inner stellar mass (e.g. M10) predicted by UM.
+
+    mask_tot : bool array
+        Mask for the input mock catalog and precomputed WL pairs.
+
+    um_wl_min_ngal : int, optional
+        Minimum requred galaxies in each bin to estimate WL profile.
+
+    """
+    # The mock catalog and precomputed mass files for subsamples
+    mock_use = um_data['um_mock'][mask_mtot]
+    mass_encl_use = um_data['um_mass_encl'][mask_mtot, :]
+
+    return [asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
+                               logms_mod_tot, logms_mod_inn,
+                               um_wl_min_ngal=um_wl_min_ngal,
+                               verbose=verbose,
+                               add_stellar=cfg['um_wl_add_stellar'])
+            for obs_prof in obs_data['obs_wl_dsigma']]
 
 
 def asap_predict_model(parameters, cfg, obs_data, um_data,
@@ -205,10 +263,9 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
     um_smf_tot, um_smf_inn = asap_predict_smf(
         logms_mod_tot_all[mask_mtot], logms_mod_inn, cfg)
 
-    um_wl_profs = self.umPredictWL(logms_mod_tot_all[mask_mtot],
-                                   logms_mod_inn,
-                                   mask_mtot,
-                                   add_stellar=self.um_wl_add_stellar)
+    um_wl_profs = asap_predict_dsigma(
+        logms_mod_tot_all[mask_mtot], logms_mod_inn,
+        mask_mtot, add_stellar=cfg['um_wl_add_stellar'])
 
     if plotSMF:
         um_smf_tot_all = get_smf_bootstrap(logms_mod_tot_all,

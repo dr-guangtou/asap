@@ -52,9 +52,9 @@ def run_asap_model(args, verbose=True):
     cfg, obs_data, um_data = initial_model(cfg, verbose=verbose)
 
     # Initialize the model
-    mcmc_position = mcmc_initial_guess(cfg['param_ini'], cfg['param_sig'],
-                                       cfg['mcmc_nwalkers'],
-                                       cfg['mcmc_ndims'])
+    mcmc_position = mcmc_initial_guess(
+        cfg['param_ini'], cfg['param_sig'], cfg['mcmc_nwalkers'],
+        cfg['mcmc_ndims'])
 
 
 if __name__ == '__main__':

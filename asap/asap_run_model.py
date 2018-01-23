@@ -1,6 +1,5 @@
+#!/usr/bin/env python2
 """Model using the in-situ and ex-situ mass."""
-
-from __future__ import print_function, division
 
 import os
 import pickle
@@ -22,7 +21,7 @@ from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_data_io import parse_config, load_observed_data, \
-    config_observed_data, \
+    config_observed_data
 from asap_utils import mcmc_save_chains, mcmc_save_results
 # from convergence import convergence_check
 

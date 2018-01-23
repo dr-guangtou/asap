@@ -76,6 +76,16 @@ def load_observed_data(cfg, verbose=True):
         print("    %d bins at %5.2f < logMtot < %5.2f" %
               (obs_smf_tot_nbin, obs_smf_tot_min, obs_smf_tot_max))
 
+    obs_zmin = np.nanmin(obs_mass[cfg['obs_z_col']])
+    obs_zmax = np.nanmax(obs_mass[cfg['obs_z_col']])
+
+    obs_volume = ((cfg['cosmo'].comoving_volume(obs_zmax) -
+                   cfg['cosmo'].comoving_volume(obs_zmin)) *
+                  (cfg['obs_area'] / 41254.0)).value
+
+    if verbose:
+        print("# The volume of the HSC data is %15.2f Mpc^3" % obs_volume)
+
     return {'obs_mass': obs_mass,
             'obs_minn': obs_minn, 'obs_mtot': obs_mtot,
             'obs_logms_inn': obs_logms_inn, 'obs_logms_tot': obs_logms_tot,
@@ -88,7 +98,8 @@ def load_observed_data(cfg, verbose=True):
             'obs_smf_tot_max': obs_smf_tot_max,
             'obs_smf_inn_nbin': obs_smf_inn_nbin,
             'obs_smf_tot_nbin': obs_smf_tot_nbin,
-            'obs_smf_full': obs_smf_full
+            'obs_smf_full': obs_smf_full,
+            'obs_volume': obs_volume
             }
 
 
@@ -160,16 +171,6 @@ def config_observed_data(cfg, verbose=True):
 
     if 'obs_z_col' not in cfg.keys():
         cfg['obs_z_col'] = 'z_best'
-
-    obs_zmin = np.nanmin(cfg['obs_mass'][cfg['obs_z_col']])
-    obs_zmax = np.nanmax(cfg['obs_mass'][cfg['obs_z_col']])
-
-    cfg['obs_volume'] = ((cfg['cosmo'].comoving_volume(obs_zmax) -
-                          cfg['cosmo'].comoving_volume(obs_zmin)) *
-                         (cfg['obs_area'] / 41254.0)).value
-    if verbose:
-        print("# The volume of the HSC data is %15.2f Mpc^3" %
-              cfg['obs_volume'])
 
     # --------------------------------------------------- #
     # Observed inner and outer mass

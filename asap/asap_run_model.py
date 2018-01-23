@@ -23,6 +23,7 @@ from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
 from asap_utils import mcmc_save_chains, mcmc_save_results
+from asap_model_setup import setup_model
 # from convergence import convergence_check
 
 
@@ -35,6 +36,8 @@ def initial_model(cfg, verbose=True):
     # Configuration for UniverseMachine data.
     cfg = config_um_data(cfg, verbose=verbose)
     um_data = load_um_data(cfg, verbose=verbose)
+
+    cfg = setup_model(cfg, verbose=verbose)
 
     return cfg, obs_data, um_data
 

@@ -1,3 +1,19 @@
+# Model parameters
+model_type: 'frac1'
+param_ini: [0.59901, 3.69888, -0.0824, 1.2737]
+param_low: [0.2, -1.5, -0.2, 0.0]
+param_upp: [1.0, 8.0, 0.0, 1.6]
+
+# MCMC Runs
+mcmc_prefix: 'asap_smdpl'
+mcmc_nsamples: 200
+mcmc_nthreads: 2
+mcmc_nburnin: 100
+mcmc_nwalkers: 128
+mcmc_smf_only: False
+mcmc_wl_only: False
+mcmc_wl_weight: 1.0
+
 # HSC data part
 obs_dir: '../data/s16a_massive_wide2'
 obs_cat: 's16a_wide2_massive_fsps1_imgsub_use_short.fits'
@@ -35,3 +51,5 @@ um_wl_nbin: 22
 um_wl_add_stellar: False
 um_mtot_nbin: 80
 um_mtot_nbin_min: 7
+um_min_nobj_per_bin: 30
+um_min_scatter: 0.01

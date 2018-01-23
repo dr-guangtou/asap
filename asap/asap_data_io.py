@@ -37,11 +37,11 @@ def load_observed_data(cfg, verbose=True):
     with open(cfg['obs_wl_out'], 'rb') as f:
         obs_wl_bin, obs_wl_dsigma = pickle.load(f)
 
-    obs_wl_n_bin = len(obs_wl_bin)
+    cfg['obs_wl_n_bin'] = len(obs_wl_bin)
     if verbose:
-        if obs_wl_n_bin > 1:
+        if cfg['obs_wl_n_bin'] > 1:
             print("# There are %d weak lensing profiles in this sample" %
-                  obs_wl_n_bin)
+                  cfg['obs_wl_n_bin'])
         else:
             print("# There is 1 weak lensing profile in this sample")
 
@@ -95,7 +95,6 @@ def load_observed_data(cfg, verbose=True):
             'obs_minn': obs_minn, 'obs_mtot': obs_mtot,
             'obs_logms_inn': obs_logms_inn, 'obs_logms_tot': obs_logms_tot,
             'obs_wl_bin': obs_wl_bin, 'obs_wl_dsigma': obs_wl_dsigma,
-            'obs_wl_nbin': obs_wl_n_bin,
             'obs_smf_inn': obs_smf_inn, 'obs_smf_tot': obs_smf_tot,
             'obs_smf_full': obs_smf_full,
             'obs_volume': obs_volume

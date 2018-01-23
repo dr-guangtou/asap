@@ -262,7 +262,7 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
     um_smf_tot, um_smf_inn = asap_predict_smf(
         logms_mod_tot_all[mask_mtot], logms_mod_inn, cfg)
 
-    um_wl_profs = asap_predict_dsigma(
+    um_dsigma_profs = asap_predict_dsigma(
         cfg, obs_data, um_data,
         logms_mod_tot_all[mask_mtot], logms_mod_inn, mask_mtot,
         add_stellar=cfg['um_wl_add_stellar'])
@@ -283,12 +283,12 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
     if show_dsigma:
         # TODO: add halo mass information
         plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
-                             um_wl_profs, obs_mhalo=None, um_wl_mhalo=None)
+                             um_dsigma_profs, obs_mhalo=None, um_wl_mhalo=None)
 
     if return_all:
-        return (um_smf_tot, um_smf_inn, um_wl_profs,
+        return (um_smf_tot, um_smf_inn, um_dsigma_profs,
                 logms_mod_inn, logms_mod_tot_all[mask_mtot],
                 logms_mod_halo, mask_mtot,
                 um_mock_use)
 
-    return um_smf_tot, um_smf_inn, um_wl_profs
+    return um_smf_tot, um_smf_inn, um_dsigma_profs

@@ -2,6 +2,9 @@
 
 import numpy as np
 
+from asap_model_prediction import asap_predict_model
+
+
 __all__ = ['asap_ln_prof', 'asap_ln_like', 'asap_flat_prior']
 
 
@@ -31,5 +34,74 @@ def asap_ln_prob(param_tuple):
     return lp + asap_ln_like(param_tuple)
 
 
-def asap_ln_like(param_tuple):
+def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um, chi2=False):
+    """Calculate the likelihood for WL profile."""
+    dsigma_obs = obs_dsigma_prof.sig
+    dsigma_obs_err = obs_dsigma_prof.err_s
+
+    dsigma_var = (dsigma_obs_err[:-2] ** 2)
+    dsigma_dif = (dsigma_obs[:-2] - dsigma_um[:-2]) ** 2
+
+    dsigma_chi2 = (dsigma_dif / dsigma_var).sum()
+    dsigma_lnlike = -0.5 * (dsigma_chi2 +
+                            np.log(2 * np.pi * dsigma_var).sum())
+    # print("DSigma likelihood / chi2: %f, %f" % (dsigma_lnlike, dsigma_chi2))
+
+    if chi2:
+        return dsigma_chi2
+
+    return dsigma_lnlike
+
+
+def asap_smf_lnlike(obs_smf_tot, um_smf_tot, chi2=False):
+    """Calculate the likelihood for SMF."""
+    smf_mtot_var = (obs_smf_tot['smf_upp'] - obs_smf_tot['smf']) ** 2
+    smf_mtot_dif = (obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2
+
+    smf_chi2 = (smf_mtot_dif / smf_mtot_var).sum()
+    smf_lnlike = -0.5 * (smf_chi2 +
+                         np.log(2 * np.pi * smf_mtot_var).sum())
+
+    # print("SMF likelihood / chi2: %f, %f" % (smf_lnlike, smf_chi2))
+
+    if chi2:
+        return smf_chi2
+
+    return smf_lnlike
+
+
+def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False):
     """Calculate the lnLikelihood of the model."""
+    # Unpack the input parameters
+    parameters = list(param_tuple)
+
+    # Generate the model predictions
+    (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model(
+        parameters, cfg, obs_data, um_data)
+
+    # Check SMF
+    msg = '# UM and observed SMFs should have the same size!'
+    assert len(um_smf_inn) == len(obs_data['obs_smf_inn']), msg
+    assert len(um_smf_tot) == len(obs_data['obs_smf_tot']), msg
+
+    if not cfg['mcmc_wl_only']:
+        smf_lnlike = asap_smf_lnlike(
+            obs_data['obs_smf_tot'], um_smf_tot, chi2=chi2)
+    else:
+        smf_lnlike = 0.0
+
+    # Check WL profiles
+    msg = '# UM and observed WL profiles should have the same size!'
+    assert len(um_dsigma_profs) == len(obs_data['obs_wl_dsigma'])
+    assert len(um_dsigma_profs[0]) == len(obs_data['obs_wl_dsigma'][0].r)
+
+    if not cfg['mcmc_smf_only']:
+        dsigma_lnlike = np.nansum([
+            asap_dsigma_lnlike(obs_dsigma_prof, um_dsigma_prof,
+                               chi2=chi2)
+            for (obs_dsigma_prof, um_dsigma_prof) in
+            zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)])
+    else:
+        dsigma_lnlike = 0.0
+
+    return smf_lnlike + cfg['mcmc_wl_weight'] * dsigma_lnlike

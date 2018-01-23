@@ -381,16 +381,15 @@ class InsituExsituModel(object):
                                 r'$b_{\mathrm{SMHR}}$',
                                 r'$a_{\sigma \log M_{\star}}$',
                                 r'$b_{\sigma \log M_{\star}}$',
-                                r'$\mathrm{f}_{\mathrm{in-situ}}$',
-                                r'$\mathrm{f}_{\mathrm{ex-situ}}$']
+                                r'$f_{\mathrm{in-situ}}$',
+                                r'$f_{\mathrm{ex-situ}}$']
 
             # Initial values
             if 'param_ini' in kwargs.keys():
                 self.param_ini = kwargs['param_ini']
                 assert len(self.param_ini) == self.mcmc_ndims
             else:
-                self.param_ini = [0.599017, 3.668879,
-                                  -0.0476, 0.020,
+                self.param_ini = [0.605, 3.607, -0.033, 0.047,
                                   0.80, 0.10]
             # Lower bounds
             if 'param_low' in kwargs.keys():
@@ -404,14 +403,14 @@ class InsituExsituModel(object):
                 self.param_upp = kwargs['param_upp']
                 assert len(self.param_upp) == self.mcmc_ndims
             else:
-                self.param_upp = [1.0, 8.0, 0.0, 0.2, 1.0, 0.3]
+                self.param_upp = [1.0, 8.0, 0.2, 0.3, 1.0, 0.4]
 
             # Step to randomize the initial guesses
             if 'param_sig' in kwargs.keys():
                 self.param_sig = kwargs['param_sig']
                 assert len(self.param_sig) == self.mcmc_ndims
             else:
-                self.param_sig = [0.05, 0.1, 0.02, 0.005, 0.05, 0.05]
+                self.param_sig = [0.05, 0.1, 0.02, 0.01, 0.05, 0.05]
 
         else:
             raise Exception("# Wrong model! Has to be 'simple' or `frac1`")
@@ -1102,7 +1101,7 @@ class InsituExsituModel(object):
                     self.mcmc_nwalkers,
                     self.mcmc_ndims,
                     self.lnProb,
-                    move=emcee.moves.StretchMove(a=4),
+                    move=emcee.moves.StretchMove(a=3),
                     pool=pool
                     )
 

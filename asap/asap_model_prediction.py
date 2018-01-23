@@ -1,10 +1,19 @@
 """Predictions of the A.S.A.P. model."""
 
+import numpy as np
+
+from scipy import interpolate
+
+from halotools.mock_observables import delta_sigma_from_precomputed_pairs
+
 from stellar_mass_function import get_smf_bootstrap
 from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1
+from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 
-__all__ = ['asap_predict_mass', 'asap_predict_smf', 'asap_predict_model']
+
+__all__ = ['asap_predict_mass', 'asap_predict_smf',
+           'asap_predict_dsigma', 'asap_predict_model']
 
 
 def asap_predict_mass(parameters, cfg, obs_data, um_data,
@@ -84,6 +93,75 @@ def asap_predict_smf(logms_mod_tot, logms_mod_inn, cfg):
     return um_smf_tot, um_smf_inn
 
 
+def asap_predict_dsigma(cfg, um_data, mask,
+                        verbose=False, r_interp=None, mstar_lin=None):
+    """Weak lensing dsigma profiles using pre-computed pairs.
+
+    Parameters
+    ----------
+    cfg : dict
+        Configurations of the data and model.
+
+    um_data: dict
+        Dictionary for UniverseMachine data.
+
+    mask : ndarray
+        Mask array that defines the subsample.
+
+    r_interp : array, optional
+        Radius array to interpolate to.
+        Default: None
+
+    mstar_lin : float, optional
+        Linear mass for "point source".
+        Default: None
+
+    """
+    um_cosmo = cfg['um_cosmo']
+    mock_use = um_data['um_mock']
+    mass_encl_use = um_data['um_mass_encl']
+
+    # Radius bins
+    rp_bins = np.logspace(np.log10(cfg['um_wl_minr']),
+                          np.log10(cfg['um_wl_maxr']),
+                          cfg['um_wl_nbin'])
+
+    if verbose:
+        print("# Deal with %d galaxies in the subsample" % np.sum(mask))
+    #  Use the mask to get subsample positions and pre-computed pairs
+    subsample = mock_use[mask]
+    subsample_positions = np.vstack([subsample['x'],
+                                     subsample['y'],
+                                     subsample['z']]).T
+    subsample_mass_encl_precompute = mass_encl_use[mask, :]
+
+    rp_ht_units, ds_ht_units = delta_sigma_from_precomputed_pairs(
+        subsample_positions, subsample_mass_encl_precompute,
+        rp_bins, cfg['um_lbox'], cosmology=um_cosmo)
+
+    # Unit conversion
+    ds_phys_msun_pc2 = ((1. + cfg['um_redshift']) ** 2 *
+                        (ds_ht_units * um_cosmo.h) / (1e12))
+
+    rp_phys = ((rp_ht_units) / (abs(1. + cfg['um_redshift']) * um_cosmo.h))
+
+    # Add the point source term
+    if mstar_lin is not None:
+        ds_phys_msun_pc2[0] += (
+            mstar_lin / 1e12 / (np.pi * (rp_phys ** 2.0))
+            )
+
+    if r_interp is not None:
+        intrp = interpolate.interp1d(rp_phys, ds_phys_msun_pc2,
+                                     kind='cubic', bounds_error=False)
+        dsigma = intrp(r_interp)
+
+        return (r_interp, dsigma)
+
+    return (rp_phys, ds_phys_msun_pc2)
+
+
+
 def asap_predict_model(parameters, cfg, obs_data, um_data,
                        constant_bin=False, return_all=False,
                        show_smf=False, show_dsigma=False):
@@ -124,14 +202,8 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
          parameters, cfg, obs_data, um_data, constant_bin=constant_bin)
 
     # Predict the SMFs
-    um_smf_tot, um_smf_inn = self.umPredictSMF(
-        logms_mod_tot_all[mask_mtot],
-        logms_mod_inn)
-
-    # TODO: If one mass bin is empty, set the error to a higer value
-    # mask_zero = um_smf_tot['smf'] <= 1.0E-10
-    # um_smf_tot['smf'][mask_zero] = np.nan
-    # um_smf_tot['smf_err'][mask_zero] = np.nan
+    um_smf_tot, um_smf_inn = asap_predict_smf(
+        logms_mod_tot_all[mask_mtot], logms_mod_inn, cfg)
 
     um_wl_profs = self.umPredictWL(logms_mod_tot_all[mask_mtot],
                                    logms_mod_inn,

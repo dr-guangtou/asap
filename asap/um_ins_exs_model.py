@@ -224,7 +224,7 @@ class InsituExsituModel(object):
                    self.obs_smf_tot_max))
 
     def setupUniverseMachine(self, verbose=False, **kwargs):
-        """UniverseMachine data."""
+        """Load UniverseMachine data."""
         # ---------- UniverseMachine Mock Related ----------- #
         if 'um_dir' in kwargs.keys():
             um_dir = kwargs['um_dir']
@@ -329,8 +329,6 @@ class InsituExsituModel(object):
 
     def setupConfig(self, verbose=False, **kwargs):
         """Configure MCMC run and plots."""
-
-        # --------------- Model Parameters ------------------ #
         if 'model_type' in kwargs.keys():
             self.model_type = kwargs['model_type']
         else:
@@ -928,13 +926,15 @@ class InsituExsituModel(object):
         wl_um = um_wl_profs[index]
 
         wl_var = (wl_obs_err[:-2] ** 2)
+        wl_dif = (wl_obs[:-2] - wl_um[:-2]) ** 2
 
         if chi2 is False:
             lnlike_wl = -0.5 * (
-                np.nansum(
-                    ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
-                    + np.log(2 * np.pi * wl_var)
-                ))
+                (wl_dif / wl_var).sum() +
+                np.log(2 * np.pi * wl_var).sum()
+                )
+            print("WL bin %d likelihood: %f" % ((index + 1), lnlike_wl))
+            print("          chi2: %f" % (wl_dif / wl_var).sum())
         else:
             lnlike_wl = np.nansum(
                 ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
@@ -998,8 +998,6 @@ class InsituExsituModel(object):
         else:
             chi2_smf = 0.0
 
-        # print("lnLikelihood for SMF: %f" % lnlike_smf)
-
         # Check WL profiles
         msg = '# UM and observed WL profiles should have the same size!'
         assert len(um_wl_profs) == len(self.obs_wl_dsigma)
@@ -1018,7 +1016,6 @@ class InsituExsituModel(object):
 
         Parameters
         ----------
-
         theta : tuple
             Input parameters = (shmr_a, shmr_b, sigms_a, sigms_b)
 
@@ -1057,19 +1054,20 @@ class InsituExsituModel(object):
         if self.mcmc_wl_only is False:
             #  SMF for Mto t
             smf_mtot_var = (
-                (self.obs_smf_tot['smf_upp'] -
-                 self.obs_smf_tot['smf']) ** 2
-            )
+                self.obs_smf_tot['smf_upp'] - self.obs_smf_tot['smf']) ** 2
+
+            smf_mtot_dif = (self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2
+
+            print("Chi2 for SMF: %f" % (smf_mtot_dif / smf_mtot_var).sum())
 
             lnlike_smf = -0.5 * (
-                np.nansum(
-                    ((self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2 /
-                     smf_mtot_var) + np.log(2 * np.pi * smf_mtot_var)
-                ))
+                (smf_mtot_dif / smf_mtot_var).sum() +
+                np.log(2 * np.pi * smf_mtot_var).sum()
+                )
+
+            print("lnLikelihood for SMF: %f" % lnlike_smf)
         else:
             lnlike_smf = 0.0
-
-        # print("lnLikelihood for SMF: %f" % lnlike_smf)
 
         # Check WL profiles
         msg = '# UM and observed WL profiles should have the same size!'
@@ -1085,7 +1083,7 @@ class InsituExsituModel(object):
         return lnlike_smf + self.mcmc_wl_weight * lnlike_wl
 
     def mcmcInitialGuess(self):
-        """Initial guesses for the MCMC run."""
+        """Initialize guesses for the MCMC run."""
         self.mcmc_position = np.zeros([self.mcmc_nwalkers,
                                        self.mcmc_ndims])
 

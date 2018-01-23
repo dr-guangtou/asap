@@ -269,4 +269,10 @@ def config_um_data(cfg, verbose=False, **kwargs):
     if 'um_min_scatter' not in cfg.keys():
         cfg['um_min_scatter'] = 0.01
 
+    if 'um_halo_col' not in cfg.keys():
+        cfg['um_halo_col'] = 'logmh_vir'
+
+    if 'um_star_col' not in cfg.keys():
+        cfg['um_star_col'] = 'logms_tot'
+
     return cfg

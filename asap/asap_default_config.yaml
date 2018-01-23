@@ -54,3 +54,5 @@ um_mtot_nbin: 80
 um_mtot_nbin_min: 7
 um_min_nobj_per_bin: 30
 um_min_scatter: 0.01
+um_halo_col: 'logmh_vir'
+um_star_col: 'logms_tot'

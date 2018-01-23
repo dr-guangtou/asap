@@ -23,6 +23,7 @@ from full_mass_profile_model import mass_prof_model_simple, \
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_utils import mcmc_save_results, mcmc_save_chains, \
     mcmc_initial_guess
+from asap_likelihood import asap_flat_prior
 # from convergence import convergence_check
 
 
@@ -893,18 +894,6 @@ class InsituExsituModel(object):
 
         return (sigms_a, sigms_b, mhalo_center, sigma_mstar)
 
-    def lnPrior(self, param_tuple):
-        """Priors of parameters."""
-        param_list = list(param_tuple)
-
-        for param, low, upp in zip(param_list,
-                                   self.param_low,
-                                   self.param_upp):
-            if param <= low or param >= upp:
-                return -np.inf
-
-        return 0.0
-
     def lnProb(self, param_tuple):
         """Probability function to sample in an MCMC.
 
@@ -913,7 +902,7 @@ class InsituExsituModel(object):
         param_tuple: tuple of model parameters.
 
         """
-        lp = self.lnPrior(param_tuple)
+        lp = asap_flat_prior(param_tuple, self.param_low, self.param_upp)
 
         if not np.isfinite(lp):
             return -np.inf
@@ -934,8 +923,8 @@ class InsituExsituModel(object):
                 (wl_dif / wl_var).sum() +
                 np.log(2 * np.pi * wl_var).sum()
                 )
-            print("WL bin %d likelihood: %f" % ((index + 1), lnlike_wl))
-            print("          chi2: %f" % (wl_dif / wl_var).sum())
+            # print("WL bin %d likelihood: %f" % ((index + 1), lnlike_wl))
+            # print("          chi2: %f" % (wl_dif / wl_var).sum())
         else:
             lnlike_wl = np.nansum(
                 ((wl_obs[:-2] - wl_um[:-2]) ** 2 / wl_var)
@@ -1059,14 +1048,14 @@ class InsituExsituModel(object):
 
             smf_mtot_dif = (self.obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2
 
-            print("Chi2 for SMF: %f" % (smf_mtot_dif / smf_mtot_var).sum())
+            # print("Chi2 for SMF: %f" % (smf_mtot_dif / smf_mtot_var).sum())
 
             lnlike_smf = -0.5 * (
                 (smf_mtot_dif / smf_mtot_var).sum() +
                 np.log(2 * np.pi * smf_mtot_var).sum()
                 )
 
-            print("lnLikelihood for SMF: %f" % lnlike_smf)
+            # print("lnLikelihood for SMF: %f" % lnlike_smf)
         else:
             lnlike_smf = 0.0
 
@@ -1164,11 +1153,9 @@ class InsituExsituModel(object):
             )
 
         #  Pickle the result
-        self.mcmcSaveResults(self.mcmc_run_file,
-                             mcmc_run_result)
+        mcmc_save_results(self.mcmc_run_file, mcmc_run_result)
         mcmc_run_chain = mcmc_sampler.chain
-        self.mcmcSaveChains(self.mcmc_run_chain_file,
-                            mcmc_run_chain)
+        mcmc_save_chains(self.mcmc_run_chain_file, mcmc_run_chain)
 
         if verbose:
             print("# Get MCMC samples and best-fit parameters ...")

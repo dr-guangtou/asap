@@ -90,7 +90,7 @@ def asap_mcmc_run(mcmc_sampler, mcmc_burnin_result, config, verbose=True):
     return mcmc_run_result
 
 
-def run_asap_model(args, verbose=True):
+def asap_mcmc_fit(args, verbose=True):
     """Run A.S.A.P model."""
     global cfg, obs_data, um_data
     # Parse the configuration file  .
@@ -153,4 +153,4 @@ if __name__ == '__main__':
         help="Configuration file",
         default='asap_default_config.yaml')
 
-    run_asap_model(parser.parse_args())
+    asap_mcmc_fit(parser.parse_args())

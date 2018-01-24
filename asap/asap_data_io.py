@@ -48,13 +48,23 @@ def load_observed_data(cfg, verbose=True):
     obs_smf_inn = Table.read(cfg['smf_inn_file'])
     obs_smf_tot = Table.read(cfg['smf_tot_file'])
 
-    cfg['obs_smf_inn_min'] = np.nanmin(obs_smf_inn['logm_0'])
-    cfg['obs_smf_inn_max'] = np.nanmax(obs_smf_inn['logm_1'])
+    cfg['obs_smf_inn_min'] = np.min(obs_smf_inn['logm_0'])
+    cfg['obs_smf_inn_max'] = np.max(obs_smf_inn['logm_1'])
     cfg['obs_smf_inn_nbin'] = len(obs_smf_inn)
 
-    cfg['obs_smf_tot_min'] = np.nanmin(obs_smf_tot['logm_0'])
-    cfg['obs_smf_tot_max'] = np.nanmax(obs_smf_tot['logm_1'])
+    cfg['obs_smf_tot_min'] = np.min(obs_smf_tot['logm_0'])
+    cfg['obs_smf_tot_max'] = np.max(obs_smf_tot['logm_1'])
     cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
+
+    if verbose:
+        print("# SMF for total stellar mass: ")
+        print("  %7.4f -- %7.4f in %d bins" % (cfg['obs_smf_tot_min'],
+                                               cfg['obs_smf_tot_max'],
+                                               cfg['obs_smf_tot_nbin']))
+        print("# SMF for inner stellar mass: ")
+        print("  %7.4f -- %7.4f in %d bins" % (cfg['obs_smf_inn_min'],
+                                               cfg['obs_smf_inn_max'],
+                                               cfg['obs_smf_inn_nbin']))
 
     obs_logms_inn = obs_minn[obs_mtot >= cfg['obs_smf_tot_min']]
     obs_logms_tot = obs_mtot[obs_mtot >= cfg['obs_smf_tot_min']]

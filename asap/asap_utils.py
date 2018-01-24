@@ -57,10 +57,10 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
     mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
 
     np.savez(mcmc_file,
-             samples=mcmc_samples, lnprob=mcmc_lnprob,
-             best=mcmc_best, state=mcmc_state,
-             position=mcmc_position,
-             acceptance=mcmc_sampler.acceptance_fraction)
+             samples=mcmc_samples, lnprob=np.array(mcmc_lnprob),
+             best=np.array(mcmc_best),
+             position=np.asarray(mcmc_position),
+             acceptance=np.array(mcmc_sampler.acceptance_fraction))
 
     if verbose:
         print("#------------------------------------------------------")

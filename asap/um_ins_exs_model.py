@@ -19,7 +19,7 @@ from halotools.mock_observables import delta_sigma_from_precomputed_pairs
 
 from stellar_mass_function import get_smf_bootstrap
 from full_mass_profile_model import mass_prof_model_simple, \
-    mass_prof_model_frac1
+    mass_prof_model_frac1, mass_prof_model_frac2
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_utils import mcmc_save_results, mcmc_save_chains, \
     mcmc_initial_guess, mcmc_samples_stats
@@ -603,6 +603,21 @@ class InsituExsituModel(object):
                 )
         elif self.model_type == 'frac1':
             return mass_prof_model_frac1(
+                self.um_mock,
+                self.obs_logms_tot,
+                self.obs_logms_inn,
+                parameters,
+                min_logms=self.obs_smf_tot_min,
+                max_logms=self.obs_smf_tot_max,
+                n_bins=self.um_mtot_nbin,
+                constant_bin=constant_bin,
+                logmh_col=halo_col,
+                logms_col=star_col,
+                min_scatter=self.um_min_scatter,
+                min_nobj_per_bin=self.um_min_nobj_per_bin
+                )
+        elif self.model_type == 'frac2':
+            return mass_prof_model_frac2(
                 self.um_mock,
                 self.obs_logms_tot,
                 self.obs_logms_inn,

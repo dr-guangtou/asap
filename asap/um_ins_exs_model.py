@@ -373,7 +373,7 @@ class InsituExsituModel(object):
             else:
                 self.param_sig = [0.1, 0.3, 0.05, 0.2]
 
-        elif self.model_type == 'frac1':
+        elif self.model_type == 'frac1' or self.model_type == 'frac2':
 
             # Number of parameters
             self.mcmc_ndims = 6
@@ -1077,7 +1077,7 @@ class InsituExsituModel(object):
                     self.mcmc_nwalkers,
                     self.mcmc_ndims,
                     self.lnProb,
-                    moves=emcee.moves.StretchMove(a=2),
+                    moves=emcee.moves.StretchMove(a=4),
                     pool=pool
                     )
 
@@ -1092,7 +1092,7 @@ class InsituExsituModel(object):
                 self.mcmc_nwalkers,
                 self.mcmc_ndims,
                 self.lnProb,
-                moves=emcee.moves.StretchMove(a=2))
+                moves=emcee.moves.StretchMove(a=4))
 
             # Burn-in
             if verbose:

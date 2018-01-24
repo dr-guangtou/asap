@@ -11,15 +11,14 @@ __all__ = ['asap_ln_prob', 'asap_ln_like', 'asap_flat_prior',
 
 def asap_flat_prior(param_tuple, param_low, param_upp):
     """Priors of parameters."""
-    if not np.all(
-        [low <= param <= upp for param, low, upp in
-         zip(list(param_tuple), param_low, param_upp)]):
+    if not np.all([low <= param <= upp for param, low, upp in
+                   zip(list(param_tuple), param_low, param_upp)]):
         return -np.inf
 
     return 0.0
 
 
-def asap_ln_prob(param_tuple):
+def asap_ln_prob(param_tuple, cfg, obs_data, um_data, chi2=False):
     """Probability function to sample in an MCMC.
 
     Parameters
@@ -27,12 +26,12 @@ def asap_ln_prob(param_tuple):
     param_tuple: tuple of model parameters.
 
     """
-    lp = asap_flat_prior(param_tuple)
+    lp = asap_flat_prior(param_tuple, cfg['param_low'], cfg['param_upp'])
 
     if not np.isfinite(lp):
         return -np.inf
 
-    return lp + asap_ln_like(param_tuple)
+    return lp + asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=chi2)
 
 
 def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um, chi2=False):

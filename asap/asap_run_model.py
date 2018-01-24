@@ -2,6 +2,7 @@
 """Model using the in-situ and ex-situ mass."""
 
 import os
+import sys
 import pickle
 import argparse
 
@@ -15,37 +16,91 @@ from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
 from asap_utils import mcmc_save_chains, mcmc_save_results, \
-    mcmc_initial_guess, mcmc_samples_stats
+    mcmc_initial_guess, mcmc_samples_stats, mcmc_save_results
 from asap_model_setup import setup_model
-from asap_likelihood import asap_ln_prob
+from asap_likelihood import asap_flat_prior, asap_ln_like
 # from convergence import convergence_check
 
 
-def initial_model(cfg, verbose=True):
+def initial_model(config, verbose=True):
     """Initialize the A.S.A.P model."""
     # Configuration for HSC data
-    cfg = config_observed_data(cfg, verbose=verbose)
-    obs_data, cfg = load_observed_data(cfg, verbose=verbose)
+    config_obs = config_observed_data(config, verbose=verbose)
+    obs_data_use, config_obs = load_observed_data(config_obs, verbose=verbose)
 
     # Configuration for UniverseMachine data.
-    cfg = config_um_data(cfg, verbose=verbose)
-    um_data = load_um_data(cfg, verbose=verbose)
+    config_obs_um = config_um_data(config_obs, verbose=verbose)
+    um_data_use = load_um_data(config_obs_um, verbose=verbose)
 
-    cfg = setup_model(cfg, verbose=verbose)
+    config_all = setup_model(config_obs_um, verbose=verbose)
 
-    return cfg, obs_data, um_data
+    return config_all, obs_data_use, um_data_use
+
+
+def asap_ln_prob_global(param_tuple, chi2=False):
+    """Probability function to sample in an MCMC.
+
+    Parameters
+    ----------
+    param_tuple: tuple of model parameters.
+
+    """
+    lp = asap_flat_prior(param_tuple, cfg['param_low'], cfg['param_upp'])
+
+    if not np.isfinite(lp):
+        return -np.inf
+
+    return lp + asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=chi2)
+
+
+def asap_mcmc_burnin(mcmc_sampler, mcmc_position, config, verbose=True):
+    """Run the MCMC chain."""
+    # Burn-in
+    if verbose:
+        print("# Phase: Burn-in ...")
+    mcmc_burnin_result = mcmc_sampler.run_mcmc(
+        mcmc_position, config['mcmc_nburnin'],
+        progress=True)
+
+    mcmc_save_results(mcmc_burnin_result, mcmc_sampler,
+                      config['mcmc_burnin_file'], config['mcmc_ndims'],
+                      verbose=True)
+
+    # Rest the chains
+    mcmc_sampler.reset()
+
+    return mcmc_burnin_result
+
+
+def asap_mcmc_run(mcmc_sampler, mcmc_burnin_result, config, verbose=True):
+    """Run the MCMC chain."""
+    mcmc_burnin_position, _, mcmc_burnin_state = mcmc_burnin_result
+
+    if verbose:
+        print("# Phase: MCMC run ...")
+    mcmc_run_result = mcmc_sampler.run_mcmc(
+        mcmc_burnin_position, config['mcmc_nsamples'],
+        rstate0=mcmc_burnin_state,
+        progress=True)
+
+    mcmc_save_results(mcmc_run_result, mcmc_sampler,
+                      cfg['mcmc_run_file'], cfg['mcmc_ndims'],
+                      verbose=True)
+
+    return mcmc_run_result
 
 
 def run_asap_model(args, verbose=True):
     """Run A.S.A.P model."""
-    # Parse the configuration file.
-    cfg = parse_config(args.config)
+    global cfg, obs_data, um_data
+    # Parse the configuration file  .
+    config_initial = parse_config(args.config)
 
     # Load the data
-    cfg, obs_data, um_data = initial_model(cfg, verbose=verbose)
+    cfg, obs_data, um_data = initial_model(config_initial, verbose=verbose)
 
     # Initialize the model
-    mcmc_position = mcmc_initial_guess(
+    mcmc_ini_position = mcmc_initial_guess(
         cfg['param_ini'], cfg['param_sig'], cfg['mcmc_nwalkers'],
         cfg['mcmc_ndims'])
 
@@ -57,75 +112,37 @@ def run_asap_model(args, verbose=True):
             mcmc_sampler = emcee.EnsembleSampler(
                 cfg['mcmc_nwalkers'],
                 cfg['mcmc_ndims'],
-                asap_ln_prob,
-                move=emcee.moves.StretchMove(a=3),
+                asap_ln_prob_global,
+                moves=emcee.moves.StretchMove(a=4),
                 pool=pool)
+
+            # Burn-in
+            mcmc_burnin_result = asap_mcmc_burnin(
+                mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
+
+            mcmc_sampler.reset()
+
+            # MCMC run
+            mcmc_run_result = asap_mcmc_run(
+                mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
     else:
         mcmc_sampler = emcee.EnsembleSampler(
             cfg['mcmc_nwalkers'],
             cfg['mcmc_ndims'],
-            asap_ln_prob)
+            asap_ln_prob_global,
+            moves=emcee.moves.StretchMove(a=4))
 
-    # Burn-in
-    if verbose:
-        print("# Phase: Burn-in ...")
-    mcmc_burnin_result = mcmc_sampler.run_mcmc(
-         mcmc_position, cfg['mcmc_nburnin'],
-         progress=True)
+        # Burn-in
+        mcmc_burnin_result = asap_mcmc_burnin(
+            mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
 
-    mcmc_burnin_position, _, mcmc_burnin_state = mcmc_burnin_result
+        mcmc_sampler.reset()
 
-    #  Pickle the results
-    mcmc_save_results(cfg['mcmc_burnin_file'], mcmc_burnin_result)
-    mcmc_burnin_chain = mcmc_sampler.chain
-    mcmc_save_chains(cfg['mcmc_burnin_chain_file'], mcmc_burnin_chain)
+        # MCMC run
+        mcmc_run_result = asap_mcmc_run(
+            mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
 
-    # Rest the chains
-    mcmc_sampler.reset()
-
-    # conv_crit = 3
-
-    # MCMC run
-    if verbose:
-        print("# Phase: MCMC run ...")
-    mcmc_run_result = mcmc_sampler.run_mcmc(
-        mcmc_burnin_position, cfg['mcmc_nsamples'],
-        rstate0=mcmc_burnin_state,
-        progress=True)
-
-    #  Pickle the result
-    mcmc_save_results(cfg['mcmc_run_file'], mcmc_run_result)
-    mcmc_run_chain = mcmc_sampler.chain
-    mcmc_save_chains(cfg['mcmc_run_chain_file'], mcmc_run_chain)
-
-    if verbose:
-        print("# Get MCMC samples and best-fit parameters ...")
-    # Get the MCMC samples
-    mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
-        (-1, cfg['mcmc_ndims']))
-    #  Save the samples
-    mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
-    mcmc_best = mcmc_samples[np.argmax(mcmc_lnprob)]
-    np.savez(cfg['mcmc_run_samples_file'],
-             samples=mcmc_samples, lnprob=mcmc_lnprob,
-             best=mcmc_best, acceptance=mcmc_sampler.acceptance_fraction)
-
-    # Get the best-fit parameters and the 1-sigma error
-    mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
-    if verbose:
-        print("#------------------------------------------------------")
-        print("#  Mean acceptance fraction",
-              np.mean(mcmc_sampler.acceptance_fraction))
-        print("#------------------------------------------------------")
-        print("#  Best ln(Probability): %11.5f" %
-              np.nanmax(mcmc_lnprob))
-        print(mcmc_best)
-        print("#------------------------------------------------------")
-        for param_stats in mcmc_params_stats:
-            print(param_stats)
-        print("#------------------------------------------------------")
-
-    return mcmc_best, mcmc_params_stats, mcmc_samples
+    return mcmc_run_result
 
 
 if __name__ == '__main__':
@@ -136,6 +153,4 @@ if __name__ == '__main__':
         help="Configuration file",
         default='asap_default_config.yaml')
 
-    args = parser.parse_args()
-
-    run_asap_model(args)
+    run_asap_model(parser.parse_args())

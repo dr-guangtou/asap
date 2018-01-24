@@ -80,13 +80,9 @@ def setup_model(cfg, verbose=True):
 
     if 'mcmc_prefix' not in cfg.keys():
         cfg['mcmc_prefix'] = 'asap_smdpl'
-    cfg['mcmc_burnin_file'] = cfg['mcmc_prefix'] + '_burnin.pkl'
-    cfg['mcmc_run_file'] = cfg['mcmc_prefix'] + '_run.pkl'
-    cfg['mcmc_burnin_chain_file'] = (cfg['mcmc_prefix'] +
-                                     '_burnin_chain.pkl')
-    cfg['mcmc_run_chain_file'] = (cfg['mcmc_prefix'] +
-                                  '_run_chain.pkl')
-    cfg['mcmc_run_samples_file'] = cfg['mcmc_prefix'] + '_samples.npz'
+
+    cfg['mcmc_burnin_file'] = cfg['mcmc_prefix'] + '_burnin.npz'
+    cfg['mcmc_run_file'] = cfg['mcmc_prefix'] + '_run.npz'
     # --------------------------------------------------- #
 
     return cfg

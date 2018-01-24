@@ -18,18 +18,6 @@ def mcmc_save_chains(mcmc_chain_file, mcmc_chain):
     return None
 
 
-def mcmc_save_results(pkl_name, mcmc_result):
-    """Pickle the MCMC results to a file."""
-    pkl_file = open(pkl_name, 'wb')
-    mcmc_position, mcmc_prob, mcmc_state = mcmc_result
-    pickle.dump(mcmc_position, pkl_file, -1)
-    pickle.dump(mcmc_prob, pkl_file, -1)
-    pickle.dump(mcmc_state, pkl_file, -1)
-    pkl_file.close()
-
-    return None
-
-
 def mcmc_load_chains(mcmc_chain_file):
     """Load the pickled chain."""
     pickle_file = open(mcmc_chain_file, 'rb')
@@ -55,3 +43,35 @@ def mcmc_samples_stats(mcmc_samples):
     return map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]),
                zip(*np.percentile(mcmc_samples,
                                   [16, 50, 84], axis=0)))
+
+
+def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
+                      mcmc_ndims, verbose=True):
+    """Save the MCMC run results."""
+    (mcmc_position, mcmc_lnprob, mcmc_state) = mcmc_results
+
+    mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
+        (-1, mcmc_ndims))
+    mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
+    mcmc_best = mcmc_samples[np.argmax(mcmc_lnprob)]
+    mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
+
+    np.savez(mcmc_file,
+             samples=mcmc_samples, lnprob=mcmc_lnprob,
+             best=mcmc_best, state=mcmc_state,
+             position=mcmc_position,
+             acceptance=mcmc_sampler.acceptance_fraction)
+
+    if verbose:
+        print("#------------------------------------------------------")
+        print("#  Mean acceptance fraction",
+              np.mean(mcmc_sampler.acceptance_fraction))
+        print("#------------------------------------------------------")
+        print("#  Best ln(Probability): %11.5f" % np.max(mcmc_lnprob))
+        print(mcmc_best)
+        print("#------------------------------------------------------")
+        for param_stats in mcmc_params_stats:
+            print(param_stats)
+        print("#------------------------------------------------------")
+
+    return

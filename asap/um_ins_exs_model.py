@@ -455,27 +455,12 @@ class InsituExsituModel(object):
         if 'mcmc_burnin_file' in kwargs.keys():
             self.mcmc_burnin_file = kwargs['mcmc_burnin_file']
         else:
-            self.mcmc_burnin_file = 'um_smdpl_m100_m10_burnin_result.pkl'
+            self.mcmc_burnin_file = 'asap_smdpl_burnin_result.npz'
 
         if 'mcmc_run_file' in kwargs.keys():
             self.mcmc_run_file = kwargs['mcmc_run_file']
         else:
-            self.mcmc_run_file = 'um_smdpl_m100_m10_run_result.pkl'
-
-        if 'mcmc_burnin_chain_file' in kwargs.keys():
-            self.mcmc_burnin_chain_file = kwargs['mcmc_burnin_chain_file']
-        else:
-            self.mcmc_burnin_chain_file = 'um_smdpl_m100_m10_burnin_chain.pkl'
-
-        if 'mcmc_run_chain_file' in kwargs.keys():
-            self.mcmc_run_chain_file = kwargs['mcmc_run_chain_file']
-        else:
-            self.mcmc_run_chain_file = 'um_smdpl_m100_m10_run_chain.pkl'
-
-        if 'mcmc_run_samples_file' in kwargs.keys():
-            self.mcmc_run_samples_file = kwargs['mcmc_run_samples_file']
-        else:
-            self.mcmc_run_samples_file = 'um_smdpl_m100_m10_run_samples.npz'
+            self.mcmc_run_file = 'asap_smdpl_run_result.npz'
         # --------------------------------------------------- #
 
         return None
@@ -1079,7 +1064,7 @@ class InsituExsituModel(object):
         # hfile = h5py.File(hfilename, "a")
 
         # Setup the initial condition
-        self.mcmc_position = mcmc_initial_guess(
+        mcmc_ini_position = mcmc_initial_guess(
             self.param_ini, self.param_sig,
             self.mcmc_nwalkers, self.mcmc_ndims)
 
@@ -1092,7 +1077,7 @@ class InsituExsituModel(object):
                     self.mcmc_nwalkers,
                     self.mcmc_ndims,
                     self.lnProb,
-                    move=emcee.moves.StretchMove(a=3),
+                    moves=emcee.moves.StretchMove(a=2),
                     pool=pool
                     )
 
@@ -1100,78 +1085,40 @@ class InsituExsituModel(object):
                 if verbose:
                     print("# Phase: Burn-in ...")
                 mcmc_burnin_result = mcmc_sampler.run_mcmc(
-                     self.mcmc_position, self.mcmc_nburnin,
-                     progress=True
-                    )
+                    mcmc_ini_position, self.mcmc_nburnin,
+                    progress=True)
         else:
             mcmc_sampler = emcee.EnsembleSampler(
                 self.mcmc_nwalkers,
                 self.mcmc_ndims,
-                self.lnProb
-                )
+                self.lnProb,
+                moves=emcee.moves.StretchMove(a=2))
 
             # Burn-in
             if verbose:
                 print("# Phase: Burn-in ...")
             mcmc_burnin_result = mcmc_sampler.run_mcmc(
-                 self.mcmc_position, self.mcmc_nburnin,
-                 progress=True
-                 )
+                self.mcmc_position, self.mcmc_nburnin,
+                progress=True)
 
         mcmc_burnin_position, _, mcmc_burnin_state = mcmc_burnin_result
 
-        #  Pickle the results
-        mcmc_save_results(self.mcmc_burnin_file, mcmc_burnin_result)
-
-        #  Pickle the chain
-        mcmc_burnin_chain = mcmc_sampler.chain
-        mcmc_save_chains(self.mcmc_burnin_chain_file, mcmc_burnin_chain)
+        mcmc_save_results(mcmc_burnin_result, mcmc_sampler,
+                          self.mcmc_burnin_file, self.mcmc_ndims,
+                          verbose=True)
 
         # Rest the chains
         mcmc_sampler.reset()
-
-        # conv_crit = 3
 
         # MCMC run
         if verbose:
             print("# Phase: MCMC run ...")
         mcmc_run_result = mcmc_sampler.run_mcmc(
-            mcmc_burnin_position,
-            self.mcmc_nsamples,
-            rstate0=mcmc_burnin_state,
-            progress=True
-            )
+            mcmc_burnin_position, self.mcmc_nsamples,
+            rstate0=mcmc_burnin_state, progress=True)
 
-        #  Pickle the result
-        mcmc_save_results(self.mcmc_run_file, mcmc_run_result)
-        mcmc_run_chain = mcmc_sampler.chain
-        mcmc_save_chains(self.mcmc_run_chain_file, mcmc_run_chain)
+        mcmc_save_results(mcmc_run_result, mcmc_sampler,
+                          self.mcmc_run_file, self.mcmc_ndims,
+                          verbose=True)
 
-        if verbose:
-            print("# Get MCMC samples and best-fit parameters ...")
-        # Get the MCMC samples
-        mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
-            (-1, self.mcmc_ndims)
-            )
-        #  Save the samples
-        np.savez(self.mcmc_run_samples_file, data=mcmc_samples)
-
-        mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
-
-        # Get the best-fit parameters and the 1-sigma error
-        mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
-        if verbose:
-            print("#------------------------------------------------------")
-            print("#  Mean acceptance fraction",
-                  np.mean(mcmc_sampler.acceptance_fraction))
-            print("#------------------------------------------------------")
-            print("#  Best ln(Probability): %11.5f" %
-                  np.nanmax(mcmc_lnprob))
-            mcmc_best = mcmc_samples[np.argmax(mcmc_lnprob)]
-            print(mcmc_best)
-            print("#------------------------------------------------------")
-            for param_stats in mcmc_params_stats:
-                print(param_stats)
-            print("#------------------------------------------------------")
-
-        return mcmc_best, mcmc_params_stats, mcmc_samples
+        return mcmc_burnin_result, mcmc_run_result

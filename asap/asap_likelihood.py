@@ -102,7 +102,7 @@ def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False):
     if not cfg['mcmc_wl_only']:
         smf_lnlike = asap_smf_lnlike(
             obs_data['obs_smf_tot'], um_smf_tot,
-            obs_msf_inn=obs_data['obs_smf_tot'],
+            obs_smf_inn=obs_data['obs_smf_tot'],
             um_smf_inn=um_smf_inn, chi2=chi2)
     else:
         smf_lnlike = 0.0

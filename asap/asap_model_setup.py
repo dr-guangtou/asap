@@ -1,5 +1,7 @@
 """Setup the model parameters."""
 
+import os
+
 __all__ = ['setup_model']
 
 
@@ -81,8 +83,13 @@ def setup_model(cfg, verbose=True):
     if 'mcmc_prefix' not in cfg.keys():
         cfg['mcmc_prefix'] = 'asap_smdpl'
 
-    cfg['mcmc_burnin_file'] = cfg['mcmc_prefix'] + '_burnin.npz'
-    cfg['mcmc_run_file'] = cfg['mcmc_prefix'] + '_run.npz'
+    if 'mcmc_out_dir' not in cfg.keys():
+        cfg['mcmc_out_dir'] = '.'
+
+    cfg['mcmc_burnin_file'] = os.path.join(
+        cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_burnin.npz')
+    cfg['mcmc_run_file'] = os.path.join(
+        cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_run.npz')
     # --------------------------------------------------- #
 
     return cfg

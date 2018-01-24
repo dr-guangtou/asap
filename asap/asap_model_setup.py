@@ -29,7 +29,7 @@ def setup_model(cfg, verbose=True):
         if 'param_sig' not in cfg.keys():
             cfg['param_sig'] = [0.1, 0.3, 0.05, 0.2]
 
-    elif cfg['model_type'] == 'frac1':
+    elif cfg['model_type'] == 'frac1' or cfg['model_type'] == 'frac2':
         # Number of parameters
         cfg['mcmc_ndims'] = 6
         cfg['mcmc_labels'] = [r'$a_{\mathrm{SMHR}}$', r'$b_{\mathrm{SMHR}}$',

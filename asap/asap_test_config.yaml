@@ -7,10 +7,10 @@ param_sig: [0.05, 0.1, 0.02, 0.005, 0.05, 0.05]
 
 # MCMC Runs
 mcmc_prefix: 'asap_smdpl'
-mcmc_nsamples: 10
+mcmc_nsamples: 2
 mcmc_nthreads: 2
-mcmc_nburnin: 10
-mcmc_nwalkers: 32
+mcmc_nburnin: 2
+mcmc_nwalkers: 16
 mcmc_smf_only: False
 mcmc_wl_only: False
 mcmc_wl_weight: 1.0

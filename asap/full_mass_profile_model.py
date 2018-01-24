@@ -35,7 +35,7 @@ def sigma_logms_from_logmh(logMhalo, sigms_a, sigms_b,
         Default: 0.05
 
     """
-    logSigMs = sigms_a * (np.asarray(logMhalo) - 15.3) + sigms_b
+    logSigMs = sigms_a * (np.array(logMhalo) - 15.3) + sigms_b
 
     logSigMs = np.where(logSigMs <= min_scatter, min_scatter, logSigMs)
 

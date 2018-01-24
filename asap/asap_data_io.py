@@ -45,6 +45,8 @@ def load_observed_data(cfg, verbose=True):
         else:
             print("# There is 1 weak lensing profile in this sample")
 
+    cfg['obs_dsigma_n_data'] = len(obs_wl_dsigma[0].r) * cfg['obs_wl_n_bin']
+
     obs_smf_inn = Table.read(cfg['smf_inn_file'])
     obs_smf_tot = Table.read(cfg['smf_tot_file'])
 
@@ -55,6 +57,8 @@ def load_observed_data(cfg, verbose=True):
     cfg['obs_smf_tot_min'] = np.min(obs_smf_tot['logm_0'])
     cfg['obs_smf_tot_max'] = np.max(obs_smf_tot['logm_1'])
     cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
+
+    cfg['obs_smf_n_data'] = cfg['obs_smf_tot_nbin'] + cfg['obs_smf_inn_nbin']
 
     if verbose:
         print("# SMF for total stellar mass: ")
@@ -108,7 +112,7 @@ def load_observed_data(cfg, verbose=True):
             'obs_smf_inn': obs_smf_inn, 'obs_smf_tot': obs_smf_tot,
             'obs_smf_full': obs_smf_full,
             'obs_volume': obs_volume
-            }, cfg
+           }, cfg
 
 
 def config_observed_data(cfg, verbose=True):

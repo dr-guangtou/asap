@@ -56,6 +56,10 @@ def setup_model(cfg, verbose=True):
     assert len(cfg['param_low']) == cfg['mcmc_ndims']
     assert len(cfg['param_upp']) == cfg['mcmc_ndims']
     assert len(cfg['param_sig']) == cfg['mcmc_ndims']
+
+    # Degree of freedom for the model: This is actually WRONG
+    cfg['model_dof'] = (cfg['obs_smf_n_data'] + cfg['obs_dsigma_n_data'] -
+                        cfg['mcmc_ndims'])
     # --------------------------------------------------- #
 
     # ------------------- MCMC Related ------------------ #

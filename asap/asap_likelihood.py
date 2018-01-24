@@ -85,7 +85,13 @@ def asap_smf_lnlike(obs_smf_tot, um_smf_tot,
     return smf_mtot_lnlike + smf_minn_lnlike
 
 
-def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False):
+def asap_chi2(param_tuple, cfg, obs_data, um_data):
+    """Chi2 function for the model."""
+    return -1.0 * asap_ln_like(param_tuple, cfg, obs_data, um_data)
+
+
+def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False,
+                 sep_return=False):
     """Calculate the lnLikelihood of the model."""
     # Unpack the input parameters
     parameters = list(param_tuple)
@@ -120,5 +126,8 @@ def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False):
             zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)])
     else:
         dsigma_lnlike = 0.0
+
+    if sep_return:
+        return smf_lnlike, dsigma_lnlike
 
     return smf_lnlike + cfg['mcmc_wl_weight'] * dsigma_lnlike

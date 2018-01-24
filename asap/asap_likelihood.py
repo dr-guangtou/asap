@@ -53,21 +53,36 @@ def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um, chi2=False):
     return dsigma_lnlike
 
 
-def asap_smf_lnlike(obs_smf_tot, um_smf_tot, chi2=False):
+def asap_smf_lnlike(obs_smf_tot, um_smf_tot,
+                    obs_smf_inn=None, um_smf_inn=None, chi2=False):
     """Calculate the likelihood for SMF."""
     smf_mtot_var = (obs_smf_tot['smf_upp'] - obs_smf_tot['smf']) ** 2
     smf_mtot_dif = (obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2
 
-    smf_chi2 = (smf_mtot_dif / smf_mtot_var).sum()
-    smf_lnlike = -0.5 * (smf_chi2 +
-                         np.log(2 * np.pi * smf_mtot_var).sum())
+    smf_mtot_chi2 = (smf_mtot_dif / smf_mtot_var).sum()
+    smf_mtot_lnlike = -0.5 * (
+        smf_mtot_chi2 + np.log(2 * np.pi * smf_mtot_var).sum())
 
-    # print("SMF likelihood / chi2: %f, %f" % (smf_lnlike, smf_chi2))
+    # print("SMF Tot lnlike/chi2: %f,%f" % (smf_mtot_lnlike,
+    #                                       smf_mtot_chi2))
+
+    if obs_smf_inn is not None and um_smf_inn is not None:
+        smf_minn_var = (obs_smf_inn['smf_upp'] - obs_smf_inn['smf']) ** 2
+        smf_minn_dif = (obs_smf_inn['smf'] - um_smf_inn['smf']) ** 2
+
+        smf_minn_chi2 = (smf_minn_dif / smf_minn_var).sum()
+        smf_minn_lnlike = -0.5 * (
+            smf_minn_chi2 + np.log(2 * np.pi * smf_minn_var).sum())
+
+        # print("SMF Inn lnlike/chi2: %f,%f" % (smf_minn_lnlike,
+        #                                       smf_minn_chi2))
+    else:
+        smf_minn_lnlike = 0.0
 
     if chi2:
-        return smf_chi2
+        return smf_mtot_chi2 + smf_minn_chi2
 
-    return smf_lnlike
+    return smf_mtot_lnlike + smf_minn_lnlike
 
 
 def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False):
@@ -86,7 +101,9 @@ def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False):
 
     if not cfg['mcmc_wl_only']:
         smf_lnlike = asap_smf_lnlike(
-            obs_data['obs_smf_tot'], um_smf_tot, chi2=chi2)
+            obs_data['obs_smf_tot'], um_smf_tot,
+            obs_msf_inn=obs_data['obs_smf_tot'],
+            um_smf_inn=um_smf_inn, chi2=chi2)
     else:
         smf_lnlike = 0.0
 

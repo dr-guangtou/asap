@@ -169,6 +169,19 @@ def asap_um_dsigma(cfg, mock_use, mass_encl_use, mask,
     return (rp_phys, ds_phys_msun_pc2)
 
 
+def asap_single_mhalo(mock_use, obs_prof,
+                      logms_mod_tot, logms_mod_inn):
+    """Mhalo and scatter in one bin."""
+    bin_mask = ((logms_mod_tot >= obs_prof.low_mtot) &
+                (logms_mod_tot <= obs_prof.upp_mtot) &
+                (logms_mod_inn >= obs_prof.low_minn) &
+                (logms_mod_inn <= obs_prof.upp_mtot))
+
+    # Just return the logMHalo and its scatter in each bin
+    return (np.nanmedian(mock_use['logmh_vir'][bin_mask]),
+            np.nanstd(mock_use['logmh_vir'][bin_mask]))
+
+
 def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
                        logms_mod_tot, logms_mod_inn,
                        um_wl_min_ngal=15, verbose=False,
@@ -180,7 +193,6 @@ def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
                 (logms_mod_inn <= obs_prof.upp_mtot))
 
     # "Point source" term for the central galaxy
-    # TODO: more appropriate way to add stellar mass component?
     if add_stellar:
         mstar_lin = np.nanmedian(10.0 * logms_mod_tot[bin_mask])
     else:
@@ -191,11 +203,36 @@ def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
         if verbose:
             print("# Not enough UM galaxy in bin %d !" % obs_prof.bin_id)
     else:
-        wl_rp, wl_prof = asap_um_dsigma(
+        _, wl_prof = asap_um_dsigma(
             cfg, mock_use, mass_encl_use, bin_mask,
             r_interp=obs_prof.r, mstar_lin=mstar_lin)
 
     return wl_prof
+
+
+def asap_predict_mhalo(obs_dsigma, mock_use,
+                       logms_mod_tot, logms_mod_inn):
+    """Halo mass and its scatter in each bin.
+
+    Parameters
+    ----------
+    logms_mod_tot : ndarray
+        Total stellar mass (e.g. M100) predicted by UM.
+
+    logms_mod_inn : ndarray
+        Inner stellar mass (e.g. M10) predicted by UM.
+
+    mask_tot : bool array
+        Mask for the input mock catalog and precomputed WL pairs.
+
+    um_wl_min_ngal : int, optional
+        Minimum requred galaxies in each bin to estimate WL profile.
+
+    """
+    # The mock catalog and precomputed mass files for subsamples
+    return [asap_single_mhalo(mock_use, obs_prof,
+                              logms_mod_tot, logms_mod_inn)
+            for obs_prof in obs_dsigma]
 
 
 def asap_predict_dsigma(cfg, obs_data, um_data,
@@ -206,7 +243,6 @@ def asap_predict_dsigma(cfg, obs_data, um_data,
 
     Parameters
     ----------
-
     logms_mod_tot : ndarray
         Total stellar mass (e.g. M100) predicted by UM.
 
@@ -232,15 +268,14 @@ def asap_predict_dsigma(cfg, obs_data, um_data,
             for obs_prof in obs_data['obs_wl_dsigma']]
 
 
-def asap_predict_model(parameters, cfg, obs_data, um_data,
+def asap_predict_model(param, cfg, obs_data, um_data,
                        constant_bin=False, return_all=False,
                        show_smf=False, show_dsigma=False):
     """Return all model predictions.
 
-    Parameters:
-    -----------
-
-    parameters: list, array, or tuple.
+    Parameters
+    ----------
+    param: list, array, or tuple.
         Input model parameters.
 
     cfg : dict
@@ -268,7 +303,7 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
     # Predict stellar mass
     (logms_mod_inn, logms_mod_tot_all,
      logms_mod_halo, mask_mtot, um_mock_use) = asap_predict_mass(
-         parameters, cfg, obs_data, um_data, constant_bin=constant_bin)
+         param, cfg, obs_data, um_data, constant_bin=constant_bin)
 
     # Predict the SMFs
     um_smf_tot, um_smf_inn = asap_predict_smf(
@@ -285,17 +320,21 @@ def asap_predict_model(parameters, cfg, obs_data, um_data,
                                            20, 10.5, 12.5,
                                            n_boots=1)
         logms_mod_tot = logms_mod_tot_all[mask_mtot]
-        plot_mtot_minn_smf(obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
-                           obs_data['obs_mtot'], obs_data['obs_minn'],
-                           um_smf_tot, um_smf_inn,
-                           logms_mod_tot, logms_mod_inn,
-                           obs_smf_full=obs_data['obs_smf_full'],
-                           um_smf_tot_all=um_smf_tot_all)
+        fig_smf = plot_mtot_minn_smf(
+            obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
+            obs_data['obs_mtot'], obs_data['obs_minn'],
+            um_smf_tot, um_smf_inn,
+            logms_mod_tot, logms_mod_inn,
+            obs_smf_full=obs_data['obs_smf_full'],
+            um_smf_tot_all=um_smf_tot_all)
 
     if show_dsigma:
-        # TODO: add halo mass information
-        plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
-                             um_dsigma_profs, obs_mhalo=None, um_wl_mhalo=None)
+        um_mhalo_tuple = asap_predict_mhalo(
+            obs_data['obs_wl_dsigma'], um_data['um_mock'][mask_mtot],
+            logms_mod_tot, logms_mod_inn)
+        fig_dsigma = plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
+                                          um_dsigma_profs, obs_mhalo=None,
+                                          um_mhalo=um_mhalo_tuple)
 
     if return_all:
         return (um_smf_tot, um_smf_inn, um_dsigma_profs,

@@ -338,7 +338,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
 
 
 def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
-                         obs_mhalo=None, um_wl_mhalo=None, **kwargs):
+                         obs_mhalo=None, um_mhalo=None, **kwargs):
     """Plot the UM predicted weak lensing profiles."""
     obs_wl_n_bin = len(um_wl_profs)
     if obs_wl_n_bin <= 4:
@@ -415,12 +415,12 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         ax.plot(obs_prof.r, um_wl_profs[ii],
                 linewidth=2.0, color='royalblue', alpha=0.7)
 
-        if um_wl_mhalo is not None:
-            ax.text(0.35, 0.90,
-                    r"$[\log M_{\rm Vir, UM}]=%5.2f$" % (um_wl_mhalo[ii]),
+        if um_mhalo is not None:
+            ax.text(0.50, 0.92,
+                    r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
                     verticalalignment='center',
                     horizontalalignment='left',
-                    fontsize=15.0,
+                    fontsize=13.0,
                     transform=ax.transAxes,
                     color='royalblue')
 

@@ -49,6 +49,30 @@ def setup_model(cfg, verbose=True):
         # Step to randomize the initial guesses
         if 'param_sig' not in cfg.keys():
             cfg['param_sig'] = [0.05, 0.1, 0.02, 0.005, 0.05, 0.05]
+    elif cfg['model_type'] == 'frac3':
+        # Number of parameters
+        cfg['mcmc_ndims'] = 7
+        cfg['mcmc_labels'] = [r'$a_{\mathrm{SMHR}}$', r'$b_{\mathrm{SMHR}}$',
+                              r'$a_{\sigma \log M_{\star}}$',
+                              r'$b_{\sigma \log M_{\star}}$',
+                              r'$\mathrm{f}_{\mathrm{in-situ}}$',
+                              r'$\mathrm{f}_{\mathrm{ex-situ}}$',
+                              r'$\mathrm{f}_{\mathrm{tot}}$']
+        # Initial values
+        if 'param_ini' not in cfg.keys():
+            cfg['param_ini'] = [0.599, 3.669, -0.048, 0.020,
+                                0.80, 0.11, 0.80]
+        # Lower bounds
+        if 'param_low' not in cfg.keys():
+            cfg['param_low'] = [0.2, 0.0, -0.2, 0.0,
+                                0.3, 0.0, 0.5]
+        # Upper bounds
+        if 'param_upp' not in cfg.keys():
+            cfg['param_upp'] = [1.0, 8.0, 0.0, 0.2,
+                                1.0, 0.3, 1.0]
+        # Step to randomize the initial guesses
+        if 'param_sig' not in cfg.keys():
+            cfg['param_sig'] = [0.05, 0.1, 0.02, 0.005, 0.05, 0.05, 0.1]
     else:
         raise Exception("# Wrong model! Has to be 'simple' or `frac1`")
 

@@ -8,7 +8,7 @@ from halotools.mock_observables import delta_sigma_from_precomputed_pairs
 
 from stellar_mass_function import get_smf_bootstrap
 from full_mass_profile_model import mass_prof_model_simple, \
-    mass_prof_model_frac1, mass_prof_model_frac2
+    mass_prof_model_frac1, mass_prof_model_frac2, mass_prof_model_frac3
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 
 
@@ -23,7 +23,6 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
 
     Parameters
     ----------
-
     parameters : array, list, or tuple
         Model parameters.
 
@@ -38,6 +37,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
 
     constant_bin : boolen
         Whether to use constant bin size for logMs_tot or not.
+
     """
     if cfg['model_type'] == 'simple':
         return mass_prof_model_simple(
@@ -69,6 +69,20 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
     elif cfg['model_type'] == 'frac2':
         return mass_prof_model_frac2(
+            um_data['um_mock'],
+            obs_data['obs_logms_tot'],
+            obs_data['obs_logms_inn'],
+            parameters,
+            min_logms=cfg['obs_smf_tot_min'],
+            max_logms=cfg['obs_smf_tot_max'],
+            n_bins=cfg['um_mtot_nbin'],
+            constant_bin=constant_bin,
+            logmh_col=cfg['um_halo_col'],
+            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'],
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+    elif cfg['model_type'] == 'frac3':
+        return mass_prof_model_frac3(
             um_data['um_mock'],
             obs_data['obs_logms_tot'],
             obs_data['obs_logms_inn'],

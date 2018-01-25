@@ -18,6 +18,11 @@ def asap_flat_prior(param_tuple, param_low, param_upp):
     return 0.0
 
 
+def asap_flat_prior_transform(unit_cube, param_low, param_upp):
+    """Transform unit cube into flat priors."""
+    return unit_cube * param_upp + (1.0 - unit_cube) * param_low
+
+
 def asap_ln_prob(param_tuple, cfg, obs_data, um_data, chi2=False):
     """Probability function to sample in an MCMC.
 

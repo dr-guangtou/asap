@@ -6,27 +6,30 @@ import scipy.optimize
 import smhm_fit
 
 solarMassUnits = r"($M_{\odot}$)"
-smhm_ratio_scatter = r"$\sigma\ [log\ M_{*}/M_{vir}]$"
 
 m_vir_x_axis = r"$log\ M_{vir}/h$"
-hm_scatter = r"$\sigma_{log\ M_{vir}}$"
+hm_scatter = r"$\sigma(log\ M_{vir}/h)$"
 
+sm_scatter_simple = r"$\sigma(log\ M_{\ast})$"
+m_star_x_axis_simple = r"$log\ M_{\ast}$"
 def m_star_x_axis(n_sats):
-    return r"$log\ M_{*}^{" + str(n_sats) + "}$"
+    return r"$log\ M_{\ast}^{" + str(n_sats) + "}$"
 def sm_scatter(n_sats):
-    return r"$\sigma_{log\ M_{*}^{" + str(n_sats) + "}}$"
+    return r"$\sigma(log\ M_{\ast}^{" + str(n_sats) + "})$"
 
 # Be very careful with when you are in log and when not in log...
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
-# central_catalogs look like: {label1: {data: [ ], fit: [ ]}, label2: ...}
-def hm_vs_sm_scatter(central_catalogs, ax = None):
+# plots m_star_all_halo, m_star_all_cen, m_star_insitu
+def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
     if ax is None:
         fig, ax = plt.subplots()
         fig.set_size_inches(18.5, 10.5)
 
-    for k, v in central_catalogs.items():
+
+    for cat in ["insitu", "cen", "halo"]:
+        v = central_catalogs[cat]
         halo_masses = np.log10(v["data"]["m"])
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
         predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v["fit"])
@@ -38,10 +41,38 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
                 0.2)
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
         std, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=bins)
-        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M_{\ast}^{" + str(cat) + "}$") # fixme: hack to remove last bin where there is only one point
     ax.set(
         xlabel=m_vir_x_axis,
-        ylabel=sm_scatter,
+        ylabel=sm_scatter_simple,
+    )
+    ax.legend()
+    return ax
+
+# central_catalogs look like: {label1: {data: [ ], fit: [ ]}, label2: ...}
+def hm_vs_sm_scatter(central_catalogs, ax = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(18.5, 10.5)
+
+    for k, v in central_catalogs.items():
+        if k == "insitu":
+            continue
+        halo_masses = np.log10(v["data"]["m"])
+        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+        predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v["fit"])
+        delta_stellar_masses = stellar_masses - predicted_stellar_masses
+
+        bins = np.arange(
+                np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+                np.max(halo_masses) + 0.2, # to ensure that the last point is included
+                0.2)
+        bin_midpoints = bins[:-1] + np.diff(bins) / 2
+        std, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=bins)
+        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M_{\ast}^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+    ax.set(
+        xlabel=m_vir_x_axis,
+        ylabel=sm_scatter_simple,
     )
     ax.legend()
     return ax
@@ -52,6 +83,8 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
+        if k == "insitu":
+            continue
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
         halo_masses = np.log10(v["data"]["m"])
         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
@@ -63,9 +96,9 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
                 0.2)
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
         std, _, _ = scipy.stats.binned_statistic(stellar_masses, delta_halo_masses, statistic="std", bins=bins)
-        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M_{\ast}^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
     ax.set(
-        xlabel=m_star_x_axis,
+        xlabel=m_star_x_axis_simple,
         ylabel=hm_scatter,
     )
     ax.legend()
@@ -108,8 +141,9 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
 
 # HM (y axis) at fixed SM (x axis)
 def dm_vs_sm(catalog, fit=None, ax=None):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
+    if ax is None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(18.5, 10.5)
     x = np.log10(catalog["icl"] + catalog["sm"])
     y = np.log10(catalog["m"])
 
@@ -127,8 +161,8 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     ax.fill_between(sm_bin_midpoints, mean_hm-(2*std_hm), mean_hm-(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm+(2*std_hm), mean_hm+(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.set(
-        xlabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
-        ylabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
+        xlabel=m_star_x_axis_simple,
+        ylabel=m_vir_x_axis,
     )
 
     if fit is not None:
@@ -138,8 +172,9 @@ def dm_vs_sm(catalog, fit=None, ax=None):
 
 # SM (y axis) at fixed HM (x axis)
 def sm_vs_dm(catalog, fit=None, ax=None):
-    fig, ax = plt.subplots()
-    fig.set_size_inches(18.5, 10.5)
+    if ax is None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(18.5, 10.5)
     y = np.log10(catalog["icl"] + catalog["sm"])
     x = np.log10(catalog["m"])
 
@@ -157,8 +192,8 @@ def sm_vs_dm(catalog, fit=None, ax=None):
     ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
     ax.set(
-        xlabel=r"$M_{vir}\ [log\ M_{vir}/M_{\odot}]$",
-        ylabel=r"$M_{*}\ [log\ M_{*}/M_{\odot}]$",
+        xlabel=m_vir_x_axis,
+        ylabel=m_star_x_axis_simple,
     )
 
     if fit is not None:

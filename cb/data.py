@@ -13,12 +13,13 @@ def load():
 
 def cut_centrals(centrals):
     centrals_stellar_cut = centrals[centrals["sm"] + centrals["icl"] > 1e11]
+    centrals_insitu_cut = centrals[centrals["sm"] > 1e10]
     centrals_halo_cut = centrals[centrals["m"] > 1e13]
-    return centrals_stellar_cut, centrals_halo_cut
+    return centrals_insitu_cut, centrals_stellar_cut, centrals_halo_cut
 
 def get_with_sats(centrals, satellites, f):
     res = {}
-    for (k, sats) in [(0, 0), (1, 1), (2, 2), (5, 5), (9, 9), ("all", 0.999999)]:
+    for (k, sats) in [("cen", 0), (1, 1), (2, 2), (5, 5), ("halo", 0.999999)]:
         centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, sats)
         res[k] = {
             "data": centrals_with_n_sats,

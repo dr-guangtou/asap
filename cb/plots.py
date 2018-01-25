@@ -7,8 +7,8 @@ import smhm_fit
 
 solarMassUnits = r"($M_{\odot}$)"
 
-m_vir_x_axis = r"$log\ M_{vir}/h$"
-hm_scatter = r"$\sigma(log\ M_{vir}/h)$"
+m_vir_x_axis = r"$log\ M_{vir}$"
+hm_scatter = r"$\sigma(log\ M_{vir})$"
 
 sm_scatter_simple = r"$\sigma(log\ M_{\ast})$"
 m_star_x_axis_simple = r"$log\ M_{\ast}$"
@@ -46,7 +46,8 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
         xlabel=m_vir_x_axis,
         ylabel=sm_scatter_simple,
     )
-    ax.legend()
+    ax.legend(loc="upper left")
+    ax.set_ylim(top = 0.62) # to make room for the legend
     return ax
 
 # central_catalogs look like: {label1: {data: [ ], fit: [ ]}, label2: ...}
@@ -154,7 +155,7 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     std_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=sm_bin_edges)
 
     # Plot data and colored error regions
-    ax.plot(sm_bin_midpoints, mean_hm, marker="o")
+    ax.plot(sm_bin_midpoints, mean_hm, marker="o", label="Universe Machine")
     ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm+std_hm, alpha=0.5, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm-(2*std_hm), alpha=0.25, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm+std_hm, mean_hm+(2*std_hm), alpha=0.25, facecolor="tab:blue")
@@ -166,12 +167,13 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     )
 
     if fit is not None:
-        ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit))
+        ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit), label="Best Fit")
+    ax.legend()
 
     return ax
 
 # SM (y axis) at fixed HM (x axis)
-def sm_vs_dm(catalog, fit=None, ax=None):
+def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
         fig.set_size_inches(18.5, 10.5)
@@ -185,7 +187,7 @@ def sm_vs_dm(catalog, fit=None, ax=None):
     std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)
 
     # Plot data and colored error regions
-    ax.plot(hm_bin_midpoints, mean_sm, marker="o")
+    ax.plot(hm_bin_midpoints, mean_sm, marker="o", label="Universe Machine")
     ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.5, facecolor="tab:blue")
     ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.25, facecolor="tab:blue")
     ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.25, facecolor="tab:blue")
@@ -193,10 +195,11 @@ def sm_vs_dm(catalog, fit=None, ax=None):
     ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
     ax.set(
         xlabel=m_vir_x_axis,
-        ylabel=m_star_x_axis_simple,
+        ylabel=m_star_x_axis(n_sats),
     )
 
     if fit is not None:
-        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit))
+        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit")
+    ax.legend(loc="lower right")
 
     return ax

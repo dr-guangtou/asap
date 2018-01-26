@@ -5,26 +5,26 @@ import pickle
 import numpy as np
 
 
-__all__ = ["mcmc_save_chains", "mcmc_save_results", "mcmc_load_chains",
+__all__ = ["mcmc_save_pickle", "mcmc_save_results", "mcmc_load_pickle",
            "mcmc_initial_guess", "mcmc_samples_stats"]
 
 
-def mcmc_save_chains(mcmc_chain_file, mcmc_chain):
+def mcmc_save_pickle(mcmc_pickle_file, mcmc_results):
     """Pickle the chain to a file."""
-    pickle_file = open(mcmc_chain_file, 'wb')
-    pickle.dump(mcmc_chain, pickle_file)
+    pickle_file = open(mcmc_pickle_file, 'wb')
+    pickle.dump(mcmc_results, pickle_file)
     pickle_file.close()
 
     return None
 
 
-def mcmc_load_chains(mcmc_chain_file):
-    """Load the pickled chain."""
-    pickle_file = open(mcmc_chain_file, 'rb')
-    mcmc_chain = pickle.load(pickle_file)
+def mcmc_load_pickle(mcmc_pickle_file):
+    """Load the pickled pickle."""
+    pickle_file = open(mcmc_pickle_file, 'rb')
+    mcmc_pickle = pickle.load(pickle_file)
     pickle_file.close()
 
-    return mcmc_chain
+    return mcmc_pickle
 
 
 def mcmc_initial_guess(param_ini, param_sig, n_walkers, n_dims):

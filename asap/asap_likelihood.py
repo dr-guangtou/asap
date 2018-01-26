@@ -73,10 +73,7 @@ def asap_smf_lnlike(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn,
         lnlike_norm = -0.5 * ((np.log(2.0 * np.pi) * smf_cov_dim) +
                               np.log(linalg.det(obs_smf_cov)))
         smf_dif = np.concatenate([smf_mtot_dif, smf_minn_dif])
-        print(smf_dif)
-        print(np.dot(smf_cov_inv, smf_dif))
-        print(np.dot(smf_dif, np.dot(smf_cov_inv, smf_dif)))
-
+        
         if chi2:
             return np.dot(smf_dif, np.dot(smf_cov_inv, smf_dif))
 

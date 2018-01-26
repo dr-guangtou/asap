@@ -118,6 +118,34 @@ def setup_model(cfg, verbose=True):
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_burnin.npz')
     cfg['mcmc_run_file'] = os.path.join(
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_run.npz')
+
+    # Dynesty related
+    cfg['dynesty_results_file'] = os.path.join(
+        cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_results.pkl')
+
+    if 'dynesty_bound' not in cfg.keys():
+        cfg['dynesty_bound'] = 'multi'
+
+    if 'dynesty_sample' not in cfg.keys():
+        cfg['dynesty_sample'] = 'unif'
+
+    if 'dynesty_nlive_ini' not in cfg.keys():
+        cfg['dynesty_nlive_ini'] = 100
+
+    if 'dynesty_nlive_run' not in cfg.keys():
+        cfg['dynesty_nlive_run'] = 200
+
+    if 'dynesty_bootstrap' not in cfg.keys():
+        cfg['dynesty_bootstrap'] = 20
+
+    if 'dynesty_update_interval' not in cfg.keys():
+        cfg['dynesty_update_interval'] = 0.8
+
+    if 'dynesty_enlarge' not in cfg.keys():
+        cfg['dynesty_enlarge'] = 1.0
+
+    if 'dynesty_walks' not in cfg.keys():
+        cfg['dynesty_walks'] = 25
     # --------------------------------------------------- #
 
     return cfg

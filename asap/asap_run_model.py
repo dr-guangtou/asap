@@ -1,18 +1,30 @@
 #!/usr/bin/env python2
 """Model using the in-situ and ex-situ mass."""
 
+import time
 import argparse
 
-import emcee
+try:
+    import emcee
+    use_emcee = True
+except ImportError:
+    use_emcee = False
+
+try:
+    import dynesty
+    use_dynesty = True
+except ImportError:
+    use_dynesty = False
 
 import numpy as np
 
 from asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
-from asap_utils import mcmc_save_results, mcmc_initial_guess
+from asap_utils import mcmc_save_results, mcmc_initial_guess, \
+    mcmc_save_pickle
 from asap_model_setup import setup_model
 from asap_likelihood import asap_flat_prior, asap_ln_like, \
-    asap_smf_lnlike, asap_dsigma_lnlike
+    asap_smf_lnlike, asap_dsigma_lnlike, asap_flat_prior_transform
 from asap_model_prediction import asap_predict_model
 # from convergence import convergence_check
 
@@ -91,7 +103,7 @@ def asap_ln_like_global(param_tuple):
     return smf_lnlike + cfg['mcmc_wl_weight'] * dsigma_lnlike
 
 
-def asap_mcmc_burnin(mcmc_sampler, mcmc_position, config, verbose=True):
+def asap_emcee_burnin(mcmc_sampler, mcmc_position, config, verbose=True):
     """Run the MCMC chain."""
     # Burn-in
     if verbose:
@@ -110,7 +122,7 @@ def asap_mcmc_burnin(mcmc_sampler, mcmc_position, config, verbose=True):
     return mcmc_burnin_result
 
 
-def asap_mcmc_run(mcmc_sampler, mcmc_burnin_result, config, verbose=True):
+def asap_emcee_run(mcmc_sampler, mcmc_burnin_result, config, verbose=True):
     """Run the MCMC chain."""
     mcmc_burnin_position, _, mcmc_burnin_state = mcmc_burnin_result
 
@@ -128,8 +140,20 @@ def asap_mcmc_run(mcmc_sampler, mcmc_burnin_result, config, verbose=True):
     return mcmc_run_result
 
 
+def asap_dynesty_run(dsampler, config, verbose=True):
+    """Run Dynesty sampler for A.S.A.P model."""
+    # generator for initial nested sampling
+    ncall = dsampler.ncall
+    niter = dsampler.it - 1
+    tstart = time.time()
+
+    ndur = time.time() - tstart
+
+
 def asap_dynesty_fit(args, verbose=True):
     """Run A.S.A.P model using dynesty."""
+    assert use_dynesty, "# Can not import dynesty !"
+
     global cfg, obs_data, um_data
     # Parse the configuration file  .
     config_initial = parse_config(args.config)
@@ -137,13 +161,89 @@ def asap_dynesty_fit(args, verbose=True):
     # Load the data
     cfg, obs_data, um_data = initial_model(config_initial, verbose=verbose)
 
-    # TODO: Place holder
+    if cfg['mcmc_nthreads'] > 1:
+        from multiprocessing import Pool
+        from contextlib import closing
 
-    return
+        with closing(Pool(processes=cfg['mcmc_nthreads'])) as pool:
+            if args.sampler == 'nested':
+                dsampler = dynesty.NestedSampler(
+                    asap_ln_like_global,
+                    asap_flat_prior_transform,
+                    cfg['mcmc_ndims'],
+                    ptform_args=[cfg['param_low'], cfg['param_upp']],
+                    bound=cfg['dynesty_bound'],
+                    sample=cfg['dynesty_sample'],
+                    nlive=cfg['dynesty_nlive_ini'],
+                    bootstrap=cfg['dynesty_bootstrap'],
+                    enlarge=cfg['dynesty_enlarge'],
+                    walks=cfg['dynesty_walks'],
+                    update_interval=cfg['dynesty_update_interval'],
+                    pool=pool)
+            else:
+                # logl_args=[cfg, obs_data, um_data],
+                dsampler = dynesty.DynamicNestedSampler(
+                    asap_ln_like_global,
+                    asap_flat_prior_transform,
+                    cfg['mcmc_ndims'],
+                    ptform_args=[cfg['param_low'], cfg['param_upp']],
+                    bound=cfg['dynesty_bound'],
+                    sample=cfg['dynesty_sample'],
+                    nlive=cfg['dynesty_nlive_ini'],
+                    bootstrap=cfg['dynesty_bootstrap'],
+                    enlarge=cfg['dynesty_enlarge'],
+                    walks=cfg['dynesty_walks'],
+                    update_interval=cfg['dynesty_update_interval'],
+                    pool=pool)
+
+            dsampler.run_nested(dlogz=0.01, maxiter=15000,
+                                maxcall=50000)
+    else:
+        if args.sampler == 'nested':
+            dsampler = dynesty.NestedSampler(
+                asap_ln_like_global,
+                asap_flat_prior_transform,
+                cfg['mcmc_ndims'],
+                ptform_args=[cfg['param_low'], cfg['param_upp']],
+                bound=cfg['dynesty_bound'],
+                sample=cfg['dynesty_sample'],
+                nlive=cfg['dynesty_nlive_ini'],
+                bootstrap=cfg['dynesty_bootstrap'],
+                enlarge=cfg['dynesty_enlarge'],
+                walks=cfg['dynesty_walks'],
+                update_interval=cfg['dynesty_update_interval'])
+        else:
+            dsampler = dynesty.DynamicNestedSampler(
+                asap_ln_like_global,
+                asap_flat_prior_transform,
+                cfg['mcmc_ndims'],
+                ptform_args=[cfg['param_low'], cfg['param_upp']],
+                bound=cfg['dynesty_bound'],
+                sample=cfg['dynesty_sample'],
+                nlive=cfg['dynesty_nlive_ini'],
+                bootstrap=cfg['dynesty_bootstrap'],
+                enlarge=cfg['dynesty_enlarge'],
+                walks=cfg['dynesty_walks'],
+                update_interval=cfg['dynesty_update_interval'])
+
+        dsampler.run_nested(dlogz=0.01, maxiter=15000,
+                            maxcall=50000)
+
+    dynesty_results = dsampler.results
+
+    # Show a summary
+    print(dynesty_results.summary())
+
+    # Pickle the results
+    mcmc_save_pickle(cfg['dynesty_results_file'], dynesty_results)
+
+    return dynesty_results
 
 
 def asap_emcee_fit(args, verbose=True):
     """Run A.S.A.P model using emcee."""
+    assert use_emcee, "# Can not import emcee!"
+
     global cfg, obs_data, um_data
     # Parse the configuration file  .
     config_initial = parse_config(args.config)
@@ -169,13 +269,13 @@ def asap_emcee_fit(args, verbose=True):
                 pool=pool)
 
             # Burn-in
-            mcmc_burnin_result = asap_mcmc_burnin(
+            mcmc_burnin_result = asap_emcee_burnin(
                 mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
 
             mcmc_sampler.reset()
 
             # MCMC run
-            mcmc_run_result = asap_mcmc_run(
+            mcmc_run_result = asap_emcee_run(
                 mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
     else:
         mcmc_sampler = emcee.EnsembleSampler(
@@ -185,13 +285,13 @@ def asap_emcee_fit(args, verbose=True):
             moves=emcee.moves.StretchMove(a=4))
 
         # Burn-in
-        mcmc_burnin_result = asap_mcmc_burnin(
+        mcmc_burnin_result = asap_emcee_burnin(
             mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
 
         mcmc_sampler.reset()
 
         # MCMC run
-        mcmc_run_result = asap_mcmc_run(
+        mcmc_run_result = asap_emcee_run(
             mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
 
     return mcmc_run_result
@@ -204,5 +304,16 @@ if __name__ == '__main__':
         '-c', '--config', dest='config',
         help="Configuration file",
         default='asap_default_config.yaml')
+    parser.add_argument(
+        '-s', '--sampler', dest='sampler',
+        help="Sampling method",
+        default='emcee')
 
-    asap_emcee_fit(parser.parse_args())
+    args = parser.parse_args()
+
+    if args.sampler == 'emcee':
+        asap_emcee_fit(args)
+    elif args.sampler == 'nested' or args['sampler'] == 'dynesty':
+        asap_dynesty_fit(args)
+    else:
+        raise Exception("# Wrong sampler option! [emcee/nested/dynesty]")

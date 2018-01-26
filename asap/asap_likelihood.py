@@ -62,15 +62,20 @@ def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um, chi2=False):
 def asap_smf_lnlike(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn,
                     obs_smf_cov=None, chi2=False):
     """Calculate the likelihood for SMF."""
-    smf_mtot_dif = (obs_smf_tot['smf'] - um_smf_tot['smf']) ** 2
-    smf_minn_dif = (obs_smf_inn['smf'] - um_smf_inn['smf']) ** 2
+    smf_mtot_dif = (np.array(obs_smf_tot['smf']) -
+                    np.array(um_smf_tot['smf']))
+    smf_minn_dif = (np.array(obs_smf_inn['smf']) -
+                    np.array(um_smf_inn['smf']))
 
     if obs_smf_cov is not None:
         smf_cov_inv = linalg.inv(obs_smf_cov)
         smf_cov_dim = len(obs_smf_cov)
         lnlike_norm = -0.5 * ((np.log(2.0 * np.pi) * smf_cov_dim) +
                               np.log(linalg.det(obs_smf_cov)))
-        smf_dif = np.array([smf_mtot_dif, smf_minn_dif]).flatten()
+        smf_dif = np.concatenate([smf_mtot_dif, smf_minn_dif])
+        print(smf_dif)
+        print(np.dot(smf_cov_inv, smf_dif))
+        print(np.dot(smf_dif, np.dot(smf_cov_inv, smf_dif)))
 
         if chi2:
             return np.dot(smf_dif, np.dot(smf_cov_inv, smf_dif))
@@ -81,8 +86,8 @@ def asap_smf_lnlike(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn,
         smf_mtot_var = obs_smf_tot['smf_err'] ** 2
         smf_minn_var = obs_smf_inn['smf_err'] ** 2
 
-        smf_mtot_chi2 = (smf_mtot_dif / smf_mtot_var).sum()
-        smf_minn_chi2 = (smf_minn_dif / smf_minn_var).sum()
+        smf_mtot_chi2 = (smf_mtot_dif ** 2 / smf_mtot_var).sum()
+        smf_minn_chi2 = (smf_minn_dif ** 2 / smf_minn_var).sum()
 
         smf_mtot_lnlike = -0.5 * (
             smf_mtot_chi2 + np.log(2 * np.pi * smf_mtot_var).sum())

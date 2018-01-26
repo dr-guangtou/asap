@@ -47,8 +47,15 @@ def load_observed_data(cfg, verbose=True):
 
     cfg['obs_dsigma_n_data'] = len(obs_wl_dsigma[0].r) * cfg['obs_wl_n_bin']
 
-    obs_smf_inn = Table.read(cfg['smf_inn_file'])
-    obs_smf_tot = Table.read(cfg['smf_tot_file'])
+    if os.path.splitext(cfg['smf_inn_file'])[-1] == '.npy':
+        obs_smf_inn = np.load(cfg['smf_inn_file'])
+    else:
+        obs_smf_inn = Table.read(cfg['smf_inn_file'])
+
+    if os.path.splitext(cfg['smf_tot_file'])[-1] == '.npy':
+        obs_smf_tot = np.load(cfg['smf_tot_file'])
+    else:
+        obs_smf_tot = Table.read(cfg['smf_tot_file'])
 
     cfg['obs_smf_inn_min'] = np.min(obs_smf_inn['logm_0'])
     cfg['obs_smf_inn_max'] = np.max(obs_smf_inn['logm_1'])
@@ -161,7 +168,7 @@ def config_observed_data(cfg, verbose=True):
                                            cfg['obs_smf_inn'])
     else:
         cfg['smf_inn_file'] = os.path.join(
-            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_m10_new.fits')
+            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_m10_new.npy')
     if verbose:
         print("# Pre-computed SMF for inner logMs: %s" % cfg['smf_inn_file'])
 
@@ -170,7 +177,7 @@ def config_observed_data(cfg, verbose=True):
                                            cfg['obs_smf_tot'])
     else:
         cfg['smf_tot_file'] = os.path.join(
-            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_mmax_new.fits')
+            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_mmax_new.npy')
     if verbose:
         print("# Pre-computed SMF for total logMs: %s" % cfg['smf_tot_file'])
 
@@ -179,6 +186,8 @@ def config_observed_data(cfg, verbose=True):
                                            cfg['obs_smf_cov'])
     else:
         cfg['smf_cov_file'] = None
+    if verbose:
+        print("# Covariances for SMFs: %s" % cfg['smf_cov_file'])
 
     # Total stellar mass function for comparison (optional)
     if 'obs_smf_full_fits' not in cfg.keys():

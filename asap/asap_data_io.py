@@ -60,6 +60,12 @@ def load_observed_data(cfg, verbose=True):
 
     cfg['obs_smf_n_data'] = cfg['obs_smf_tot_nbin'] + cfg['obs_smf_inn_nbin']
 
+    if cfg['smf_cov_file'] is not None:
+        obs_smf_cov = np.load(cfg['smf_cov_file'])
+        assert cfg['obs_smf_n_data'] == len(obs_smf_cov)
+    else:
+        obs_smf_cov = None
+
     if verbose:
         print("# SMF for total stellar mass: ")
         print("  %7.4f -- %7.4f in %d bins" % (cfg['obs_smf_tot_min'],
@@ -110,9 +116,8 @@ def load_observed_data(cfg, verbose=True):
             'obs_logms_inn': obs_logms_inn, 'obs_logms_tot': obs_logms_tot,
             'obs_wl_bin': obs_wl_bin, 'obs_wl_dsigma': obs_wl_dsigma,
             'obs_smf_inn': obs_smf_inn, 'obs_smf_tot': obs_smf_tot,
-            'obs_smf_full': obs_smf_full,
-            'obs_volume': obs_volume
-           }, cfg
+            'obs_smf_full': obs_smf_full, 'obs_smf_cov': obs_smf_cov,
+            'obs_volume': obs_volume}, cfg
 
 
 def config_observed_data(cfg, verbose=True):
@@ -141,7 +146,7 @@ def config_observed_data(cfg, verbose=True):
     # --------------------------------------------------- #
     # Observed weak lensing delta sigma profiles
     if 'obs_wl_sample' not in cfg.keys():
-        cfg['obs_wl_sample'] = 's16a_wide2_massive_boxbin3_default'
+        cfg['obs_wl_sample'] = 's16a_wide2_massive_boxbin5_default'
     if verbose:
         print("# Weak lensing profile sample: %s" % cfg['obs_wl_sample'])
 
@@ -156,7 +161,7 @@ def config_observed_data(cfg, verbose=True):
                                            cfg['obs_smf_inn'])
     else:
         cfg['smf_inn_file'] = os.path.join(
-            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_m10_11.5.fits')
+            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_m10_new.fits')
     if verbose:
         print("# Pre-computed SMF for inner logMs: %s" % cfg['smf_inn_file'])
 
@@ -165,9 +170,15 @@ def config_observed_data(cfg, verbose=True):
                                            cfg['obs_smf_tot'])
     else:
         cfg['smf_tot_file'] = os.path.join(
-            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_mmax_11.5.fits')
+            cfg['obs_dir'], 'smf', 's16a_wide2_massive_smf_mmax_new.fits')
     if verbose:
         print("# Pre-computed SMF for total logMs: %s" % cfg['smf_tot_file'])
+
+    if 'obs_smf_cov' in cfg.keys():
+        cfg['smf_cov_file'] = os.path.join(cfg['obs_dir'], 'smf',
+                                           cfg['obs_smf_cov'])
+    else:
+        cfg['smf_cov_file'] = None
 
     # Total stellar mass function for comparison (optional)
     if 'obs_smf_full_fits' not in cfg.keys():

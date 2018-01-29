@@ -193,6 +193,11 @@ def asap_dynesty_fit(args, verbose=True):
                     walks=cfg['dynesty_walks'],
                     update_interval=cfg['dynesty_update_interval'],
                     pool=pool)
+
+                dsampler.run_nested(
+                    dlogz=cfg['dynesty_dlogz_run'],
+                    maxiter=cfg['dynesty_maxiter_run'],
+                    maxcall=cfg['dynesty_maxcall_run'])
             else:
                 # logl_args=[cfg, obs_data, um_data],
                 dsampler = dynesty.DynamicNestedSampler(
@@ -209,9 +214,9 @@ def asap_dynesty_fit(args, verbose=True):
                     update_interval=cfg['dynesty_update_interval'],
                     pool=pool)
 
-            dsampler.run_nested(dlogz=cfg['dynesty_dlogz_run'],
-                                maxiter=cfg['dynesty_maxiter_run'],
-                                maxcall=cfg['dynesty_maxcall_run'])
+                dsampler.run_nested(
+                    dlogz_init=cfg['dynesty_dlogz_run'])
+
     else:
         if args.sampler == 'nested':
             dsampler = dynesty.NestedSampler(
@@ -226,6 +231,11 @@ def asap_dynesty_fit(args, verbose=True):
                 enlarge=cfg['dynesty_enlarge'],
                 walks=cfg['dynesty_walks'],
                 update_interval=cfg['dynesty_update_interval'])
+
+            dsampler.run_nested(
+                dlogz=cfg['dynesty_dlogz_run'],
+                maxiter=cfg['dynesty_maxiter_run'],
+                maxcall=cfg['dynesty_maxcall_run'])
         else:
             dsampler = dynesty.DynamicNestedSampler(
                 asap_ln_like_global,
@@ -240,9 +250,8 @@ def asap_dynesty_fit(args, verbose=True):
                 walks=cfg['dynesty_walks'],
                 update_interval=cfg['dynesty_update_interval'])
 
-        dsampler.run_nested(dlogz=cfg['dynesty_dlogz_run'],
-                            maxiter=cfg['dynesty_maxiter_run'],
-                            maxcall=cfg['dynesty_maxcall_run'])
+            dsampler.run_nested(
+                dlogz_init=cfg['dynesty_dlogz_run'])
 
     dynesty_results = dsampler.results
 

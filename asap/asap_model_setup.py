@@ -130,10 +130,10 @@ def setup_model(cfg, verbose=True):
         cfg['dynesty_sample'] = 'unif'
 
     if 'dynesty_nlive_ini' not in cfg.keys():
-        cfg['dynesty_nlive_ini'] = 100
+        cfg['dynesty_nlive_ini'] = 500
 
     if 'dynesty_nlive_run' not in cfg.keys():
-        cfg['dynesty_nlive_run'] = 200
+        cfg['dynesty_nlive_run'] = 500
 
     if 'dynesty_bootstrap' not in cfg.keys():
         cfg['dynesty_bootstrap'] = 20
@@ -146,6 +146,24 @@ def setup_model(cfg, verbose=True):
 
     if 'dynesty_walks' not in cfg.keys():
         cfg['dynesty_walks'] = 25
+
+    if 'dynesty_dlogz_ini' not in cfg.keys():
+        cfg['dynesty_dlogz_ini'] = 0.1
+
+    if 'dynesty_maxcall_ini' not in cfg.keys():
+        cfg['dynesty_maxcall_ini'] = 500000
+
+    if 'dynesty_maxiter_ini' not in cfg.keys():
+        cfg['dynesty_maxiter_ini'] = 100000
+
+    if 'dynesty_dlogz_run' not in cfg.keys():
+        cfg['dynesty_dlogz_run'] = 0.1
+
+    if 'dynesty_maxcall_run' not in cfg.keys():
+        cfg['dynesty_maxcall_run'] = 500000
+
+    if 'dynesty_maxiter_run' not in cfg.keys():
+        cfg['dynesty_maxiter_run'] = 500000
     # --------------------------------------------------- #
 
     return cfg

@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
 """Model using the in-situ and ex-situ mass."""
 
+from __future__ import division, print_function, unicode_literals
+
+import sys
 import time
 import argparse
 
@@ -146,8 +149,18 @@ def asap_dynesty_run(dsampler, config, verbose=True):
     ncall = dsampler.ncall
     niter = dsampler.it - 1
     tstart = time.time()
+    for results in dsampler.sample_initial(nlive=cfg['dynesty_nlive_ini'],
+                                           dlogz=cfg['dynesty_dlogz_ini'],
+                                           maxcall=cfg['dynesty_maxcall_ini'],
+                                           maxiter=cfg['dynesty_maxiter_ini']):
+
+        (worst, ustar, vstar, loglstar, logvol,
+         logwt, logz, logzvar, h, nc, worst_it,
+         propidx, propiter, eff, delta_logz) = results
 
     ndur = time.time() - tstart
+    if verbose:
+        print('\ndone dynesty (initial) in {0}s'.format(ndur))
 
 
 def asap_dynesty_fit(args, verbose=True):
@@ -196,8 +209,9 @@ def asap_dynesty_fit(args, verbose=True):
                     update_interval=cfg['dynesty_update_interval'],
                     pool=pool)
 
-            dsampler.run_nested(dlogz=0.01, maxiter=15000,
-                                maxcall=50000)
+            dsampler.run_nested(dlogz=cfg['dynesty_dlogz_run'],
+                                maxiter=cfg['dynesty_maxiter_run'],
+                                maxcall=cfg['dynesty_maxcall_run'])
     else:
         if args.sampler == 'nested':
             dsampler = dynesty.NestedSampler(
@@ -226,8 +240,9 @@ def asap_dynesty_fit(args, verbose=True):
                 walks=cfg['dynesty_walks'],
                 update_interval=cfg['dynesty_update_interval'])
 
-        dsampler.run_nested(dlogz=0.01, maxiter=15000,
-                            maxcall=50000)
+        dsampler.run_nested(dlogz=cfg['dynesty_dlogz_run'],
+                            maxiter=cfg['dynesty_maxiter_run'],
+                            maxcall=cfg['dynesty_maxcall_run'])
 
     dynesty_results = dsampler.results
 
@@ -313,7 +328,7 @@ if __name__ == '__main__':
 
     if args.sampler == 'emcee':
         asap_emcee_fit(args)
-    elif args.sampler == 'nested' or args['sampler'] == 'dynesty':
+    elif args.sampler == 'nested' or args.sampler == 'dynesty':
         asap_dynesty_fit(args)
     else:
         raise Exception("# Wrong sampler option! [emcee/nested/dynesty]")

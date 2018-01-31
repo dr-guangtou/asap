@@ -215,7 +215,13 @@ def asap_dynesty_fit(args, verbose=True):
                     pool=pool)
 
                 dsampler.run_nested(
-                    dlogz_init=cfg['dynesty_dlogz_run'])
+                    dlogz_init=cfg['dynesty_dlogz_ini'],
+                    nlive_init=cfg['dynesty_nlive_ini'],
+                    maxiter_init=cfg['dynesty_maxiter_ini'],
+                    maxcall_init=cfg['dynesty_maxcall_ini'],
+                    nlive_batch=cfg['dynesty_nlive_run'],
+                    maxiter_batch=cfg['dynesty_maxiter_run'],
+                    maxcall_batch=cfg['dynesty_maxcall_run'])
 
     else:
         if args.sampler == 'nested':
@@ -251,7 +257,13 @@ def asap_dynesty_fit(args, verbose=True):
                 update_interval=cfg['dynesty_update_interval'])
 
             dsampler.run_nested(
-                dlogz_init=cfg['dynesty_dlogz_run'])
+                dlogz_init=cfg['dynesty_dlogz_ini'],
+                nlive_init=cfg['dynesty_nlive_ini'],
+                maxiter_init=cfg['dynesty_maxiter_ini'],
+                maxcall_init=cfg['dynesty_maxcall_ini'],
+                nlive_batch=cfg['dynesty_nlive_run'],
+                maxiter_batch=cfg['dynesty_maxiter_run'],
+                maxcall_batch=cfg['dynesty_maxcall_run'])
 
     dynesty_results = dsampler.results
 

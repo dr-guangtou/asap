@@ -187,13 +187,13 @@ def setup_model(cfg, verbose=True):
         cfg['dynesty_sample'] = 'unif'
 
     if 'dynesty_nlive_ini' not in cfg.keys():
-        cfg['dynesty_nlive_ini'] = 500
+        cfg['dynesty_nlive_ini'] = 200
 
     if 'dynesty_nlive_run' not in cfg.keys():
-        cfg['dynesty_nlive_run'] = 500
+        cfg['dynesty_nlive_run'] = 100
 
     if 'dynesty_bootstrap' not in cfg.keys():
-        cfg['dynesty_bootstrap'] = 20
+        cfg['dynesty_bootstrap'] = 40
 
     if 'dynesty_update_interval' not in cfg.keys():
         cfg['dynesty_update_interval'] = 0.8
@@ -205,22 +205,22 @@ def setup_model(cfg, verbose=True):
         cfg['dynesty_walks'] = 25
 
     if 'dynesty_dlogz_ini' not in cfg.keys():
-        cfg['dynesty_dlogz_ini'] = 0.1
+        cfg['dynesty_dlogz_ini'] = 20.0
 
     if 'dynesty_maxcall_ini' not in cfg.keys():
-        cfg['dynesty_maxcall_ini'] = 500000
+        cfg['dynesty_maxcall_ini'] = 100000
 
     if 'dynesty_maxiter_ini' not in cfg.keys():
-        cfg['dynesty_maxiter_ini'] = 100000
+        cfg['dynesty_maxiter_ini'] = 1000
 
     if 'dynesty_dlogz_run' not in cfg.keys():
         cfg['dynesty_dlogz_run'] = 0.1
 
     if 'dynesty_maxcall_run' not in cfg.keys():
-        cfg['dynesty_maxcall_run'] = 500000
+        cfg['dynesty_maxcall_run'] = 100000
 
     if 'dynesty_maxiter_run' not in cfg.keys():
-        cfg['dynesty_maxiter_run'] = 500000
+        cfg['dynesty_maxiter_run'] = 1000
     # --------------------------------------------------- #
 
     return cfg

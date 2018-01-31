@@ -6,7 +6,7 @@ import numpy as np
 
 
 __all__ = ["mcmc_save_pickle", "mcmc_save_results", "mcmc_load_pickle",
-           "mcmc_initial_guess", "mcmc_samples_stats"]
+           "mcmc_initial_guess", "mcmc_samples_stats", "mcmc_load_results"]
 
 
 def mcmc_save_pickle(mcmc_pickle_file, mcmc_results):
@@ -43,6 +43,15 @@ def mcmc_samples_stats(mcmc_samples):
     return map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]),
                zip(*np.percentile(mcmc_samples,
                                   [16, 50, 84], axis=0)))
+
+
+def mcmc_load_results(mcmc_file):
+    """Retrieve the MCMC results from .npz file"""
+    mcmc_data = np.load(mcmc_file)
+
+    return (mcmc_data['samples'], mcmc_data['lnprob'],
+            mcmc_data['best'], mcmc_data['position'],
+            mcmc_data['acceptance'])
 
 
 def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,

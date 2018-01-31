@@ -8,7 +8,9 @@ from halotools.mock_observables import delta_sigma_from_precomputed_pairs
 
 from stellar_mass_function import get_smf_bootstrap
 from full_mass_profile_model import mass_prof_model_simple, \
-    mass_prof_model_frac1, mass_prof_model_frac2, mass_prof_model_frac3
+    mass_prof_model_frac1, mass_prof_model_frac2, \
+    mass_prof_model_frac3, mass_prof_model_frac4, \
+    mass_prof_model_frac5
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 
 
@@ -52,7 +54,8 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
-            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
     elif cfg['model_type'] == 'frac1':
         return mass_prof_model_frac1(
             um_data['um_mock'],
@@ -66,7 +69,8 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
-            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
     elif cfg['model_type'] == 'frac2':
         return mass_prof_model_frac2(
             um_data['um_mock'],
@@ -80,7 +84,8 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
-            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
     elif cfg['model_type'] == 'frac3':
         return mass_prof_model_frac3(
             um_data['um_mock'],
@@ -94,7 +99,8 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
-            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
     elif cfg['model_type'] == 'frac4':
         return mass_prof_model_frac4(
             um_data['um_mock'],
@@ -108,7 +114,23 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
-            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
+    elif cfg['model_type'] == 'frac5':
+        return mass_prof_model_frac5(
+            um_data['um_mock'],
+            obs_data['obs_logms_tot'],
+            obs_data['obs_logms_inn'],
+            parameters,
+            min_logms=cfg['obs_smf_tot_min'],
+            max_logms=cfg['obs_smf_tot_max'],
+            n_bins=cfg['um_mtot_nbin'],
+            constant_bin=constant_bin,
+            logmh_col=cfg['um_halo_col'],
+            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'],
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
     else:
         raise Exception("# Wrong model choice! ")
 

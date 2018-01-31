@@ -1,6 +1,7 @@
 # Model parameters
-model_type: 'frac4'
-param_ini: [0.599, 3.669, -0.048, 0.020, 0.80, 0.00, 0.10]
+model_type: 'frac5'
+#param_ini: [0.599, 3.669, -0.048, 0.020, 0.80, 0.00, 0.10]
+param_ini: [0.599, 3.669, -0.048, 0.020, 0.02, 0.80, 0.00, 0.10]
 
 # MCMC Runs
 mcmc_prefix: 'asap_smdpl'
@@ -15,7 +16,7 @@ mcmc_wl_weight: 1.0
 # HSC data part
 obs_dir: '../data/s16a_massive_wide2'
 obs_cat: 's16a_wide2_massive_fsps1_imgsub_use_short.fits'
-obs_wl_sample: 's16a_wide2_massive_boxbin3_default'
+obs_wl_sample: 's16a_wide2_massive_boxbin7_default'
 
 # Volume:
 obs_area: 145.0

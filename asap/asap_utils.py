@@ -61,13 +61,14 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
 
     mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
         (-1, mcmc_ndims))
+    mcmc_chains = mcmc_sampler.chain
     mcmc_lnprob = mcmc_sampler.lnprobability.reshape(-1, 1)
     mcmc_best = mcmc_samples[np.argmax(mcmc_lnprob)]
     mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
 
     np.savez(mcmc_file,
              samples=mcmc_samples, lnprob=np.array(mcmc_lnprob),
-             best=np.array(mcmc_best),
+             best=np.array(mcmc_best), chains=mcmc_chains,
              position=np.asarray(mcmc_position),
              acceptance=np.array(mcmc_sampler.acceptance_fraction))
 

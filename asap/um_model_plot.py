@@ -508,6 +508,74 @@ def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
     return fig
 
 
+def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None):
+    """Traceplot for MCMC results."""
+    fig = plt.figure(figsize=(10, 15))
+    fig.subplots_adjust(hspace=0.0, wspace=0.0,
+                        bottom=0.1, top=0.9,
+                        left=0.1, right=0.88)
+
+    # I want the plot of individual walkers to span 2 columns
+    nparam = len(mcmc_labels)
+    gs = gridspec.GridSpec(nparam, 3)
+
+    for ii, param in mcmc_labels:
+        param_chain = mcmc_chains[:, :, ii]
+        max_var = max(np.var(param_chain[:, :], axis=1))
+
+        # Trace plot
+        ax1 = plt.subplot(gs[ii, :2])
+
+        for walker in param_chain:
+            ax1.plot(np.arange(len(walker)), walker,
+                     drawstyle="steps",
+                     color=OrRd_9(np.var(walker) / max_var),
+                     alpha=0.7)
+
+            ax1.set_ylabel(param,
+                           fontsize=25,
+                           labelpad=18,
+                           rotation="horizontal",
+                           color='k')
+
+            # Don't show ticks on the y-axis
+            ax1.yaxis.set_ticks([])
+
+        # For the plot on the bottom, add an x-axis label. Hide all others
+        if ii == (nparam - 1):
+            ax1.set_xlabel(r"$\mathrm{Steps}$",
+                           fontsize=20, labelpad=18, color='k')
+        else:
+            ax1.xaxis.set_visible(False)
+
+        # Posterior histograms
+        ax2 = plt.subplot(gs[ii, 2])
+
+        ax2.hist(np.ravel(param_chain[:, :]),
+                 bins=np.linspace(ax1.get_ylim()[0],
+                                  ax1.get_ylim()[1],
+                                  100),
+                 orientation='horizontal',
+                 facecolor=ORG,
+                 edgecolor="none")
+
+        ax1.set_ylim(np.min(param_chain[:, 0]), np.max(param_chain[:, 0]))
+        ax2.set_ylim(ax1.get_ylim())
+
+        ax1.get_xaxis().tick_bottom()
+        ax2.xaxis.set_visible(False)
+        ax2.yaxis.tick_right()
+        ax2.yaxis.set_label_position("right")
+
+        if ii == 0:
+            t = ax1.set_title("Walkers", fontsize=25, color='k')
+            t.set_y(1.01)
+            t = ax2.set_title("Posterior", fontsize=25, color='k')
+            t.set_y(1.01)
+
+    return fig
+
+
 def plot_mcmc_corner(mcmc_samples, mcmc_labels):
     """Corner plots for MCMC samples."""
     fig = corner.corner(
@@ -519,7 +587,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
         plot_contours=True,
         fill_contours=True,
         show_titles=True,
-        title_kwargs={"fontsize": 18},
+        title_kwargs={"fontsize": 20},
         hist_kwargs={"histtype": 'stepfilled',
                      "alpha": 0.4,
                      "edgecolor": "none"},
@@ -586,5 +654,93 @@ def plot_mtot_minn_trend(
 
     ax1.set_xlim(x_lim)
     ax1.set_ylim(y_lim)
+
+    return fig
+
+
+def plot_mass_scatter_fsat_trends(um_mock_use, logms_tot_mod):
+    """Plot the trends among mass and scatters."""
+    mask_cen = um_mock_use['mask_central']
+
+    logms_bin = np.linspace(11.6, 12.3, 10)
+    logmh_bin = np.linspace(12.5, 15.2, 12)
+
+    logms_cen = logms_tot_mod[mask_cen]
+    logmh_cen = um_mock_use['logmh_vir'][mask_cen]
+
+    logms_all = logms_tot_mod
+    logmh_all = um_mock_use['logmh_vir']
+
+    idx_logms_cen = np.digitize(logms_cen, logms_bin)
+    idx_logmh_cen = np.digitize(logmh_cen, logmh_bin)
+
+    idx_logms_all = np.digitize(logms_all, logms_bin)
+    idx_logmh_all = np.digitize(logmh_all, logmh_bin)
+
+    logms_mean = [np.nanmean(logms_all[idx_logms_all == k])
+                  for k in range(len(logms_bin))]
+    logmh_mean = [np.nanmean(logmh_all[idx_logmh_all == k])
+                  for k in range(len(logmh_bin))]
+
+    sigmh_cen = [np.nanstd(logmh_cen[idx_logms_cen == k])
+                 for k in range(len(logms_bin))]
+    sigmh_all = [np.nanstd(logmh_all[idx_logms_all == k])
+                 for k in range(len(logms_bin))]
+
+    sigms_cen = [np.nanstd(logms_cen[idx_logmh_cen == k])
+                 for k in range(len(logmh_bin))]
+    sigms_all = [np.nanstd(logms_all[idx_logmh_all == k])
+                 for k in range(len(logmh_bin))]
+
+    frac_cen = np.array([np.sum(mask_cen[idx_logms_all == k]) * 1.0 / (len(um_mock_use[idx_logms_all == k]))
+                         for k in range(len(logms_bin))])
+
+
+    fig, axes = plt.subplots(3, figsize=(7, 15))
+
+    ax1 = axes[0]
+    ax1.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
+
+    ax1.scatter(logmh_mean, sigms_all, s=50,
+                label=r'$\mathrm{All}$')
+    ax1.scatter(logmh_mean, sigms_cen, s=30, alpha=0.7,
+                label=r'$\mathrm{Cen}$')
+    ax1.set_xlabel(r'$\log M_{\rm Vir}$', fontsize=25)
+    ax1.set_ylabel(r'$\sigma_{\log M_{\star, 100\mathrm{kpc,\ Model}}}$', fontsize=25)
+    ax1.legend(fontsize=15, loc='lower right')
+
+    for tick in ax1.xaxis.get_major_ticks():
+        tick.label.set_fontsize(15)
+    for tick in ax1.yaxis.get_major_ticks():
+        tick.label.set_fontsize(15)
+
+
+    ax2 = axes[1]
+    ax2.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
+
+    ax2.scatter(logms_mean, sigmh_all, s=50)
+    ax2.scatter(logms_mean, sigmh_cen, s=30, alpha=0.7)
+
+    ax2.set_xlabel(r'$\log M_{\star, 100\mathrm{kpc,\ Model}}$', fontsize=25)
+    ax2.set_ylabel(r'$\sigma_{\log M_{\rm Vir}}$', fontsize=25)
+
+    for tick in ax2.xaxis.get_major_ticks():
+        tick.label.set_fontsize(15)
+    for tick in ax2.yaxis.get_major_ticks():
+        tick.label.set_fontsize(15)
+
+
+    ax3 = axes[2]
+    ax3.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
+
+    ax3.scatter(logms_mean, (1.0 - frac_cen) * 100.0, s=50, alpha=0.8)
+
+    ax3.set_xlabel(r'$\log M_{\star, 100\mathrm{kpc,\ Model}}$', fontsize=25)
+    ax3.set_ylabel(r'$f_{\rm Satellites}$', fontsize=25)
+
+    for tick in ax3.xaxis.get_major_ticks():
+        tick.label.set_fontsize(15)
+    for tick in ax3.yaxis.get_major_ticks():
+        tick.label.set_fontsize(15)
 
     return fig

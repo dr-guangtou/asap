@@ -83,9 +83,9 @@ def setup_model(cfg, verbose=True):
                               r'$b_{\mathrm{SMHR}}$',
                               r'$a_{\sigma \log M_{\star}}$',
                               r'$b_{\sigma \log M_{\star}}$',
-                              r'$\mathrm{f}_{\mathrm{in-situ}}$',
-                              r'$\mathrm{f}_{\mathrm{ex-situ},\ a}$',
-                              r'$\mathrm{f}_{\mathrm{ex-situ},\ b}}$']
+                              r'$\mathrm{f}_{\mathrm{ins}}$',
+                              r'$\mathrm{f}_{\mathrm{exs},a}$',
+                              r'$\mathrm{f}_{\mathrm{exs},b}$']
         # Initial values
         if 'param_ini' not in cfg.keys():
             cfg['param_ini'] = [0.599, 3.669, -0.048, 0.020,
@@ -110,10 +110,10 @@ def setup_model(cfg, verbose=True):
                               r'$b_{\mathrm{SMHR}}$',
                               r'$a_{\sigma \log M_{\star}}$',
                               r'$b_{\sigma \log M_{\star}}$',
-                              r'$\mathrm{f}_{\mathrm{in-situ},\ a}$',
-                              r'$\mathrm{f}_{\mathrm{in-situ},\ a}$',
-                              r'$\mathrm{f}_{\mathrm{ex-situ},\ a}$',
-                              r'$\mathrm{f}_{\mathrm{ex-situ},\ b}}$']
+                              r'$\mathrm{f}_{\mathrm{ins},a}$',
+                              r'$\mathrm{f}_{\mathrm{ins},a}$',
+                              r'$\mathrm{f}_{\mathrm{exs},a}$',
+                              r'$\mathrm{f}_{\mathrm{exs},b}}$']
         # Initial values
         if 'param_ini' not in cfg.keys():
             cfg['param_ini'] = [0.599, 3.669, -0.048, 0.020,

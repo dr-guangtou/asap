@@ -95,6 +95,20 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
+    elif cfg['model_type'] == 'frac4':
+        return mass_prof_model_frac4(
+            um_data['um_mock'],
+            obs_data['obs_logms_tot'],
+            obs_data['obs_logms_inn'],
+            parameters,
+            min_logms=cfg['obs_smf_tot_min'],
+            max_logms=cfg['obs_smf_tot_max'],
+            n_bins=cfg['um_mtot_nbin'],
+            constant_bin=constant_bin,
+            logmh_col=cfg['um_halo_col'],
+            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'],
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin'])
     else:
         raise Exception("# Wrong model choice! ")
 

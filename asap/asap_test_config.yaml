@@ -1,9 +1,6 @@
 # Model parameters
-model_type: 'frac1'
-param_ini: [0.599, 3.669, -0.048, 0.020, 0.80, 0.11]
-param_low: [0.2, 0.0, -0.2, 0.0, 0.3, 0.0]
-param_upp: [1.0, 8.0, 0.0, 0.2, 1.0, 0.3]
-param_sig: [0.05, 0.1, 0.02, 0.005, 0.05, 0.05]
+model_type: 'frac4'
+param_ini: [0.599, 3.669, -0.048, 0.020, 0.80, 0.00, 0.10]
 
 # MCMC Runs
 mcmc_prefix: 'asap_smdpl'

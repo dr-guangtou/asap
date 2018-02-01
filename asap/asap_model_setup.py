@@ -143,7 +143,7 @@ def setup_model(cfg, verbose=True):
                         cfg['mcmc_ndims'])
     # --------------------------------------------------- #
 
-    # ------------------- MCMC Related ------------------ #
+    # ------------------- Emcee Related ------------------ #
     if 'mcmc_nsamples' not in cfg.keys():
         cfg['mcmc_nsamples'] = 200
 
@@ -171,12 +171,21 @@ def setup_model(cfg, verbose=True):
     if 'mcmc_out_dir' not in cfg.keys():
         cfg['mcmc_out_dir'] = '.'
 
+    if 'mcmc_moves' not in cfg.keys():
+        cfg['mcmc_moves'] = 'redblue'
+
+    if 'mcmc_stretch_a' not in cfg.keys():
+        cfg['mcmc_stretch_a'] = 4
+
+    if 'mcmc_walk_s' not in cfg.keys():
+        cfg['mcmc_walk_s'] = 3
+
     cfg['mcmc_burnin_file'] = os.path.join(
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_burnin.npz')
     cfg['mcmc_run_file'] = os.path.join(
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_run.npz')
 
-    # Dynesty related
+    # ------------------ Dynesty Related ------------------ #
     cfg['dynesty_results_file'] = os.path.join(
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_results.pkl')
 

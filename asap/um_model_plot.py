@@ -14,8 +14,10 @@ from matplotlib.ticker import MaxNLocator
 from scipy.ndimage.filters import gaussian_filter
 
 import corner
-from palettable.colorbrewer.sequential import OrRd_9, Greys_9
-ORG = OrRd_9.mpl_colormap
+from palettable.colorbrewer.sequential import OrRd_3, OrRd_8, Greys_9, PuBu_4
+ORG = OrRd_8.mpl_colormap
+ORG_2 = OrRd_3.mpl_colormap
+BLU = PuBu_4.mpl_colormap
 BLK = Greys_9.mpl_colormap
 
 plt.rcParams['figure.dpi'] = 100.0
@@ -508,57 +510,72 @@ def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
     return fig
 
 
-def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None):
+def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
+                    mcmc_burnin=None, trace_alpha=0.2):
     """Traceplot for MCMC results."""
-    fig = plt.figure(figsize=(10, 15))
+    if mcmc_burnin is not None:
+        fig = plt.figure(figsize=(12, 15))
+    else:
+        fig = plt.figure(figsize=(10, 15))
+
     fig.subplots_adjust(hspace=0.0, wspace=0.0,
                         bottom=0.1, top=0.9,
                         left=0.1, right=0.88)
 
     # I want the plot of individual walkers to span 2 columns
     nparam = len(mcmc_labels)
-    gs = gridspec.GridSpec(nparam, 3)
+    if mcmc_burnin is not None:
+        gs = gridspec.GridSpec(nparam, 5)
+    else:
+        gs = gridspec.GridSpec(nparam, 3)
 
-    for ii, param in mcmc_labels:
+    if mcmc_best is not None:
+        assert len(mcmc_best) == len(mcmc_labels)
+
+    for ii, param in enumerate(mcmc_labels):
         param_chain = mcmc_chains[:, :, ii]
         max_var = max(np.var(param_chain[:, :], axis=1))
 
         # Trace plot
-        ax1 = plt.subplot(gs[ii, :2])
+        if mcmc_burnin is None:
+            ax1 = plt.subplot(gs[ii, :2])
+        else:
+            ax1 = plt.subplot(gs[ii, 2:4])
+        ax1.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
         for walker in param_chain:
             ax1.plot(np.arange(len(walker)), walker,
                      drawstyle="steps",
-                     color=OrRd_9(np.var(walker) / max_var),
-                     alpha=0.7)
+                     color=ORG_2(1.0 - np.var(walker) / max_var),
+                     alpha=trace_alpha)
 
-            ax1.set_ylabel(param,
-                           fontsize=25,
-                           labelpad=18,
-                           rotation="horizontal",
-                           color='k')
+            if mcmc_burnin is None:
+                ax1.set_ylabel(param,
+                               fontsize=25,
+                               labelpad=18,
+                               color='k')
 
             # Don't show ticks on the y-axis
             ax1.yaxis.set_ticks([])
 
         # For the plot on the bottom, add an x-axis label. Hide all others
-        if ii == (nparam - 1):
-            ax1.set_xlabel(r"$\mathrm{Steps}$",
-                           fontsize=20, labelpad=18, color='k')
-        else:
+        if ii != (nparam - 1):
             ax1.xaxis.set_visible(False)
 
         # Posterior histograms
-        ax2 = plt.subplot(gs[ii, 2])
+        ax2 = plt.subplot(gs[ii, -1])
+        ax2.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
         ax2.hist(np.ravel(param_chain[:, :]),
                  bins=np.linspace(ax1.get_ylim()[0],
                                   ax1.get_ylim()[1],
                                   100),
                  orientation='horizontal',
-                 facecolor=ORG,
+                 alpha=0.7,
+                 facecolor=ORG_2(0.9),
                  edgecolor="none")
 
+        ax1.set_xlim(1, len(walker))
         ax1.set_ylim(np.min(param_chain[:, 0]), np.max(param_chain[:, 0]))
         ax2.set_ylim(ax1.get_ylim())
 
@@ -567,11 +584,50 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None):
         ax2.yaxis.tick_right()
         ax2.yaxis.set_label_position("right")
 
+        if mcmc_best is not None:
+            ax1.axhline(mcmc_best[ii], linestyle='--', linewidth=2,
+                        c=BLU(1.0), alpha=0.8)
+            ax2.axhline(mcmc_best[ii], linestyle='--', linewidth=2,
+                        c=BLU(1.0), alpha=0.8)
+
+        # Trace plot for burnin
+        if mcmc_burnin is not None:
+            param_burnin = mcmc_burnin[:, :, ii]
+            ax3 = plt.subplot(gs[ii, :2])
+            ax3.grid(linewidth=1.5, linestyle='--', alpha=0.5)
+
+            for walker in param_burnin:
+                ax3.plot(np.arange(len(walker)), walker,
+                         drawstyle="steps",
+                         color=BLU(1.0 - np.var(walker) / max_var),
+                         alpha=trace_alpha)
+
+                ax3.set_ylabel(param,
+                               fontsize=25,
+                               labelpad=18,
+                               color='k')
+
+                # Don't show ticks on the y-axis
+                ax3.yaxis.set_ticks([])
+                ax3.set_xlim(1, len(walker))
+                ax3.set_ylim(np.min(param_chain[:, 0]),
+                             np.max(param_chain[:, 0]))
+                ax3.get_xaxis().tick_bottom()
+
+        # For the plot on the bottom, add an x-axis label. Hide all others
+        if ii != (nparam - 1):
+            ax1.xaxis.set_visible(False)
+            if mcmc_burnin is not None:
+                ax3.xaxis.set_visible(False)
+
         if ii == 0:
-            t = ax1.set_title("Walkers", fontsize=25, color='k')
+            t = ax1.set_title("MCMC\ Walkers", fontsize=25, color='k')
             t.set_y(1.01)
             t = ax2.set_title("Posterior", fontsize=25, color='k')
             t.set_y(1.01)
+            if mcmc_burnin is not None:
+                t = ax3.set_title("Burnin\ Walkers", fontsize=25, color='k')
+                t.set_y(1.01)
 
     return fig
 
@@ -598,7 +654,8 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
 
 
 def plot_mtot_minn_trend(
-        x_arr, y_arr, z_arr, method='count', bins=50,
+        x_arr, y_arr, z_arr, method='count',
+        x_bins=40, y_bins=30, z_min=None, z_max=None,
         contour=True, nticks=10, x_lim=None, y_lim=None,
         n_contour=6,
         xlabel=r'$\log (M_{\star,\ \mathrm{Total}}/M_{\odot})$',
@@ -606,12 +663,17 @@ def plot_mtot_minn_trend(
         title=r'$\log M_{\mathrm{Halo}}$'):
     """Density plot."""
     z_stats, x_edges, y_edges = binned_statistic_2d(
-        x_arr, y_arr, z_arr, method, bins=bins)
+        x_arr, y_arr, z_arr, method, bins=(x_bins, y_bins))
 
     if x_lim is None:
         x_lim = [np.nanmin(x_arr), np.nanmax(x_arr)]
     if y_lim is None:
         y_lim = [np.nanmin(y_arr), np.nanmax(y_arr)]
+
+    if z_min is None:
+        z_min = np.nanmin(z_stats)
+    if z_max is None:
+        z_max = np.nanmax(z_stats)
 
     fig = plt.figure(figsize=(9, 7))
     fig.subplots_adjust(left=0.19, right=0.995,
@@ -623,14 +685,13 @@ def plot_mtot_minn_trend(
     HM = ax1.imshow(z_stats.T, origin='lower',
                     extent=[x_edges[0], x_edges[-1],
                             y_edges[0], y_edges[-1]],
+                    vmin=z_min, vmax=z_max,
                     aspect='auto', interpolation='nearest',
                     cmap=ORG)
 
-    z_min, z_max = np.nanmin(z_stats), np.nanmax(z_stats)
-
     if contour:
         CT = ax1.contour(x_edges[:-1], y_edges[:-1],
-                         gaussian_filter(z_stats.T, 0.2),
+                         gaussian_filter(z_stats.T, 0.25),
                          n_contour, linewidths=2.0,
                          colors=[BLK(0.8), BLK(0.9)],
                          extend='neither')

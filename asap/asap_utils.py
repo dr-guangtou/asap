@@ -1,12 +1,14 @@
 """Utilities for A.S.A.P model."""
 
 import pickle
+import emcee
 
 import numpy as np
 
 
 __all__ = ["mcmc_save_pickle", "mcmc_save_results", "mcmc_load_pickle",
-           "mcmc_initial_guess", "mcmc_samples_stats", "mcmc_load_results"]
+           "mcmc_initial_guess", "mcmc_samples_stats", "mcmc_load_results",
+           "mcmc_setup_moves"]
 
 
 def mcmc_save_pickle(mcmc_pickle_file, mcmc_results):
@@ -85,3 +87,19 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
         print("#------------------------------------------------------")
 
     return
+
+
+def mcmc_setup_moves(cfg):
+    """Setup the Move object for emcee."""
+    if cfg['mcmc_moves'] == 'redblue':
+        emcee_moves = emcee.moves.RedBlueMove(randomize_split=True)
+    elif cfg['mcmc_moves'] == 'stretch':
+        emcee_moves = emcee.moves.StretchMove(a=cfg['mcmc_stretch_a'])
+    elif cfg['mcmc_moves'] == 'walk':
+        emcee_moves = emcee.moves.WalkMove(s=cfg['mcmc_walk_s'])
+    elif cfg['mcmc_moves'] == 'kde':
+        emcee_moves = emcee.moves.KDEMove()
+    else:
+        raise Exception("Wrong option: redblue, stretch, walk, kde")
+
+    return emcee_moves

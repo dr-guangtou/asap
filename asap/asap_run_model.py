@@ -24,7 +24,7 @@ import numpy as np
 from asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
 from asap_utils import mcmc_save_results, mcmc_initial_guess, \
-    mcmc_save_pickle
+    mcmc_save_pickle, mcmc_setup_moves
 from asap_model_setup import setup_model
 from asap_likelihood import asap_flat_prior, asap_ln_like, \
     asap_smf_lnlike, asap_dsigma_lnlike, asap_flat_prior_transform
@@ -286,8 +286,8 @@ def asap_emcee_fit(args, verbose=True):
     # Parse the configuration file  .
     config_initial = parse_config(args.config)
 
-    # move = emcee.moves.StretchMove(a=4)
-    emcee_move = emcee.moves.WalkMove()
+    # Decide the Ensemble moves for walkers
+    emcee_move = mcmc_setup_moves(cfg)
 
     # Load the data
     cfg, obs_data, um_data = initial_model(config_initial, verbose=verbose)

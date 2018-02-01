@@ -602,7 +602,7 @@ def plot_mtot_minn_trend(
         contour=True, nticks=10, x_lim=None, y_lim=None,
         n_contour=6,
         xlabel=r'$\log (M_{\star,\ \mathrm{Total}}/M_{\odot})$',
-        ylabel=r'$\log (M_{\star,\ \mathrm{In\ Situ}}/M_{\odot})$',
+        ylabel=r'$\log (M_{\star,\ \mathrm{Inner}}/M_{\odot})$',
         title=r'$\log M_{\mathrm{Halo}}$'):
     """Density plot."""
     z_stats, x_edges, y_edges = binned_statistic_2d(
@@ -658,18 +658,20 @@ def plot_mtot_minn_trend(
     return fig
 
 
-def plot_mass_scatter_fsat_trends(um_mock_use, logms_tot_mod):
+def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
     """Plot the trends among mass and scatters."""
-    mask_cen = um_mock_use['mask_central']
-
-    logms_bin = np.linspace(11.6, 12.3, 10)
-    logmh_bin = np.linspace(12.5, 15.2, 12)
+    mask_cen = um_mock['upid'] == -1
 
     logms_cen = logms_tot_mod[mask_cen]
-    logmh_cen = um_mock_use['logmh_vir'][mask_cen]
+    logmh_cen = um_mock['logmh_vir'][mask_cen]
 
     logms_all = logms_tot_mod
-    logmh_all = um_mock_use['logmh_vir']
+    logmh_all = um_mock['logmh_vir']
+
+    logms_bin = np.linspace(np.nanmin(logms_all),
+                            np.nanmax(logms_all), nbin)
+    logmh_bin = np.linspace(np.nanmin(logmh_all),
+                            np.nanmax(logmh_all), nbin)
 
     idx_logms_cen = np.digitize(logms_cen, logms_bin)
     idx_logmh_cen = np.digitize(logmh_cen, logmh_bin)
@@ -692,9 +694,9 @@ def plot_mass_scatter_fsat_trends(um_mock_use, logms_tot_mod):
     sigms_all = [np.nanstd(logms_all[idx_logmh_all == k])
                  for k in range(len(logmh_bin))]
 
-    frac_cen = np.array([np.sum(mask_cen[idx_logms_all == k]) * 1.0 / (len(um_mock_use[idx_logms_all == k]))
+    frac_cen = np.array([(np.sum(mask_cen[idx_logms_all == k]) * 1.0 /
+                          (len(um_mock[idx_logms_all == k])))
                          for k in range(len(logms_bin))])
-
 
     fig, axes = plt.subplots(3, figsize=(7, 15))
 
@@ -706,14 +708,14 @@ def plot_mass_scatter_fsat_trends(um_mock_use, logms_tot_mod):
     ax1.scatter(logmh_mean, sigms_cen, s=30, alpha=0.7,
                 label=r'$\mathrm{Cen}$')
     ax1.set_xlabel(r'$\log M_{\rm Vir}$', fontsize=25)
-    ax1.set_ylabel(r'$\sigma_{\log M_{\star, 100\mathrm{kpc,\ Model}}}$', fontsize=25)
-    ax1.legend(fontsize=15, loc='lower right')
+    ax1.set_ylabel(r'$\sigma_{\log M_{\star, 100\mathrm{kpc,\ Model}}}$',
+                   fontsize=25)
+    ax1.legend(fontsize=15, loc='lower left')
 
     for tick in ax1.xaxis.get_major_ticks():
         tick.label.set_fontsize(15)
     for tick in ax1.yaxis.get_major_ticks():
         tick.label.set_fontsize(15)
-
 
     ax2 = axes[1]
     ax2.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
@@ -728,7 +730,6 @@ def plot_mass_scatter_fsat_trends(um_mock_use, logms_tot_mod):
         tick.label.set_fontsize(15)
     for tick in ax2.yaxis.get_major_ticks():
         tick.label.set_fontsize(15)
-
 
     ax3 = axes[2]
     ax3.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)

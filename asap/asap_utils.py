@@ -49,9 +49,9 @@ def mcmc_load_results(mcmc_file):
     """Retrieve the MCMC results from .npz file"""
     mcmc_data = np.load(mcmc_file)
 
-    return (mcmc_data['samples'], mcmc_data['lnprob'],
-            mcmc_data['best'], mcmc_data['position'],
-            mcmc_data['acceptance'])
+    return (mcmc_data['samples'], mcmc_data['chains'],
+            mcmc_data['lnprob'], mcmc_data['best'],
+            mcmc_data['position'], mcmc_data['acceptance'])
 
 
 def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,

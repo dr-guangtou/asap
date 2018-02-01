@@ -62,10 +62,10 @@ def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um, chi2=False):
 def asap_smf_lnlike(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn,
                     obs_smf_cov=None, chi2=False):
     """Calculate the likelihood for SMF."""
-    smf_mtot_dif = (np.array(obs_smf_tot['smf']) -
-                    np.array(um_smf_tot['smf']))
-    smf_minn_dif = (np.array(obs_smf_inn['smf']) -
-                    np.array(um_smf_inn['smf']))
+    smf_mtot_dif = (np.array(um_smf_tot['smf']) -
+                    np.array(obs_smf_tot['smf']))
+    smf_minn_dif = (np.array(um_smf_inn['smf']) -
+                    np.array(obs_smf_inn['smf']))
 
     if obs_smf_cov is not None:
         smf_cov_inv = linalg.inv(obs_smf_cov)

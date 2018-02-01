@@ -286,6 +286,9 @@ def asap_emcee_fit(args, verbose=True):
     # Parse the configuration file  .
     config_initial = parse_config(args.config)
 
+    # move = emcee.moves.StretchMove(a=4)
+    emcee_move = emcee.moves.WalkMove()
+
     # Load the data
     cfg, obs_data, um_data = initial_model(config_initial, verbose=verbose)
 
@@ -303,7 +306,7 @@ def asap_emcee_fit(args, verbose=True):
                 cfg['mcmc_nwalkers'],
                 cfg['mcmc_ndims'],
                 asap_ln_prob_global,
-                moves=emcee.moves.StretchMove(a=4),
+                moves=emcee_move,
                 pool=pool)
 
             # Burn-in
@@ -320,7 +323,7 @@ def asap_emcee_fit(args, verbose=True):
             cfg['mcmc_nwalkers'],
             cfg['mcmc_ndims'],
             asap_ln_prob_global,
-            moves=emcee.moves.StretchMove(a=4))
+            moves=emcee_move)
 
         # Burn-in
         mcmc_burnin_result = asap_emcee_burnin(

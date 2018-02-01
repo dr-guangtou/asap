@@ -35,8 +35,8 @@ def setup_model(cfg, verbose=True):
         cfg['mcmc_labels'] = [r'$a_{\mathrm{SMHR}}$', r'$b_{\mathrm{SMHR}}$',
                               r'$a_{\sigma \log M_{\star}}$',
                               r'$b_{\sigma \log M_{\star}}$',
-                              r'$\mathrm{f}_{\mathrm{in-situ}}$',
-                              r'$\mathrm{f}_{\mathrm{ex-situ}}$']
+                              r'$\mathrm{f}_{\mathrm{ins}}$',
+                              r'$\mathrm{f}_{\mathrm{exs}}$']
         # Initial values
         if 'param_ini' not in cfg.keys():
             cfg['param_ini'] = [0.599, 3.669, -0.048, 0.020, 0.80, 0.11]
@@ -57,8 +57,8 @@ def setup_model(cfg, verbose=True):
                               r'$b_{\mathrm{SMHR}}$',
                               r'$a_{\sigma \log M_{\star}}$',
                               r'$b_{\sigma \log M_{\star}}$',
-                              r'$\mathrm{f}_{\mathrm{in-situ}}$',
-                              r'$\mathrm{f}_{\mathrm{ex-situ}}$',
+                              r'$\mathrm{f}_{\mathrm{ins}}$',
+                              r'$\mathrm{f}_{\mathrm{exs}}$',
                               r'$\mathrm{f}_{\mathrm{tot}}$']
         # Initial values
         if 'param_ini' not in cfg.keys():

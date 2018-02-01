@@ -1,13 +1,16 @@
-"""
-Module storing functions used to paint values of M10, M100 and M*_tot onto
-model galaxies
-"""
+"""Predict M100 and M10."""
 
 import numpy as np
 
 from sm_halo_model import logms_halo_from_logmh_log_linear
 from sm_minn_model import logms_inn_cam
 from sm_mtot_model import logms_tot_from_logms_halo
+
+__all__ = ['frac_from_logmh', 'sigma_logms_from_logmh',
+           'determine_logms_bins', 'mass_prof_model_simple',
+           'mass_prof_model_frac1', 'mass_prof_model_frac2',
+           'mass_prof_model_frac3', 'mass_prof_model_frac4',
+           'mass_prof_model_frac5']
 
 
 def frac_from_logmh(logm_halo, frac_a, frac_b,
@@ -88,6 +91,7 @@ def mass_prof_model_simple(um_mock,
     """Mtot and Minn prediction using simple model."""
     # Model parameters
     shmr_a, shmr_b, sigms_a, sigms_b = parameters
+
     # Scatter of logMs_tot based on halo mass
     sig_logms_tot = sigma_logms_from_logmh(um_mock[logmh_col],
                                            sigms_a, sigms_b,
@@ -107,17 +111,13 @@ def mass_prof_model_simple(um_mock,
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
     # galaxies (central + ICL + satellites) in haloes.
-    logms_halo_mod = logms_halo_from_logmh_log_linear(um_mock[logmh_col],
-                                                      shmr_a,
-                                                      shmr_b,
-                                                      sig_logms_tot,
-                                                      log_mass=True)
+    logms_halo_mod_all = logms_halo_from_logmh_log_linear(
+        um_mock[logmh_col], shmr_a, shmr_b, sig_logms_tot, log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
     # predict the total stellar mass of galaxies (central + ICL).
-    logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
-                                                  frac_tot_by_halo,
-                                                  log_mass=True)
+    logms_tot_mod_all = logms_tot_from_logms_halo(
+        logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     # Only keep the ones with Ms,tot within the obseved range.
     mask_tot = ((logms_tot_mod_all >= logms_tot_bins[0]) &
@@ -136,9 +136,8 @@ def mass_prof_model_simple(um_mock,
 
     return (logms_inn_mod,
             logms_tot_mod_all,
-            logms_halo_mod[mask_tot],
-            mask_tot,
-            um_mock[mask_tot])
+            logms_halo_mod_all,
+            mask_tot)
 
 
 def mass_prof_model_frac1(um_mock,
@@ -180,17 +179,13 @@ def mass_prof_model_frac1(um_mock,
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
     # galaxies (central + ICL + satellites) in haloes.
-    logms_halo_mod = logms_halo_from_logmh_log_linear(um_mock[logmh_col],
-                                                      shmr_a,
-                                                      shmr_b,
-                                                      sig_logms_tot,
-                                                      log_mass=True)
+    logms_halo_mod_all = logms_halo_from_logmh_log_linear(
+        um_mock[logmh_col], shmr_a, shmr_b, sig_logms_tot, log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
-    # predict the total stellar mass of galaxies (in-situ + ex-situ).
-    logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
-                                                  frac_tot_by_halo,
-                                                  log_mass=True)
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_tot_from_logms_halo(
+        logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     # Only keep the ones with Ms,tot within the obseved range.
     mask_tot = ((logms_tot_mod_all >= logms_tot_bins[0]) &
@@ -209,9 +204,8 @@ def mass_prof_model_frac1(um_mock,
 
     return (logms_inn_mod,
             logms_tot_mod_all,
-            logms_halo_mod[mask_tot],
-            mask_tot,
-            um_mock[mask_tot])
+            logms_halo_mod_all,
+            mask_tot)
 
 
 def mass_prof_model_frac2(um_mock,
@@ -254,17 +248,13 @@ def mass_prof_model_frac2(um_mock,
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
     # galaxies (central + ICL + satellites) in haloes.
-    logms_halo_mod = logms_halo_from_logmh_log_linear(um_mock[logmh_col],
-                                                      shmr_a,
-                                                      shmr_b,
-                                                      sig_logms_tot,
-                                                      log_mass=True)
+    logms_halo_mod_all = logms_halo_from_logmh_log_linear(
+        um_mock[logmh_col], shmr_a, shmr_b, sig_logms_tot, log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
-    # predict the total stellar mass of galaxies (in-situ + ex-situ).
-    logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
-                                                  frac_tot_by_halo,
-                                                  log_mass=True)
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_tot_from_logms_halo(
+        logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     mtot_mod_all = 10.0 ** logms_tot_mod_all
     logms_inn_mod_all = np.log10(mtot_mod_all * frac_ins_by_tot * frac_ins +
@@ -274,11 +264,10 @@ def mass_prof_model_frac2(um_mock,
     mask_tot = ((logms_tot_mod_all >= logms_tot_bins[0]) &
                 (logms_tot_mod_all <= logms_tot_bins[-1]))
 
-    return (logms_inn_mod_all[mask_tot],
+    return (logms_inn_mod_all,
             logms_tot_mod_all,
-            logms_halo_mod[mask_tot],
-            mask_tot,
-            um_mock[mask_tot])
+            logms_halo_mod_all,
+            mask_tot)
 
 
 def mass_prof_model_frac3(um_mock,
@@ -321,17 +310,13 @@ def mass_prof_model_frac3(um_mock,
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
     # galaxies (central + ICL + satellites) in haloes.
-    logms_halo_mod = logms_halo_from_logmh_log_linear(um_mock[logmh_col],
-                                                      shmr_a,
-                                                      shmr_b,
-                                                      sig_logms_tot,
-                                                      log_mass=True)
+    logms_halo_mod_all = logms_halo_from_logmh_log_linear(
+        um_mock[logmh_col], shmr_a, shmr_b, sig_logms_tot, log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
-    # predict the total stellar mass of galaxies (in-situ + ex-situ).
-    logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
-                                                  frac_tot_by_halo,
-                                                  log_mass=True)
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_tot_from_logms_halo(
+        logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     mtot_mod_all = 10.0 ** logms_tot_mod_all
 
@@ -344,11 +329,10 @@ def mass_prof_model_frac3(um_mock,
     mask_tot = ((logms_tot_mod_all >= logms_tot_bins[0]) &
                 (logms_tot_mod_all <= logms_tot_bins[-1]))
 
-    return (logms_inn_mod_all[mask_tot],
+    return (logms_inn_mod_all,
             logms_out_mod_all,
-            logms_halo_mod[mask_tot],
-            mask_tot,
-            um_mock[mask_tot])
+            logms_halo_mod_all,
+            mask_tot)
 
 
 def mass_prof_model_frac4(um_mock,
@@ -389,17 +373,13 @@ def mass_prof_model_frac4(um_mock,
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
     # galaxies (central + ICL + satellites) in haloes.
-    logms_halo_mod = logms_halo_from_logmh_log_linear(um_mock[logmh_col],
-                                                      shmr_a,
-                                                      shmr_b,
-                                                      sig_logms_tot,
-                                                      log_mass=True)
+    logms_halo_mod_all = logms_halo_from_logmh_log_linear(
+        um_mock[logmh_col], shmr_a, shmr_b, sig_logms_tot, log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
-    # predict the total stellar mass of galaxies (in-situ + ex-situ).
-    logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
-                                                  frac_tot_by_halo,
-                                                  log_mass=True)
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_tot_from_logms_halo(
+        logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     # Fraction of ex-situ component that goes into the inner aperture
     frac_exs = frac_from_logmh(um_mock[logmh_col],
@@ -416,11 +396,10 @@ def mass_prof_model_frac4(um_mock,
     mask_tot = ((logms_tot_mod_all >= logms_tot_bins[0]) &
                 (logms_tot_mod_all <= logms_tot_bins[-1]))
 
-    return (logms_inn_mod_all[mask_tot],
+    return (logms_inn_mod_all,
             logms_tot_mod_all,
-            logms_halo_mod[mask_tot],
-            mask_tot,
-            um_mock[mask_tot])
+            logms_halo_mod_all,
+            mask_tot)
 
 
 def mass_prof_model_frac5(um_mock,
@@ -462,17 +441,13 @@ def mass_prof_model_frac5(um_mock,
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
     # galaxies (central + ICL + satellites) in haloes.
-    logms_halo_mod = logms_halo_from_logmh_log_linear(um_mock[logmh_col],
-                                                      shmr_a,
-                                                      shmr_b,
-                                                      sig_logms_tot,
-                                                      log_mass=True)
+    logms_halo_mod_all = logms_halo_from_logmh_log_linear(
+        um_mock[logmh_col], shmr_a, shmr_b, sig_logms_tot, log_mass=True)
 
     # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
-    # predict the total stellar mass of galaxies (in-situ + ex-situ).
-    logms_tot_mod_all = logms_tot_from_logms_halo(logms_halo_mod,
-                                                  frac_tot_by_halo,
-                                                  log_mass=True)
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_tot_from_logms_halo(
+        logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     # Fraction of ex-situ component that goes into the inner aperture
     frac_ins = frac_from_logmh(um_mock[logmh_col],
@@ -491,8 +466,7 @@ def mass_prof_model_frac5(um_mock,
     mask_tot = ((logms_tot_mod_all >= logms_tot_bins[0]) &
                 (logms_tot_mod_all <= logms_tot_bins[-1]))
 
-    return (logms_inn_mod_all[mask_tot],
+    return (logms_inn_mod_all,
             logms_tot_mod_all,
-            logms_halo_mod[mask_tot],
-            mask_tot,
-            um_mock[mask_tot])
+            logms_halo_mod_all,
+            mask_tot)

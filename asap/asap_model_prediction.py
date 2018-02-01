@@ -351,17 +351,25 @@ def asap_predict_model(param, cfg, obs_data, um_data,
 
     """
     # Predict stellar mass
-    (logms_mod_inn, logms_mod_tot_all,
-     logms_mod_halo, mask_mtot, um_mock_use) = asap_predict_mass(
-         param, cfg, obs_data, um_data, constant_bin=constant_bin)
+    if (cfg['model_type'] == 'simple' or cfg['model_type'] == 'frac1'):
+        (logms_mod_inn, logms_mod_tot_all,
+         logms_mod_halo_all, mask_mtot) = asap_predict_mass(
+             param, cfg, obs_data, um_data, constant_bin=constant_bin)
+        logms_mod_tot = logms_mod_tot_all[mask_mtot]
+    else:
+        (logms_mod_inn_all, logms_mod_tot_all,
+         logms_mod_halo_all, mask_mtot) = asap_predict_mass(
+             param, cfg, obs_data, um_data, constant_bin=constant_bin)
+        logms_mod_inn = logms_mod_inn_all[mask_mtot]
+        logms_mod_tot = logms_mod_tot_all[mask_mtot]
 
     # Predict the SMFs
     um_smf_tot, um_smf_inn = asap_predict_smf(
-        logms_mod_tot_all[mask_mtot], logms_mod_inn, cfg)
+        logms_mod_tot, logms_mod_inn, cfg)
 
     um_dsigma_profs = asap_predict_dsigma(
         cfg, obs_data, um_data,
-        logms_mod_tot_all[mask_mtot], logms_mod_inn, mask_mtot,
+        logms_mod_tot, logms_mod_inn, mask_mtot,
         add_stellar=cfg['um_wl_add_stellar'])
 
     if show_smf:
@@ -369,7 +377,6 @@ def asap_predict_model(param, cfg, obs_data, um_data,
                                            cfg['um_volume'],
                                            20, 10.5, 12.5,
                                            n_boots=1)
-        logms_mod_tot = logms_mod_tot_all[mask_mtot]
         fig_smf = plot_mtot_minn_smf(
             obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
             obs_data['obs_mtot'], obs_data['obs_minn'],
@@ -387,9 +394,13 @@ def asap_predict_model(param, cfg, obs_data, um_data,
                                           um_mhalo=um_mhalo_tuple)
 
     if return_all:
-        return (um_smf_tot, um_smf_inn, um_dsigma_profs,
-                logms_mod_inn, logms_mod_tot_all[mask_mtot],
-                logms_mod_halo, mask_mtot,
-                um_mock_use)
+        if (cfg['model_type'] == 'simple' or cfg['model_type'] == 'frac1'):
+            return (um_smf_tot, um_smf_inn, um_dsigma_profs,
+                    logms_mod_inn, logms_mod_tot_all,
+                    logms_mod_halo_all, mask_mtot)
+        else:
+            return (um_smf_tot, um_smf_inn, um_dsigma_profs,
+                    logms_mod_inn_all, logms_mod_tot_all,
+                    logms_mod_halo_all, mask_mtot)
 
     return um_smf_tot, um_smf_inn, um_dsigma_profs

@@ -179,7 +179,7 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
     return ax
 
 # HM (y axis) at fixed SM (x axis)
-def dm_vs_sm(catalog, fit=None, ax=None):
+def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
         fig.set_size_inches(18.5, 10.5)
@@ -200,7 +200,7 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     ax.fill_between(sm_bin_midpoints, mean_hm-(2*std_hm), mean_hm-(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm+(2*std_hm), mean_hm+(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.set(
-        xlabel=m_star_x_axis_simple,
+        xlabel=m_star_x_axis(n_sats),
         ylabel=m_vir_x_axis,
     )
 

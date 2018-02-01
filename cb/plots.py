@@ -21,12 +21,47 @@ def sm_scatter(n_sats):
 # All plotters should plot using log10(value)
 # Whether they take in data in that format or convert it depends so keep track of that
 
+def resample_scatter(x, y, bins):
+    bin_indexes = np.digitize(x, bins)
+    stds, stdstds = np.zeros(len(bins)-1), np.zeros(len(bins)-1)
+    # Assert no empty bins
+    for i in range(len(bins) - 1):
+        indexes_in_bin = np.where(bin_indexes == i + 1)[0] # digitize is 1 indexed
+        count_in_bin = len(indexes_in_bin)
+        if count_in_bin < 5:
+            print("Warning - {} items in bin {}".format(count_in_bin, i+1))
+
+        # Calculate stats for that bin
+        iterations = 1000
+        this_bin_std = np.zeros(iterations)
+        for j in range(iterations):
+            ci = np.random.choice(indexes_in_bin, len(indexes_in_bin)) # chosen indexes
+            this_bin_std[j] = np.std(y[ci])
+        stds[i] = np.mean(this_bin_std)
+        stdstds[i] = np.std(this_bin_std)
+    return stds, stdstds
+
+# This is simlar to ^ except it resamples everything which doesn't guarantee that
+# the number of points in each bin is conserved. It *appears* to be the same.
+# Trade off here is simple code, but the chance of having empty bins which I am not
+# 100% sure how to deal with...
+def resample_scatter_simple(x, y, bins):
+    stds = []
+    while len(stds) < 1000:
+        si = np.random.choice(len(x), len(x))
+        std, _, _ = scipy.stats.binned_statistic(x[si], y[si], statistic="std", bins=bins)
+        if np.any(std == 0):
+            print("warning, empty bin. Not an issue unless you see a lot (10?) of these")
+            continue
+        stds.append(std)
+    stds = np.array(stds)
+    return np.mean(stds, axis=0), np.std(stds, axis=0)
+
 # plots m_star_all_halo, m_star_all_cen, m_star_insitu
 def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
     if ax is None:
         fig, ax = plt.subplots()
         fig.set_size_inches(18.5, 10.5)
-
 
     for cat in ["insitu", "cen", "halo"]:
         v = central_catalogs[cat]
@@ -38,10 +73,11 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
         bins = np.arange(
                 np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
                 np.max(halo_masses) + 0.2, # to ensure that the last point is included
-                0.2)
+                0.2)[:-1] # The last bin has only one data point. Can't have that.
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
-        std, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=bins)
-        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M_{\ast}^{" + str(cat) + "}$") # fixme: hack to remove last bin where there is only one point
+
+        std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
+        ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(cat) + "}$", capsize=1.5, linewidth=1)
     ax.set(
         xlabel=m_vir_x_axis,
         ylabel=sm_scatter_simple,
@@ -67,10 +103,11 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
         bins = np.arange(
                 np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
                 np.max(halo_masses) + 0.2, # to ensure that the last point is included
-                0.2)
+                0.2)[:-1]
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
-        std, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=bins)
-        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M_{\ast}^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+
+        std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
+        ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
     ax.set(
         xlabel=m_vir_x_axis,
         ylabel=sm_scatter_simple,
@@ -94,10 +131,11 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         bins = np.arange(
                 np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
                 np.max(stellar_masses) + 0.2, # to ensure that the last point is included
-                0.2)
+                0.2)[:-1]
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
-        std, _, _ = scipy.stats.binned_statistic(stellar_masses, delta_halo_masses, statistic="std", bins=bins)
-        ax.plot(bin_midpoints[:-1], std[:-1], label=r"$M_{\ast}^{" + str(k) + "}$") # fixme: hack to remove last bin where there is only one point
+
+        std, stdstd = resample_scatter(stellar_masses, delta_halo_masses, bins)
+        ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
     ax.set(
         xlabel=m_star_x_axis_simple,
         ylabel=hm_scatter,
@@ -155,7 +193,7 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     std_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=sm_bin_edges)
 
     # Plot data and colored error regions
-    ax.plot(sm_bin_midpoints, mean_hm, marker="o", label="Universe Machine")
+    ax.plot(sm_bin_midpoints, mean_hm, marker="o", label="Universe Machine", linewidth=1)
     ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm+std_hm, alpha=0.5, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm-(2*std_hm), alpha=0.25, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm+std_hm, mean_hm+(2*std_hm), alpha=0.25, facecolor="tab:blue")
@@ -167,7 +205,7 @@ def dm_vs_sm(catalog, fit=None, ax=None):
     )
 
     if fit is not None:
-        ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit), label="Best Fit")
+        ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
     ax.legend()
 
     return ax
@@ -187,7 +225,7 @@ def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)
 
     # Plot data and colored error regions
-    ax.plot(hm_bin_midpoints, mean_sm, marker="o", label="Universe Machine")
+    ax.plot(hm_bin_midpoints, mean_sm, marker="o", label="Universe Machine", linewidth=1)
     ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.5, facecolor="tab:blue")
     ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.25, facecolor="tab:blue")
     ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.25, facecolor="tab:blue")
@@ -199,7 +237,7 @@ def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     )
 
     if fit is not None:
-        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit")
+        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
     ax.legend(loc="lower right")
 
     return ax

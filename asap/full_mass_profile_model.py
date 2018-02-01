@@ -105,8 +105,8 @@ def mass_prof_model_simple(um_mock,
 
     # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
     # (including satellites)
-    frac_tot_by_halo = 10.0 ** (um_mock['logms_tot'] - um_mock['logms_halo'])
-    frac_inn_by_tot = 10.0 ** (um_mock['logms_gal'] - um_mock['logms_tot'])
+    frac_tot_by_halo = 10.0 ** (um_mock[logms_col] - um_mock['logms_halo'])
+    frac_inn_by_tot = 10.0 ** (um_mock['logms_gal'] - um_mock[logms_col])
 
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
@@ -169,7 +169,7 @@ def mass_prof_model_frac1(um_mock,
 
     # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
     # (including satellites)
-    frac_tot_by_halo = 10.0 ** (um_mock['logms_tot'] - um_mock['logms_halo'])
+    frac_tot_by_halo = 10.0 ** (um_mock[logms_col] - um_mock['logms_halo'])
 
     um_mins_predict = np.log10(frac_ins * um_mock['sm'] +
                                frac_exs * um_mock['icl'])
@@ -240,7 +240,7 @@ def mass_prof_model_frac2(um_mock,
 
     # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
     # (including satellites)
-    frac_tot_by_halo = 10.0 ** (um_mock['logms_tot'] - um_mock['logms_halo'])
+    frac_tot_by_halo = 10.0 ** (um_mock[logms_col] - um_mock['logms_halo'])
 
     frac_ins_by_tot = um_mock['sm'] / (um_mock['sm'] + um_mock['icl'])
     frac_exs_by_tot = um_mock['icl'] / (um_mock['sm'] + um_mock['icl'])
@@ -302,7 +302,7 @@ def mass_prof_model_frac3(um_mock,
 
     # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
     # (including satellites)
-    frac_tot_by_halo = 10.0 ** (um_mock['logms_tot'] - um_mock['logms_halo'])
+    frac_tot_by_halo = 10.0 ** (um_mock[logms_col] - um_mock['logms_halo'])
 
     frac_ins_by_tot = um_mock['sm'] / (um_mock['sm'] + um_mock['icl'])
     frac_exs_by_tot = um_mock['icl'] / (um_mock['sm'] + um_mock['icl'])
@@ -368,7 +368,7 @@ def mass_prof_model_frac4(um_mock,
 
     # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
     # (including satellites)
-    frac_tot_by_halo = 10.0 ** (um_mock['logms_tot'] - um_mock['logms_halo'])
+    frac_tot_by_halo = 10.0 ** (um_mock[logms_col] - um_mock['logms_halo'])
 
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
@@ -436,7 +436,7 @@ def mass_prof_model_frac5(um_mock,
 
     # Fraction of 'sm' + 'icl' to the total stellar mass of the halo
     # (including satellites)
-    frac_tot_by_halo = 10.0 ** (um_mock['logms_tot'] - um_mock['logms_halo'])
+    frac_tot_by_halo = 10.0 ** (um_mock[logms_col] - um_mock['logms_halo'])
 
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all

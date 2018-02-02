@@ -286,11 +286,11 @@ def asap_emcee_fit(args, verbose=True):
     # Parse the configuration file  .
     config_initial = parse_config(args.config)
 
-    # Decide the Ensemble moves for walkers
-    emcee_move = mcmc_setup_moves(cfg)
-
     # Load the data
     cfg, obs_data, um_data = initial_model(config_initial, verbose=verbose)
+
+    # Decide the Ensemble moves for walkers
+    emcee_move = mcmc_setup_moves(cfg)
 
     # Initialize the model
     mcmc_ini_position = mcmc_initial_guess(

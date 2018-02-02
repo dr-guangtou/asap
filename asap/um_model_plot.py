@@ -300,17 +300,47 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                 s=20, label='__no_label__',
                 alpha=1.0)
 
-    ax2.plot(um_smf_tot['logm_mean'],
-             np.log10(um_smf_tot['smf']),
-             linewidth=4, linestyle='--',
-             c='royalblue',
-             label=r'$\mathrm{UM:\ Mtot}$')
+    if isinstance(um_smf_inn, (list,)):
+        for ii, smf in enumerate(um_smf_inn):
+            if ii == 0:
+                ax2.plot(smf['logm_mean'],
+                         np.log10(smf['smf']),
+                         linewidth=1, linestyle='-',
+                         c='salmon', alpha=0.7,
+                         label=r'$\mathrm{UM:\ Minn}$')
+            else:
+                ax2.plot(smf['logm_mean'],
+                         np.log10(smf['smf']),
+                         linewidth=1, linestyle='-',
+                         c='salmon', alpha=0.7,
+                         label='__no_label__')
+    else:
+        ax2.plot(um_smf_inn['logm_mean'],
+                 np.log10(um_smf_inn['smf']),
+                 linewidth=4, linestyle='--',
+                 c='salmon',
+                 label=r'$\mathrm{UM:\ Minn}$')
 
-    ax2.plot(um_smf_inn['logm_mean'],
-             np.log10(um_smf_inn['smf']),
-             linewidth=4, linestyle='--',
-             c='salmon',
-             label=r'$\mathrm{UM:\ Minn}$')
+    if isinstance(um_smf_tot, (list,)):
+        for ii, smf in enumerate(um_smf_tot):
+            if ii == 0:
+                ax2.plot(smf['logm_mean'],
+                         np.log10(smf['smf']),
+                         linewidth=1, linestyle='-',
+                         c='royalblue', alpha=0.7,
+                         label=r'$\mathrm{UM:\ Mtot}$')
+            else:
+                ax2.plot(smf['logm_mean'],
+                         np.log10(smf['smf']),
+                         linewidth=1, linestyle='-',
+                         c='royalblue', alpha=0.7,
+                         label='__no_label__')
+    else:
+        ax2.plot(um_smf_tot['logm_mean'],
+                 np.log10(um_smf_tot['smf']),
+                 linewidth=4, linestyle='--',
+                 c='royalblue',
+                 label=r'$\mathrm{UM:\ Mtot}$')
 
     ax2.legend(fontsize=12, loc='upper right')
 
@@ -342,7 +372,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
 def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                          obs_mhalo=None, um_mhalo=None, **kwargs):
     """Plot the UM predicted weak lensing profiles."""
-    obs_wl_n_bin = len(um_wl_profs)
+    obs_wl_n_bin = len(obs_wl_dsigma)
     if obs_wl_n_bin <= 4:
         n_col = obs_wl_n_bin
         n_row = 1
@@ -412,10 +442,16 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                 color='k', alpha=0.9)
 
         # Predicted WL profile
-        ax.scatter(obs_prof.r, um_wl_profs[ii],
-                   marker='h', s=5, c='b', alpha=0.7)
-        ax.plot(obs_prof.r, um_wl_profs[ii],
-                linewidth=2.0, color='royalblue', alpha=0.7)
+        if isinstance(um_wl_profs[0], (list,)):
+            for dsig in um_wl_profs:
+                ax.plot(obs_prof.r, dsig[ii],
+                        linewidth=1.2, color='royalblue',
+                        alpha=0.7)
+        else:
+            ax.scatter(obs_prof.r, um_wl_profs[ii],
+                       marker='h', s=5, c='b', alpha=0.7)
+            ax.plot(obs_prof.r, um_wl_profs[ii],
+                    linewidth=2.0, color='royalblue', alpha=0.7)
 
         if um_mhalo is not None:
             ax.text(0.50, 0.92,

@@ -90,9 +90,9 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
 
 
 def mcmc_setup_moves(cfg):
-    """Setup the Move object for emcee."""
+    """Choose the Move object for emcee."""
     if cfg['mcmc_moves'] == 'redblue':
-        emcee_moves = emcee.moves.RedBlueMove(randomize_split=True)
+        emcee_moves = emcee.moves.RedBlueMove(randomize_split=False)
     elif cfg['mcmc_moves'] == 'stretch':
         emcee_moves = emcee.moves.StretchMove(a=cfg['mcmc_stretch_a'])
     elif cfg['mcmc_moves'] == 'walk':

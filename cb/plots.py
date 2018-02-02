@@ -61,12 +61,13 @@ def resample_scatter_simple(x, y, bins):
 def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
     if ax is None:
         fig, ax = plt.subplots()
-        fig.set_size_inches(18.5, 10.5)
+        # fig.set_size_inches(18.5, 10.5)
 
     for cat in ["insitu", "cen", "halo"]:
         v = central_catalogs[cat]
         halo_masses = np.log10(v["data"]["m"])
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+
         predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v["fit"])
         delta_stellar_masses = stellar_masses - predicted_stellar_masses
 
@@ -90,7 +91,7 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
 def hm_vs_sm_scatter(central_catalogs, ax = None):
     if ax is None:
         fig, ax = plt.subplots()
-        fig.set_size_inches(18.5, 10.5)
+        # fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
         if k == "insitu":
@@ -118,7 +119,7 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
 def sm_vs_hm_scatter(central_catalogs, ax = None):
     if ax is None:
         fig, ax = plt.subplots()
-        fig.set_size_inches(18.5, 10.5)
+        # fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
         if k == "insitu":
@@ -182,7 +183,7 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
 def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
-        fig.set_size_inches(18.5, 10.5)
+        # fig.set_size_inches(18.5, 10.5)
     x = np.log10(catalog["icl"] + catalog["sm"])
     y = np.log10(catalog["m"])
 
@@ -214,7 +215,7 @@ def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
 def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
-        fig.set_size_inches(18.5, 10.5)
+        # fig.set_size_inches(18.5, 10.5)
     y = np.log10(catalog["icl"] + catalog["sm"])
     x = np.log10(catalog["m"])
 

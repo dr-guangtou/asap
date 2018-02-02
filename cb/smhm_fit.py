@@ -3,6 +3,17 @@ import scipy.stats
 import scipy.optimize
 
 
+def get_fit_binning(x_data):
+    step = 0.1
+    # np.arange doesn't go above the max
+    edges = np.arange(np.min(x_data), np.max(x_data) + step, step)
+    midpoints = edges[:-1] + np.diff(edges) / 2
+    return edges, midpoints
+
+def drop_nans(bin_midpoints, y):
+    indexes = np.isfinite(y)
+    return bin_midpoints[indexes], y[indexes]
+
 # Returns the parameters needed to fit SM (on the x axis) to HM (on the y axis)
 # Uses the functional form in the paper...
 def get_fit(catalog):
@@ -10,9 +21,11 @@ def get_fit(catalog):
     y = np.log10(catalog["m"])
 
     # Find various stats on our data
-    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
-    sm_bin_midpoints = sm_bin_edges[:-1] + np.diff(sm_bin_edges) / 2
+    sm_bin_edges, sm_bin_midpoints = get_fit_binning(x)
     mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
+
+    # Drop nans (from empty bins)
+    sm_bin_midpoints, mean_hm = drop_nans(sm_bin_midpoints, mean_hm)
 
     # Start with the default values from the paper
     m1 = 10**12.73
@@ -43,9 +56,11 @@ def get_fit_2(catalog):
     x = np.log10(catalog["m"])
 
     # Find various stats on our data
-    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
-    hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
+    hm_bin_edges, hm_bin_midpoints  = get_fit_binning(x)
     mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
+
+    # Drop nans (from empty bins)
+    hm_bin_midpoints, mean_sm = drop_nans(hm_bin_midpoints, mean_sm)
 
     # Start with the default values from the paper
     m1 = 10**12.73

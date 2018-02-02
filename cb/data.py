@@ -11,18 +11,54 @@ def load():
     satellites = catalog["satellites"]
     return centrals, satellites
 
-def cut_centrals(centrals):
-    centrals_stellar_cut = centrals[centrals["sm"] + centrals["icl"] > 1e11]
-    centrals_insitu_cut = centrals[centrals["sm"] > 1e10]
-    centrals_halo_cut = centrals[centrals["m"] > 1e13]
-    return centrals_insitu_cut, centrals_stellar_cut, centrals_halo_cut
+cut_config = {
+        "cen": {"n_sats": 0, "mass_limit": 11.6},
+        1: {"n_sats": 1, "mass_limit": 11.7},
+        2: {"n_sats": 2, "mass_limit": 11.7},
+        5: {"n_sats": 5, "mass_limit": 11.8},
+        "halo": {"n_sats": 0.999999999, "mass_limit": 11.9},
+}
 
-def get_with_sats(centrals, satellites, f):
+def sm_cuts_with_sats(centrals, satellites, f):
     res = {}
-    for (k, sats) in [("cen", 0), (1, 1), (2, 2), (5, 5), ("halo", 0.999999)]:
-        centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, sats)
+    for (k, cfg) in cut_config.items():
+        centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, cfg["n_sats"])
+        centrals_with_n_sats = centrals_with_n_sats[
+                (centrals_with_n_sats["sm"] + centrals_with_n_sats["icl"]) > 10**cfg["mass_limit"]
+        ]
         res[k] = {
             "data": centrals_with_n_sats,
             "fit": f(centrals_with_n_sats),
         }
+    # Add insitu
+    insitu_only = np.copy(centrals)
+    insitu_only["icl"] = 0
+    insitu_only = insitu_only[
+            insitu_only["sm"] > 10**11.3
+    ]
+    res["insitu"] = {
+            "data": insitu_only,
+            "fit": f(insitu_only),
+    }
+
+    return res
+
+def hm_cuts_with_sats(centrals, satellites, f):
+    res = {}
+
+    for (k, cfg) in cut_config.items():
+        centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, cfg["n_sats"])
+        centrals_with_n_sats = centrals_with_n_sats[centrals_with_n_sats["m"] > 10**13]
+        res[k] = {
+            "data": centrals_with_n_sats,
+            "fit": f(centrals_with_n_sats),
+        }
+    # Add insitu
+    insitu_only = np.copy(centrals)
+    insitu_only["icl"] = 0
+    insitu_only = insitu_only[insitu_only["m"] > 10**13]
+    res["insitu"] = {
+            "data": insitu_only,
+            "fit": f(insitu_only),
+    }
     return res

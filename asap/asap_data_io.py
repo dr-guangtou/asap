@@ -7,7 +7,7 @@ import yaml
 
 import numpy as np
 
-from astropy.table import Table
+from astropy.table import Table, Column
 from astropy.cosmology import FlatLambdaCDM
 
 __all__ = ["parse_config",
@@ -225,14 +225,36 @@ def load_um_data(cfg, verbose=True):
     """Load the UniverseMachine data."""
     um_mock = Table(np.load(os.path.join(cfg['um_dir'],
                                          cfg['um_model'])))
+
+    # Only select the useful columns
+    cols_use = ['halo_id', 'upid', 'mvir', 'mpeak', 'sm', 'icl',
+                'halo_hostid', 'mhalo_host',
+                'mtot_galaxy', 'mstar_mhalo', 'logms_gal',
+                'logms_icl', 'logms_tot', 'logms_halo',
+                'logmh_vir', 'logmh_peak', 'logmh_host']
+    um_mock_use = um_mock[cols_use]
+
+    # Value added a few useful columns
+    um_mock_use.add_column(Column(data=(um_mock_use['mtot_galaxy'] /
+                                        um_mock_use['mstar_mhalo']),
+                                  name='frac_cen_tot'))
+    um_mock_use.add_column(Column(data=(um_mock_use['sm'] /
+                                        um_mock_use['mtot_galaxy']),
+                                  name='frac_ins_cen'))
+    um_mock_use.add_column(Column(data=(um_mock_use['icl'] /
+                                        um_mock_use['mtot_galaxy']),
+                                  name='frac_exs_cen'))
+
+    # Load the pre-compute lensing pairs
     um_mass_encl = np.load(os.path.join(cfg['um_dir'],
                                         cfg['um_wl_cat']))
-    assert len(um_mock) == len(um_mass_encl)
+    assert len(um_mock_use) == len(um_mass_encl)
 
     # Mask for central galaxies
-    mask_central = um_mock['mask_central']
+    mask_central = (um_mock_use['upid'] == -1)
 
-    return {'um_mock': um_mock, 'um_mass_encl': um_mass_encl,
+    return {'um_mock': um_mock_use,
+            'um_mass_encl': um_mass_encl,
             'mask_central': mask_central}
 
 

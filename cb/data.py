@@ -57,6 +57,10 @@ def hm_cuts_with_sats(centrals, satellites, f):
     insitu_only = np.copy(centrals)
     insitu_only["icl"] = 0
     insitu_only = insitu_only[insitu_only["m"] > 10**13]
+
+    # Drop one terrible data point
+    insitu_only = insitu_only[np.where(insitu_only["sm"] > 1e7)]
+
     res["insitu"] = {
             "data": insitu_only,
             "fit": f(insitu_only),

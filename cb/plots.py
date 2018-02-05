@@ -17,16 +17,13 @@ def m_star_x_axis(n_sats):
 def sm_scatter(n_sats):
     return r"$\sigma(log\ M_{\ast}^{" + str(n_sats) + "})$"
 
-# Be very careful with when you are in log and when not in log...
-# All plotters should plot using log10(value)
-# Whether they take in data in that format or convert it depends so keep track of that
-
+# See https://arxiv.org/pdf/0810.1885.pdf
 def resample_scatter(x, y, bins):
     bin_indexes = np.digitize(x, bins)
     stds, stdstds = np.zeros(len(bins)-1), np.zeros(len(bins)-1)
-    # Assert no empty bins
     for i in range(len(bins) - 1):
-        indexes_in_bin = np.where(bin_indexes == i + 1)[0] # digitize is 1 indexed
+        # digitize is 1 indexed
+        indexes_in_bin = np.where(bin_indexes == i + 1)[0]
         count_in_bin = len(indexes_in_bin)
         if count_in_bin < 5:
             print("Warning - {} items in bin {}".format(count_in_bin, i+1))
@@ -36,9 +33,9 @@ def resample_scatter(x, y, bins):
         this_bin_std = np.zeros(iterations)
         for j in range(iterations):
             ci = np.random.choice(indexes_in_bin, len(indexes_in_bin)) # chosen indexes
-            this_bin_std[j] = np.std(y[ci])
+            this_bin_std[j] = np.std(y[ci], ddof=1)
         stds[i] = np.mean(this_bin_std)
-        stdstds[i] = np.std(this_bin_std)
+        stdstds[i] = np.std(this_bin_std, ddof=1)
     return stds, stdstds
 
 # This is simlar to ^ except it resamples everything which doesn't guarantee that
@@ -55,12 +52,12 @@ def resample_scatter_simple(x, y, bins):
             continue
         stds.append(std)
     stds = np.array(stds)
-    return np.mean(stds, axis=0), np.std(stds, axis=0)
+    return np.mean(stds, axis=0), np.std(stds, axis=0, ddof=1)
 
 # plots m_star_all_halo, m_star_all_cen, m_star_insitu
 def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
     if ax is None:
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
 
     for cat in ["insitu", "cen", "halo"]:
@@ -90,7 +87,7 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
 # central_catalogs look like: {label1: {data: [ ], fit: [ ]}, label2: ...}
 def hm_vs_sm_scatter(central_catalogs, ax = None):
     if ax is None:
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
@@ -118,7 +115,7 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
 
 def sm_vs_hm_scatter(central_catalogs, ax = None):
     if ax is None:
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
@@ -182,7 +179,7 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
 # HM (y axis) at fixed SM (x axis)
 def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
     x = np.log10(catalog["icl"] + catalog["sm"])
     y = np.log10(catalog["m"])
@@ -214,7 +211,7 @@ def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
 # SM (y axis) at fixed HM (x axis)
 def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
     y = np.log10(catalog["icl"] + catalog["sm"])
     x = np.log10(catalog["m"])

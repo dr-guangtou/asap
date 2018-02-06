@@ -31,8 +31,8 @@ def load_observed_data(cfg, verbose=True):
     obs_mass = Table.read(os.path.join(cfg['obs_dir'],
                                        cfg['obs_cat']))
 
-    obs_minn = obs_mass[cfg['obs_minn_col']]
-    obs_mtot = obs_mass[cfg['obs_mtot_col']]
+    obs_minn = np.array(obs_mass[cfg['obs_minn_col']])
+    obs_mtot = np.array(obs_mass[cfg['obs_mtot_col']])
 
     with open(cfg['obs_wl_out'], 'rb') as f:
         obs_wl_bin, obs_wl_dsigma = pickle.load(f)
@@ -253,7 +253,7 @@ def load_um_data(cfg, verbose=True):
     # Mask for central galaxies
     mask_central = (um_mock_use['upid'] == -1)
 
-    return {'um_mock': um_mock_use,
+    return {'um_mock': um_mock_use.as_array(),
             'um_mass_encl': um_mass_encl,
             'mask_central': mask_central}
 

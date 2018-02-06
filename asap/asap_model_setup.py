@@ -172,13 +172,13 @@ def setup_model(cfg, verbose=True):
         cfg['mcmc_out_dir'] = '.'
 
     if 'mcmc_moves' not in cfg.keys():
-        cfg['mcmc_moves'] = 'redblue'
+        cfg['mcmc_moves'] = 'stretch'
 
     if 'mcmc_stretch_a' not in cfg.keys():
         cfg['mcmc_stretch_a'] = 4
 
     if 'mcmc_walk_s' not in cfg.keys():
-        cfg['mcmc_walk_s'] = 3
+        cfg['mcmc_walk_s'] = None
 
     cfg['mcmc_burnin_file'] = os.path.join(
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_burnin.npz')
@@ -196,10 +196,10 @@ def setup_model(cfg, verbose=True):
         cfg['dynesty_sample'] = 'rwalk'
 
     if 'dynesty_nlive_ini' not in cfg.keys():
-        cfg['dynesty_nlive_ini'] = 200
+        cfg['dynesty_nlive_ini'] = 300
 
     if 'dynesty_nlive_run' not in cfg.keys():
-        cfg['dynesty_nlive_run'] = 200
+        cfg['dynesty_nlive_run'] = 300
 
     if 'dynesty_bootstrap' not in cfg.keys():
         cfg['dynesty_bootstrap'] = 40
@@ -217,19 +217,19 @@ def setup_model(cfg, verbose=True):
         cfg['dynesty_dlogz_ini'] = 5.0
 
     if 'dynesty_maxcall_ini' not in cfg.keys():
-        cfg['dynesty_maxcall_ini'] = 10000
+        cfg['dynesty_maxcall_ini'] = 20000
 
     if 'dynesty_maxiter_ini' not in cfg.keys():
-        cfg['dynesty_maxiter_ini'] = 1000
+        cfg['dynesty_maxiter_ini'] = 2000
 
     if 'dynesty_dlogz_run' not in cfg.keys():
-        cfg['dynesty_dlogz_run'] = 0.1
+        cfg['dynesty_dlogz_run'] = 0.01
 
     if 'dynesty_maxcall_run' not in cfg.keys():
-        cfg['dynesty_maxcall_run'] = 50000
+        cfg['dynesty_maxcall_run'] = 200000
 
     if 'dynesty_maxiter_run' not in cfg.keys():
-        cfg['dynesty_maxiter_run'] = 1000
+        cfg['dynesty_maxiter_run'] = 10000
     # --------------------------------------------------- #
 
     return cfg

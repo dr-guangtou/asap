@@ -1,27 +1,55 @@
 """Predictions of the A.S.A.P. model."""
 
+from __future__ import print_function, division, unicode_literals
+
 import numpy as np
 
 from scipy import interpolate
 
 from halotools.mock_observables import delta_sigma_from_precomputed_pairs
 
-from stellar_mass_function import get_smf_bootstrap
+from stellar_mass_function import get_smf_bootstrap, \
+    smf_sigma_mass_weighted
 from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1, mass_prof_model_frac2, \
     mass_prof_model_frac3, mass_prof_model_frac4, \
     mass_prof_model_frac5
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
+from asap_mass_model import mass_model_frac4
 
 
 __all__ = ['asap_predict_mass', 'asap_predict_smf',
            'asap_single_dsigma', 'asap_um_dsigma',
-           'asap_predict_dsigma', 'asap_predict_model']
+           'asap_predict_dsigma', 'asap_predict_model',
+           'asap_predict_model_prob', 'asap_predict_mass_prob',
+           'asap_predict_smf_prob']
+
+
+def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
+    """Predict stellar masses in different apertures."""
+    if cfg['model_type'] == 'frac4':
+        if return_all:
+            return mass_model_frac4(
+                um_mock, parameters,
+                random=False, min_logms=None,
+                logmh_col=cfg['um_halo_col'],
+                logms_col=cfg['um_star_col'],
+                min_scatter=cfg['um_min_scatter'])
+
+        return mass_model_frac4(
+            um_mock, parameters,
+            random=False, min_logms=cfg['obs_min_mtot'],
+            logmh_col=cfg['um_halo_col'],
+            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'])
+    else:
+        raise Exception("!! Wrong model: frac4")
 
 
 def asap_predict_mass(parameters, cfg, obs_data, um_data,
                       constant_bin=False):
-    """M100, M10, Mtot using Mvir, M_gal, M_ICL.
+    """
+    Predict stellar masses in different apertures.
 
     Parameters
     ----------
@@ -135,9 +163,28 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
         raise Exception("# Wrong model choice! ")
 
 
+def asap_predict_smf_prob(logms_mod_tot, logms_mod_inn, sigms, cfg):
+    """Predict SMFs weighted by mass uncertainties."""
+    # SMF of the predicted Mtot (M100 or MMax)
+    um_smf_tot = smf_sigma_mass_weighted(logms_mod_tot, sigms,
+                                         cfg['um_volume'],
+                                         cfg['obs_smf_tot_nbin'],
+                                         cfg['obs_smf_tot_min'],
+                                         cfg['obs_smf_tot_max'])
+
+    # SMF of the predicted Minn (M10x)
+    um_smf_inn = smf_sigma_mass_weighted(logms_mod_inn, sigms,
+                                         cfg['um_volume'],
+                                         cfg['obs_smf_inn_nbin'],
+                                         cfg['obs_smf_inn_min'],
+                                         cfg['obs_smf_inn_max'])
+
+    return um_smf_tot, um_smf_inn
+
+
 def asap_predict_smf(logms_mod_tot, logms_mod_inn, cfg):
     """Stellar mass functions of Minn and Mtot predicted by UM."""
-    # SMF of the predicted Mtot (M1100)
+    # SMF of the predicted Mtot (M100 or MMax)
     um_smf_tot = get_smf_bootstrap(logms_mod_tot,
                                    cfg['um_volume'],
                                    cfg['obs_smf_tot_nbin'],
@@ -318,6 +365,26 @@ def asap_predict_dsigma(cfg, obs_data, um_data,
             for obs_prof in obs_data['obs_wl_dsigma']]
 
 
+def asap_predict_model_prob(param, cfg, obs_data, um_data,
+                            return_all=False, show_smf=False,
+                            show_dsigma=False):
+    """Return all model predictions."""
+    logms_mod_inn, logms_mod_tot, sig_logms = asap_predict_mass_prob(
+        param, cfg, um_data['um_mock'], return_all=return_all)
+
+    # Predict SMFs
+    um_smf_tot, um_smf_inn = asap_predict_smf_prob(
+        logms_mod_tot, logms_mod_inn, sig_logms, cfg)
+
+    # Predict DeltaSigma profiles
+
+    if return_all:
+        return (um_smf_tot, um_smf_inn,
+                logms_mod_inn, logms_mod_tot, sig_logms)
+
+    return um_smf_tot, um_smf_inn
+
+
 def asap_predict_model(param, cfg, obs_data, um_data,
                        constant_bin=False, return_all=False,
                        show_smf=False, show_dsigma=False):
@@ -351,7 +418,7 @@ def asap_predict_model(param, cfg, obs_data, um_data,
 
     """
     # Predict stellar mass
-    if (cfg['model_type'] == 'simple' or cfg['model_type'] == 'frac1'):
+    if cfg['model_type'] == 'simple' or cfg['model_type'] == 'frac1':
         (logms_mod_inn, logms_mod_tot_all,
          logms_mod_halo_all, mask_mtot) = asap_predict_mass(
              param, cfg, obs_data, um_data, constant_bin=constant_bin)
@@ -363,10 +430,11 @@ def asap_predict_model(param, cfg, obs_data, um_data,
         logms_mod_inn = logms_mod_inn_all[mask_mtot]
         logms_mod_tot = logms_mod_tot_all[mask_mtot]
 
-    # Predict the SMFs
+    # Predict SMFs
     um_smf_tot, um_smf_inn = asap_predict_smf(
         logms_mod_tot, logms_mod_inn, cfg)
 
+    # Predict DeltaSigma profiles
     um_dsigma_profs = asap_predict_dsigma(
         cfg, obs_data, um_data,
         logms_mod_tot, logms_mod_inn, mask_mtot,

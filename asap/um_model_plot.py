@@ -679,7 +679,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
         plot_contours=True,
         fill_contours=True,
         show_titles=True,
-        title_kwargs={"fontsize": 20},
+        title_kwargs={"fontsize": 18},
         hist_kwargs={"histtype": 'stepfilled',
                      "alpha": 0.4,
                      "edgecolor": "none"},

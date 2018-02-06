@@ -1,4 +1,5 @@
 """Data input for A.S.A.P model."""
+from __future__ import print_function, division, unicode_literals
 
 import os
 import pickle
@@ -64,6 +65,9 @@ def load_observed_data(cfg, verbose=True):
     cfg['obs_smf_tot_min'] = np.min(obs_smf_tot['logm_0'])
     cfg['obs_smf_tot_max'] = np.max(obs_smf_tot['logm_1'])
     cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
+
+    # TODO : test this margin
+    cfg['obs_min_mtot'] = cfg['obs_smf_tot_min'] - 0.5
 
     cfg['obs_smf_n_data'] = cfg['obs_smf_tot_nbin'] + cfg['obs_smf_inn_nbin']
 

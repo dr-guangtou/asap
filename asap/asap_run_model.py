@@ -198,10 +198,10 @@ def asap_dynesty_fit(args, verbose=True):
                     update_interval=cfg['dynesty_update_interval'],
                     pool=pool)
 
-                dsampler.run_nested(
-                    dlogz=cfg['dynesty_dlogz_run'],
-                    maxiter=cfg['dynesty_maxiter_run'],
-                    maxcall=cfg['dynesty_maxcall_run'])
+                dsampler.run_nested()
+                # dlogz=cfg['dynesty_dlogz_run'],
+                #    maxiter=cfg['dynesty_maxiter_run'],
+                #    maxcall=cfg['dynesty_maxcall_run'])
             else:
                 # logl_args=[cfg, obs_data, um_data],
                 dsampler = dynesty.DynamicNestedSampler(

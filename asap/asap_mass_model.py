@@ -70,7 +70,8 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=None,
     # galaxies (central + ICL + satellites) in haloes.
     if random:
         logms_halo_mod_all = np.random.normal(
-            loc=(shmr_a * um_mock[logmh_col] + shmr_b), scale=sig_logms_tot)
+            loc=(shmr_a * um_mock[logmh_col] + shmr_b),
+            scale=sig_logms_tot)
     else:
         logms_halo_mod_all = shmr_a * um_mock[logmh_col] + shmr_b
 

@@ -5,14 +5,15 @@ from __future__ import print_function, division, unicode_literals
 import pickle
 import emcee
 
-from scipy.stats import mvn
+from scipy.stats import mvn, norm
 
 import numpy as np
 
 
 __all__ = ["mcmc_save_pickle", "mcmc_save_results", "mcmc_load_pickle",
            "mcmc_initial_guess", "mcmc_samples_stats", "mcmc_load_results",
-           "mcmc_setup_moves", "mass_gaussian_weight_2d"]
+           "mcmc_setup_moves", "mass_gaussian_weight_2d",
+           "mass_gaussian_weight"]
 
 
 def mcmc_save_pickle(mcmc_pickle_file, mcmc_results):
@@ -129,3 +130,9 @@ def mtot_minn_weight(logm_tot, logm_inn, sig,
     return np.array([mass_gaussian_weight_2d(
         m1, m2, ss, ss, mtot_0, mtot_1, minn_0, minn_1)
                      for m1, m2, ss in zip(logm_tot, logm_inn, sig)])
+
+
+def mass_gaussian_weight(logms, sigms, left, right):
+    """Weights of stellar in bin."""
+    return (norm.sf(left, loc=logms, scale=sigms) -
+            norm.sf(right, loc=logms, scale=sigms))

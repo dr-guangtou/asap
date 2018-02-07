@@ -187,7 +187,9 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                        obs_smf_full=None,
                        shmr_a=None, shmr_b=None,
                        sigms_a=None, sigms_b=None,
-                       um_smf_tot_all=None, **kwargs):
+                       um_smf_tot_all=None,
+                       not_table=False,
+                       **kwargs):
     """Plot the UM predicted M100-M10 plane and their SMFs."""
     fig, axes = plt.subplots(2, figsize=(7, 9))
     ax1 = axes[0]
@@ -303,44 +305,86 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
     if isinstance(um_smf_inn, (list,)):
         for ii, smf in enumerate(um_smf_inn):
             if ii == 0:
-                ax2.plot(smf['logm_mean'],
-                         np.log10(smf['smf']),
-                         linewidth=1, linestyle='-',
-                         c='salmon', alpha=0.7,
-                         label=r'$\mathrm{UM:\ Minn}$')
+                if not_table:
+                    ax2.plot(obs_smf_inn['logm_mean'],
+                             np.log10(smf),
+                             linewidth=1, linestyle='-',
+                             c='salmon', alpha=0.7,
+                             label=r'$\mathrm{UM:\ Minn}$')
+                else:
+                    ax2.plot(smf['logm_mean'],
+                             np.log10(smf['smf']),
+                             linewidth=1, linestyle='-',
+                             c='salmon', alpha=0.7,
+                             label=r'$\mathrm{UM:\ Minn}$')
             else:
-                ax2.plot(smf['logm_mean'],
-                         np.log10(smf['smf']),
-                         linewidth=1, linestyle='-',
-                         c='salmon', alpha=0.7,
-                         label='__no_label__')
+                if not_table:
+                    ax2.plot(obs_smf_inn['logm_mean'],
+                             np.log10(smf),
+                             linewidth=1, linestyle='-',
+                             c='salmon', alpha=0.7,
+                             label='__no_label__')
+                else:
+                    ax2.plot(smf['logm_mean'],
+                             np.log10(smf['smf']),
+                             linewidth=1, linestyle='-',
+                             c='salmon', alpha=0.7,
+                             label='__no_label__')
     else:
-        ax2.plot(um_smf_inn['logm_mean'],
-                 np.log10(um_smf_inn['smf']),
-                 linewidth=4, linestyle='--',
-                 c='salmon',
-                 label=r'$\mathrm{UM:\ Minn}$')
+        if not_table:
+            ax2.plot(obs_smf_inn['logm_mean'],
+                     np.log10(um_smf_inn),
+                     linewidth=4, linestyle='--',
+                     c='salmon',
+                     label=r'$\mathrm{UM:\ Minn}$')
+        else:
+            ax2.plot(um_smf_inn['logm_mean'],
+                     np.log10(um_smf_inn['smf']),
+                     linewidth=4, linestyle='--',
+                     c='salmon',
+                     label=r'$\mathrm{UM:\ Minn}$')
 
     if isinstance(um_smf_tot, (list,)):
         for ii, smf in enumerate(um_smf_tot):
             if ii == 0:
-                ax2.plot(smf['logm_mean'],
-                         np.log10(smf['smf']),
-                         linewidth=1, linestyle='-',
-                         c='royalblue', alpha=0.7,
-                         label=r'$\mathrm{UM:\ Mtot}$')
+                if not_table:
+                    ax2.plot(obs_smf_tot['logm_mean'],
+                             np.log10(smf),
+                             linewidth=1, linestyle='-',
+                             c='royalblue', alpha=0.7,
+                             label=r'$\mathrm{UM:\ Mtot}$')
+                else:
+                    ax2.plot(smf['logm_mean'],
+                             np.log10(smf['smf']),
+                             linewidth=1, linestyle='-',
+                             c='royalblue', alpha=0.7,
+                             label=r'$\mathrm{UM:\ Mtot}$')
             else:
-                ax2.plot(smf['logm_mean'],
-                         np.log10(smf['smf']),
-                         linewidth=1, linestyle='-',
-                         c='royalblue', alpha=0.7,
-                         label='__no_label__')
+                if not_table:
+                    ax2.plot(obs_smf_tot['logm_mean'],
+                             np.log10(smf),
+                             linewidth=1, linestyle='-',
+                             c='royalblue', alpha=0.7,
+                             label='__no_label__')
+                else:
+                    ax2.plot(smf['logm_mean'],
+                             np.log10(smf['smf']),
+                             linewidth=1, linestyle='-',
+                             c='royalblue', alpha=0.7,
+                             label='__no_label__')
     else:
-        ax2.plot(um_smf_tot['logm_mean'],
-                 np.log10(um_smf_tot['smf']),
-                 linewidth=4, linestyle='--',
-                 c='royalblue',
-                 label=r'$\mathrm{UM:\ Mtot}$')
+        if not_table:
+            ax2.plot(obs_smf_tot['logm_mean'],
+                     np.log10(um_smf_tot),
+                     linewidth=4, linestyle='--',
+                     c='royalblue',
+                     label=r'$\mathrm{UM:\ Mtot}$')
+        else:
+            ax2.plot(um_smf_tot['logm_mean'],
+                     np.log10(um_smf_tot['smf']),
+                     linewidth=4, linestyle='--',
+                     c='royalblue',
+                     label=r'$\mathrm{UM:\ Mtot}$')
 
     ax2.legend(fontsize=12, loc='upper right')
 

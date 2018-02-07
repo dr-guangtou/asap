@@ -413,29 +413,31 @@ def delta_sigma_from_precomputed_pairs(galaxies, mass_enclosed_per_galaxy,
     #  Perform bounds-checking and error-handling in private helper functions
     args = (galaxies, mass_enclosed_per_galaxy, rp_bins, period)
     result = _delta_sigma_precomputed_process_args(*args)
-    galaxies, mass_enclosed_per_galaxy, rp_bins, period, PBCs = result
+    galaxies, mass, rp_bins, period, PBCs = result
     del PBCs
 
     if weight is not None:
-        assert len(weight) == len(mass_enclosed_per_galaxy)
+        n_eff = np.sum(weight)
+        assert len(weight) == len(mass)
         total_mass_in_stack_of_cylinders = np.sum(
-            weight * mass_enclosed_per_galaxy, axis=0)
+            [m * w for m, w in zip(mass, weight)], axis=0)
     else:
+        n_eff = galaxies.shape[0]
         total_mass_in_stack_of_cylinders = np.sum(
             mass_enclosed_per_galaxy, axis=0)
 
     total_mass_in_stack_of_annuli = np.diff(total_mass_in_stack_of_cylinders)
 
     mean_rho_comoving = rho_m_comoving(cosmology)
-    mean_sigma_comoving = mean_rho_comoving*float(period[2])
+    mean_sigma_comoving = mean_rho_comoving * float(period[2])
 
     short_funcname = _expected_mass_enclosed_in_random_stack_of_cylinders
     expected_mass_in_random_stack_of_cylinders = short_funcname(
-        galaxies.shape[0], period[2], rp_bins, mean_rho_comoving)
+        n_eff, period[2], rp_bins, mean_rho_comoving)
 
     short_funcname = _expected_mass_enclosed_in_random_stack_of_annuli
     expected_mass_in_random_stack_of_annuli = short_funcname(
-        galaxies.shape[0], period[2], rp_bins, mean_rho_comoving)
+        n_eff, period[2], rp_bins, mean_rho_comoving)
 
     one_plus_mean_sigma_inside_rp = mean_sigma_comoving * (
         total_mass_in_stack_of_cylinders /

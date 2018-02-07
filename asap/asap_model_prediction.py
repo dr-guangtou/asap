@@ -15,29 +15,23 @@ from full_mass_profile_model import mass_prof_model_simple, \
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_mass_model import mass_model_frac4
 from asap_delta_sigma import delta_sigma_from_precomputed_pairs
+from asap_utils import mtot_minn_weight
 
 
 __all__ = ['asap_predict_mass', 'asap_predict_smf',
            'asap_single_dsigma', 'asap_um_dsigma',
            'asap_predict_dsigma', 'asap_predict_model',
            'asap_predict_model_prob', 'asap_predict_mass_prob',
-           'asap_predict_smf_prob']
+           'asap_predict_smf_prob', 'asap_single_dsigma_weight']
 
 
 def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
     """Predict stellar masses in different apertures."""
     if cfg['model_type'] == 'frac4':
-        if return_all:
-            return mass_model_frac4(
-                um_mock, parameters,
-                random=False, min_logms=None,
-                logmh_col=cfg['um_halo_col'],
-                logms_col=cfg['um_star_col'],
-                min_scatter=cfg['um_min_scatter'])
-
         return mass_model_frac4(
             um_mock, parameters,
-            random=False, min_logms=cfg['obs_min_mtot'],
+            random=False,
+            min_logms=cfg['obs_min_mtot'],
             logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'])
@@ -171,8 +165,15 @@ def asap_predict_smf_prob(logms_mod_tot, logms_mod_inn, sigms, cfg):
                                          cfg['obs_smf_tot_min'],
                                          cfg['obs_smf_tot_max'])
 
+    weight_smf_tot_inn = mtot_minn_weight(
+        logms_mod_tot, logms_mod_inn, sigms,
+        cfg['obs_smf_tot_min'], cfg['obs_smf_tot_max'],
+        cfg['obs_smf_inn_min'], cfg['obs_smf_inn_max'])
+    mask_smf = (weight_smf_tot_inn > 0.45)
+
     # SMF of the predicted Minn (M10x)
-    um_smf_inn = smf_sigma_mass_weighted(logms_mod_inn, sigms,
+    um_smf_inn = smf_sigma_mass_weighted(logms_mod_inn[mask_smf],
+                                         sigms[mask_smf],
                                          cfg['um_volume'],
                                          cfg['obs_smf_inn_nbin'],
                                          cfg['obs_smf_inn_min'],
@@ -286,6 +287,28 @@ def asap_single_mhalo(mock_use, obs_prof,
             np.nanstd(mock_use['logmh_vir'][bin_mask]))
 
 
+def asap_single_dsigma_weight(cfg, mock_use, mass_encl_use, obs_prof,
+                              logms_mod_tot, logms_mod_inn, sig_logms,
+                              add_stellar=False):
+    """Weigted delta sigma profiles."""
+    # "Point source" term for the central galaxy
+    weight = mtot_minn_weight(logms_mod_tot, logms_mod_inn, sig_logms,
+                              obs_prof.low_mtot, obs_prof.upp_mtot,
+                              obs_prof.low_minn, obs_prof.upp_mtot)
+
+    if add_stellar:
+        mstar_lin = 10.0 ** (np.sum(weight * logms_mod_tot) /
+                             np.sum(weight))
+    else:
+        mstar_lin = None
+
+    _, wl_prof = asap_um_dsigma(
+        cfg, mock_use, mass_encl_use, weight=weight, r_interp=obs_prof.r,
+        mstar_lin=mstar_lin)
+
+    return wl_prof
+
+
 def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
                        logms_mod_tot, logms_mod_inn,
                        um_wl_min_ngal=15, verbose=False,
@@ -340,7 +363,8 @@ def asap_predict_mhalo(obs_dsigma, mock_use,
 
 
 def asap_predict_dsigma(cfg, obs_data, um_data,
-                        logms_mod_tot, logms_mod_inn, mask_mtot,
+                        logms_mod_tot, logms_mod_inn,
+                        mask=None, sig_logms=None,
                         um_wl_min_ngal=15, verbose=False,
                         add_stellar=False):
     """WL profiles to compare with observations.
@@ -361,8 +385,19 @@ def asap_predict_dsigma(cfg, obs_data, um_data,
 
     """
     # The mock catalog and precomputed mass files for subsamples
-    mock_use = um_data['um_mock'][mask_mtot]
-    mass_encl_use = um_data['um_mass_encl'][mask_mtot, :]
+    if mask is not None:
+        mock_use = um_data['um_mock'][mask]
+        mass_encl_use = um_data['um_mass_encl'][mask, :]
+    else:
+        mock_use = um_data['um_mock']
+        mass_encl_use = um_data['um_mass_encl']
+
+    if sig_logms is not None:
+        return [asap_single_dsigma_weight(cfg, mock_use, mass_encl_use,
+                                          obs_prof, logms_mod_tot,
+                                          logms_mod_inn, sig_logms,
+                                          add_stellar=cfg['um_wl_add_stellar'])
+                for obs_prof in obs_data['obs_wl_dsigma']]
 
     return [asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
                                logms_mod_tot, logms_mod_inn,
@@ -376,20 +411,49 @@ def asap_predict_model_prob(param, cfg, obs_data, um_data,
                             return_all=False, show_smf=False,
                             show_dsigma=False):
     """Return all model predictions."""
-    logms_mod_inn, logms_mod_tot, sig_logms = asap_predict_mass_prob(
-        param, cfg, um_data['um_mock'], return_all=return_all)
+    (logms_mod_inn, logms_mod_tot,
+     sig_logms, mask_tot) = asap_predict_mass_prob(
+         param, cfg, um_data['um_mock'], return_all=return_all)
 
     # Predict SMFs
     um_smf_tot, um_smf_inn = asap_predict_smf_prob(
-        logms_mod_tot, logms_mod_inn, sig_logms, cfg)
+        logms_mod_tot[mask_tot], logms_mod_inn[mask_tot],
+        sig_logms[mask_tot], cfg)
 
     # Predict DeltaSigma profiles
+    um_dsigma = asap_predict_dsigma(
+        cfg, obs_data, um_data,
+        logms_mod_tot[mask_tot], logms_mod_inn[mask_tot],
+        mask=mask_tot, sig_logms=sig_logms,
+        add_stellar=cfg['um_wl_add_stellar'])
+
+    if show_smf:
+        um_smf_tot_all = get_smf_bootstrap(logms_mod_tot,
+                                           cfg['um_volume'],
+                                           20, 10.5, 12.5,
+                                           n_boots=1)
+        _ = plot_mtot_minn_smf(
+            obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
+            obs_data['obs_mtot'], obs_data['obs_minn'],
+            um_smf_tot, um_smf_inn,
+            logms_mod_tot[mask_tot], logms_mod_inn[mask_tot],
+            obs_smf_full=obs_data['obs_smf_full'],
+            um_smf_tot_all=um_smf_tot_all,
+            not_table=True)
+
+    if show_dsigma:
+        um_mhalo_tuple = asap_predict_mhalo(
+            obs_data['obs_wl_dsigma'], um_data['um_mock'][mask_tot],
+            logms_mod_tot[mask_tot], logms_mod_inn[mask_tot])
+        _ = plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
+                                 um_dsigma, obs_mhalo=None,
+                                 um_mhalo=um_mhalo_tuple)
 
     if return_all:
-        return (um_smf_tot, um_smf_inn,
+        return (um_smf_tot, um_smf_inn, um_dsigma,
                 logms_mod_inn, logms_mod_tot, sig_logms)
 
-    return um_smf_tot, um_smf_inn
+    return um_smf_tot, um_smf_inn, um_dsigma
 
 
 def asap_predict_model(param, cfg, obs_data, um_data,
@@ -444,7 +508,7 @@ def asap_predict_model(param, cfg, obs_data, um_data,
     # Predict DeltaSigma profiles
     um_dsigma_profs = asap_predict_dsigma(
         cfg, obs_data, um_data,
-        logms_mod_tot, logms_mod_inn, mask_mtot,
+        logms_mod_tot, logms_mod_inn, mask=mask_mtot,
         add_stellar=cfg['um_wl_add_stellar'])
 
     if show_smf:
@@ -452,7 +516,7 @@ def asap_predict_model(param, cfg, obs_data, um_data,
                                            cfg['um_volume'],
                                            20, 10.5, 12.5,
                                            n_boots=1)
-        fig_smf = plot_mtot_minn_smf(
+        _ = plot_mtot_minn_smf(
             obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
             obs_data['obs_mtot'], obs_data['obs_minn'],
             um_smf_tot, um_smf_inn,
@@ -464,18 +528,18 @@ def asap_predict_model(param, cfg, obs_data, um_data,
         um_mhalo_tuple = asap_predict_mhalo(
             obs_data['obs_wl_dsigma'], um_data['um_mock'][mask_mtot],
             logms_mod_tot, logms_mod_inn)
-        fig_dsigma = plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
-                                          um_dsigma_profs, obs_mhalo=None,
-                                          um_mhalo=um_mhalo_tuple)
+        _ = plot_dsigma_profiles(obs_data['obs_wl_dsigma'],
+                                 um_dsigma_profs, obs_mhalo=None,
+                                 um_mhalo=um_mhalo_tuple)
 
     if return_all:
-        if (cfg['model_type'] == 'simple' or cfg['model_type'] == 'frac1'):
+        if cfg['model_type'] == 'simple' or cfg['model_type'] == 'frac1':
             return (um_smf_tot, um_smf_inn, um_dsigma_profs,
                     logms_mod_inn, logms_mod_tot_all,
                     logms_mod_halo_all, mask_mtot)
-        else:
-            return (um_smf_tot, um_smf_inn, um_dsigma_profs,
-                    logms_mod_inn_all, logms_mod_tot_all,
-                    logms_mod_halo_all, mask_mtot)
+
+        return (um_smf_tot, um_smf_inn, um_dsigma_profs,
+                logms_mod_inn_all, logms_mod_tot_all,
+                logms_mod_halo_all, mask_mtot)
 
     return um_smf_tot, um_smf_inn, um_dsigma_profs

@@ -94,13 +94,13 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=None,
     if random:
         if min_logms is not None:
             mask_use = logms_tot_mod_all >= min_logms
-            return logms_inn_mod_all[mask_use], logms_tot_mod_all[mask_use]
+            return (logms_inn_mod_all[mask_use],
+                    logms_tot_mod_all[mask_use], mask_use)
 
         return logms_inn_mod_all, logms_tot_mod_all
 
     if min_logms is not None:
         mask_use = logms_tot_mod_all >= min_logms
-        return (logms_inn_mod_all[mask_use], logms_tot_mod_all[mask_use],
-                sig_logms_tot[mask_use])
+        return logms_inn_mod_all, logms_tot_mod_all, sig_logms_tot, mask_use
 
     return logms_inn_mod_all, logms_tot_mod_all, sig_logms_tot

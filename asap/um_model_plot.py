@@ -1,11 +1,11 @@
 """QA plots for UM model."""
+from __future__ import print_function, division
 
 import numpy as np
 
 from astroML.stats import binned_statistic_2d
 
 import matplotlib.pyplot as plt
-import matplotlib.mlab as ml
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import NullFormatter
@@ -414,17 +414,18 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
 
 
 def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
-                         obs_mhalo=None, um_mhalo=None, **kwargs):
+                         obs_mhalo=None, um_mhalo=None,
+                         each_col=3, **kwargs):
     """Plot the UM predicted weak lensing profiles."""
     obs_wl_n_bin = len(obs_wl_dsigma)
-    if obs_wl_n_bin <= 4:
-        n_col = obs_wl_n_bin
-        n_row = 1
+    if obs_wl_n_bin <= each_col:
+        n_row = obs_wl_n_bin
+        n_col = 1
     else:
-        n_col = 4
-        n_row = int(np.ceil(obs_wl_n_bin / 4.0))
+        n_row = each_col
+        n_col = int(np.ceil(obs_wl_n_bin / each_col))
 
-    fig = plt.figure(figsize=(3 * n_col, 3.8 * n_row))
+    fig = plt.figure(figsize=(3. * n_col, 3.5 * n_row))
     gs = gridspec.GridSpec(n_row, n_col)
     gs.update(wspace=0.0, hspace=0.00)
 
@@ -437,7 +438,10 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     y_max = np.nanmax(y_max_arr) * 1.5
 
     for ii in range(obs_wl_n_bin):
-        ax = plt.subplot(gs[ii])
+        col_id = int(np.floor(ii / n_row))
+        row_id = int(n_row - (ii + 1 - col_id * n_row))
+
+        ax = plt.subplot(gs[row_id, col_id])
         ax.loglog()
 
         ax.grid(linestyle='--', linewidth=1, alpha=0.3, zorder=0)
@@ -512,16 +516,16 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
 
-        if ii % n_col != 0:
+        if col_id != 0:
             ax.yaxis.set_major_formatter(NullFormatter())
         else:
             ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$',
                           size=20)
-        if (ii + 1) % n_col != 0:
-            ax.xaxis.set_major_formatter(NullFormatter())
-        else:
+        if row_id == (n_row - 1):
             ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$',
                           size=20)
+        else:
+            ax.xaxis.set_major_formatter(NullFormatter())
 
     return fig
 

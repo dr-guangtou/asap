@@ -1,14 +1,18 @@
 """Utilities for A.S.A.P model."""
 
+from __future__ import print_function, division, unicode_literals
+
 import pickle
 import emcee
+
+from scipy.stats import mvn
 
 import numpy as np
 
 
 __all__ = ["mcmc_save_pickle", "mcmc_save_results", "mcmc_load_pickle",
            "mcmc_initial_guess", "mcmc_samples_stats", "mcmc_load_results",
-           "mcmc_setup_moves"]
+           "mcmc_setup_moves", "mass_gaussian_weight_2d"]
 
 
 def mcmc_save_pickle(mcmc_pickle_file, mcmc_results):
@@ -48,7 +52,7 @@ def mcmc_samples_stats(mcmc_samples):
 
 
 def mcmc_load_results(mcmc_file):
-    """Retrieve the MCMC results from .npz file"""
+    """Retrieve the MCMC results from .npz file."""
     mcmc_data = np.load(mcmc_file)
 
     return (mcmc_data['samples'], mcmc_data['chains'],
@@ -59,7 +63,7 @@ def mcmc_load_results(mcmc_file):
 def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
                       mcmc_ndims, verbose=True):
     """Save the MCMC run results."""
-    (mcmc_position, mcmc_lnprob, mcmc_state) = mcmc_results
+    (mcmc_position, mcmc_lnprob, _) = mcmc_results
 
     mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
         (-1, mcmc_ndims))
@@ -103,3 +107,25 @@ def mcmc_setup_moves(cfg):
         raise Exception("Wrong option: redblue, stretch, walk, kde")
 
     return emcee_moves
+
+
+def mass_gaussian_weight_2d(logms1, logms2, sigms1, sigms2,
+                            bin1_l, bin1_r, bin2_l, bin2_r):
+    """Weight of galaaxy using two stellar masses."""
+    low = np.array([bin1_l, bin2_l])
+    upp = np.array([bin1_r, bin2_r])
+    mu = np.array([logms1, logms2])
+    cov = np.array([[sigms1 ** 2, sigms1 * sigms2],
+                    [sigms2 * sigms1, sigms2 ** 2]])
+
+    p, _ = mvn.mvnun(low, upp, mu, cov)
+
+    return p
+
+
+def mtot_minn_weight(logm_tot, logm_inn, sig,
+                     mtot_0, mtot_1, minn_0, minn_1):
+    """Two-dimensional weight of galaxy in Mtot-Minn box."""
+    return np.array([mass_gaussian_weight_2d(
+        m1, m2, ss, ss, mtot_0, mtot_1, minn_0, minn_1)
+                     for m1, m2, ss in zip(logm_tot, logm_inn, sig)])

@@ -67,7 +67,7 @@ def load_observed_data(cfg, verbose=True):
     cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
 
     # TODO : test this margin
-    cfg['obs_min_mtot'] = cfg['obs_smf_tot_min'] - 0.5
+    cfg['obs_min_mtot'] = cfg['obs_smf_tot_min'] - 0.05
 
     cfg['obs_smf_n_data'] = cfg['obs_smf_tot_nbin'] + cfg['obs_smf_inn_nbin']
 
@@ -231,8 +231,7 @@ def load_um_data(cfg, verbose=True):
                                          cfg['um_model'])))
 
     # Only select the useful columns
-    cols_use = ['halo_id', 'upid', 'mvir', 'mpeak', 'sm', 'icl',
-                'halo_hostid', 'mhalo_host',
+    cols_use = ['upid', 'sm', 'icl', 'x', 'y', 'z',
                 'mtot_galaxy', 'mstar_mhalo', 'logms_gal',
                 'logms_icl', 'logms_tot', 'logms_halo',
                 'logmh_vir', 'logmh_peak', 'logmh_host']

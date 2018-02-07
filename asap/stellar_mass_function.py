@@ -2,9 +2,16 @@
 Python functions related to stellar mass function.
 """
 
+from __future__ import print_function, division, unicode_literals
+
 from astropy.table import Table
+from scipy.stats import norm
 
 import numpy as np
+
+__all__ = ['get_smf_bootstrap', 'bootstrap_smf', 'bootstrap_resample',
+           'compute_smf', 'mass_gaussian_weighted_count_bin',
+           'smf_sigma_mass_weighted']
 
 
 def compute_smf(sm_array, volume, nb, sm_min, sm_max,
@@ -68,6 +75,7 @@ def bootstrap_resample(X, n_boots=1000):
 
     Parameters
     ----------
+
     X : array_like
       data to resample
     n_boots : int, optional
@@ -76,7 +84,9 @@ def bootstrap_resample(X, n_boots=1000):
 
     Results
     -------
+
     returns X_resamples
+
     """
     return np.vstack(
         X[np.floor(np.random.rand(len(X))*len(X)).astype(int)]
@@ -86,9 +96,11 @@ def bootstrap_resample(X, n_boots=1000):
 def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
                   n_boots=1000, sm_err=None,
                   resample_err=False):
-    """
+    """Stellar mass function using bootstrap resampling.
+
     Parameters
     ----------
+
     sm_array: ndarray
         Array of stellar mass values in log10 values
 
@@ -107,6 +119,7 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
 
     Returns
     -------
+
     x : ndarray
         x axis of SMF in units of log10 M*
 
@@ -117,6 +130,7 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
 
     smf_boots : ndarray
         Bootstrapped SMFs
+
     """
 
     x, smf, err_poison, bins = compute_smf(sm_array, volume, nb,
@@ -215,3 +229,31 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
     smf_table['smf_upp'] = smf_upp
 
     return smf_table
+
+
+def mass_gaussian_weighted_count_bin(logms, sigms, left, right):
+    """Weighted count of stellar in bin."""
+    return sum(norm.sf(left, loc=logms, scale=sigms) -
+               norm.sf(right, loc=logms, scale=sigms))
+
+
+def smf_sigma_mass_weighted(logms, sigms, volume, nbin,
+                            min_logms, max_logms, return_count=False):
+    """Stelar mass function weighted by mass error."""
+    # Now only deal with constant bin size
+    smf, edges = np.histogram(logms, bins=nbin,
+                              range=[min_logms, max_logms])
+
+    # Bin width in dex
+    bin_width = edges[1:] - edges[0:-1]
+
+    # SMF using weighted count in each bin
+    smf = np.array([
+        mass_gaussian_weighted_count_bin(logms, sigms, left, right)
+        for left, right in zip(edges[0:-1], edges[1:])])
+
+    # Normalize
+    if return_count:
+        return smf
+
+    return smf / volume / bin_width

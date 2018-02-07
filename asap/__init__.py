@@ -14,6 +14,13 @@ from . import stellar_mass_function
 from . import swot_weak_lensing
 from . import um_ins_exs_model
 from . import um_model_plot
+from . import asap_data_io
+from . import asap_delta_sigma
+from . import asap_mass_model
+from . import asap_model_prediction
+from . import asap_model_setup
+from . import asap_run_model
+from . import asap_utils
 
 __all__ = ["ellipse_selection_functions",
            "forward_model",
@@ -28,4 +35,11 @@ __all__ = ["ellipse_selection_functions",
            "stellar_mass_function",
            "swot_weak_lensing",
            "um_ins_exs_model",
-           "um_model_plot"]
+           "um_model_plot",
+           "asap_data_io",
+           "asap_delta_sigma",
+           "asap_mass_model",
+           "asap_model_prediction",
+           "asap_model_setup",
+           "asap_run_model",
+           "asap_utils"]

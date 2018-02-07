@@ -6,8 +6,6 @@ import numpy as np
 
 from scipy import interpolate
 
-from halotools.mock_observables import delta_sigma_from_precomputed_pairs
-
 from stellar_mass_function import get_smf_bootstrap, \
     smf_sigma_mass_weighted
 from full_mass_profile_model import mass_prof_model_simple, \
@@ -16,6 +14,7 @@ from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac5
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_mass_model import mass_model_frac4
+from asap_delta_sigma import delta_sigma_from_precomputed_pairs
 
 
 __all__ = ['asap_predict_mass', 'asap_predict_smf',
@@ -203,7 +202,8 @@ def asap_predict_smf(logms_mod_tot, logms_mod_inn, cfg):
     return um_smf_tot, um_smf_inn
 
 
-def asap_um_dsigma(cfg, mock_use, mass_encl_use, mask,
+def asap_um_dsigma(cfg, mock_use, mass_encl_use,
+                   mask=None, weight=None,
                    verbose=False, r_interp=None, mstar_lin=None):
     """Weak lensing dsigma profiles using pre-computed pairs.
 
@@ -224,6 +224,7 @@ def asap_um_dsigma(cfg, mock_use, mass_encl_use, mask,
         Default: None
 
     """
+    # Cosmology
     um_cosmo = cfg['um_cosmo']
 
     # Radius bins
@@ -234,15 +235,21 @@ def asap_um_dsigma(cfg, mock_use, mass_encl_use, mask,
     if verbose:
         print("# Deal with %d galaxies in the subsample" % np.sum(mask))
     #  Use the mask to get subsample positions and pre-computed pairs
-    subsample = mock_use[mask]
+    if mask is not None:
+        subsample = mock_use[mask]
+        subsample_mass_encl_precompute = mass_encl_use[mask, :]
+    else:
+        subsample = mock_use
+        subsample_mass_encl_precompute = mass_encl_use
+
     subsample_positions = np.vstack([subsample['x'],
                                      subsample['y'],
                                      subsample['z']]).T
-    subsample_mass_encl_precompute = mass_encl_use[mask, :]
 
     rp_ht_units, ds_ht_units = delta_sigma_from_precomputed_pairs(
         subsample_positions, subsample_mass_encl_precompute,
-        rp_bins, cfg['um_lbox'], cosmology=um_cosmo)
+        rp_bins, cfg['um_lbox'], cosmology=um_cosmo,
+        weight=weight)
 
     # Unit conversion
     ds_phys_msun_pc2 = ((1. + cfg['um_redshift']) ** 2 *
@@ -301,7 +308,7 @@ def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
             print("# Not enough UM galaxy in bin %d !" % obs_prof.bin_id)
     else:
         _, wl_prof = asap_um_dsigma(
-            cfg, mock_use, mass_encl_use, bin_mask,
+            cfg, mock_use, mass_encl_use, mask=bin_mask,
             r_interp=obs_prof.r, mstar_lin=mstar_lin)
 
     return wl_prof

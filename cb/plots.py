@@ -4,6 +4,7 @@ import scipy.stats
 import scipy.optimize
 
 import smhm_fit
+import data
 
 solarMassUnits = r"($M_{\odot}$)"
 
@@ -118,9 +119,7 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
 
-    for k, v in central_catalogs.items():
-        if k == "insitu":
-            continue
+    for k, v in data.cut_config.keys()
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
         halo_masses = np.log10(v["data"]["m"])
         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])

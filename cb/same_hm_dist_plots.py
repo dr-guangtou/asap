@@ -34,7 +34,8 @@ def f_age(sample):
 def f_mm(sample):
     return sample["scale_of_last_MM"]
 
-def do_everything(catalog, f, cuts=(), bulk_set=None, ax=None):
+def do_everything(catalog, key, f, cuts=(), bins=None, ax=None):
+    catalog = catalog[key]["data"]
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
     if ax is None:
         _, ax = plt.subplots()
@@ -43,12 +44,13 @@ def do_everything(catalog, f, cuts=(), bulk_set=None, ax=None):
         (catalog["sm"] + catalog["icl"] > 10**cuts[0]) &
         (catalog["sm"] + catalog["icl"] < 10**cuts[1])
     ]
+    label1 = r"$M_{\ast}^{" + key + r"}$"
     # Step 2
     sample2 = get_sample(sample1, catalog)
+    label2 = "Random"
 
     # Step 3 compare something
-    _, bin_edges, _ = ax.hist(f(sample1), bins=18, alpha=0.3, density=True, label="SM")
-    ax.hist(f(sample2), bins=bin_edges, alpha=0.3, density=True, label="HM")
+    _, bin_edges, _ = ax.hist(f(sample1), bins=(bins or 18), alpha=0.3, density=True, label=label1)
+    ax.hist(f(sample2), bins=bin_edges, alpha=0.3, density=True, label=label2)
     ax.legend()
-    ax.set(**bulk_set)
     return ax

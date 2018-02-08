@@ -11,6 +11,8 @@ def load():
     satellites = catalog["satellites"]
     return centrals, satellites
 
+# This should be ordered in an appropriate way
+# As I understand it at the moment this probably just means central first.
 cut_config = {
         "cen": {"n_sats": 0, "mass_limit": 11.6},
         1: {"n_sats": 1, "mass_limit": 11.7},

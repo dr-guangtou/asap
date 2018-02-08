@@ -247,6 +247,7 @@ def load_um_data(cfg, verbose=True):
     um_mock_use.add_column(Column(data=(um_mock_use['icl'] /
                                         um_mock_use['mtot_galaxy']),
                                   name='frac_exs_cen'))
+    um_mock_use = um_mock_use.as_array()
 
     # Load the pre-compute lensing pairs
     um_mass_encl = np.load(os.path.join(cfg['um_dir'],
@@ -256,9 +257,12 @@ def load_um_data(cfg, verbose=True):
     # Mask for central galaxies
     mask_central = (um_mock_use['upid'] == -1)
 
-    return {'um_mock': um_mock_use.as_array(),
-            'um_mass_encl': um_mass_encl,
-            'mask_central': mask_central}
+    # Mask for massive enough halo
+    mask_mass = (um_mock_use[cfg['um_halo_col']] >= cfg['um_min_mvir'])
+
+    return {'um_mock': um_mock_use[mask_mass],
+            'um_mass_encl': um_mass_encl[mask_mass, :],
+            'mask_central': mask_central[mask_mass]}
 
 
 def config_um_data(cfg, verbose=False, **kwargs):

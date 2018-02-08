@@ -3,7 +3,7 @@
 import numpy as np
 from numpy import linalg
 
-from asap_model_prediction import asap_predict_model
+from asap_model_prediction import asap_predict_model, asap_predict_model_prob
 
 
 __all__ = ['asap_ln_prob', 'asap_ln_like', 'asap_flat_prior',
@@ -60,12 +60,18 @@ def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um, chi2=False):
 
 
 def asap_smf_lnlike(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn,
-                    obs_smf_cov=None, chi2=False):
+                    obs_smf_cov=None, chi2=False, not_table=True):
     """Calculate the likelihood for SMF."""
-    smf_mtot_dif = (np.array(um_smf_tot['smf']) -
-                    np.array(obs_smf_tot['smf']))
-    smf_minn_dif = (np.array(um_smf_inn['smf']) -
-                    np.array(obs_smf_inn['smf']))
+    if not_table:
+        smf_mtot_dif = (np.array(um_smf_tot) -
+                        np.array(obs_smf_tot['smf']))
+        smf_minn_dif = (np.array(um_smf_inn) -
+                        np.array(obs_smf_inn['smf']))
+    else:
+        smf_mtot_dif = (np.array(um_smf_tot['smf']) -
+                        np.array(obs_smf_tot['smf']))
+        smf_minn_dif = (np.array(um_smf_inn['smf']) -
+                        np.array(obs_smf_inn['smf']))
 
     if obs_smf_cov is not None:
         smf_cov_inv = linalg.inv(obs_smf_cov)
@@ -114,8 +120,18 @@ def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False,
     parameters = list(param_tuple)
 
     # Generate the model predictions
-    (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model(
-        parameters, cfg, obs_data, um_data)
+    if cfg['model_prob']:
+        (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model_prob(
+            parameters, cfg, obs_data, um_data)
+    else:
+        (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model(
+            parameters, cfg, obs_data, um_data)
+
+    if um_smf_tot is None or um_smf_inn is None or um_dsigma_profs is None:
+        if sep_return:
+            return -np.inf, -np.inf
+
+        return -np.inf
 
     # Check SMF
     msg = '# UM and observed SMFs should have the same size!'
@@ -137,11 +153,13 @@ def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False,
     assert len(um_dsigma_profs[0]) == len(obs_data['obs_wl_dsigma'][0].r)
 
     if not cfg['mcmc_smf_only']:
-        dsigma_lnlike = np.nansum([
+        dsigma_lnlike = np.array([
             asap_dsigma_lnlike(obs_dsigma_prof, um_dsigma_prof,
                                chi2=chi2)
             for (obs_dsigma_prof, um_dsigma_prof) in
-            zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)])
+            zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)]).sum()
+        if not np.isfinite(dsigma_lnlike):
+            dsigma_lnlike = -np.inf
     else:
         dsigma_lnlike = 0.0
 

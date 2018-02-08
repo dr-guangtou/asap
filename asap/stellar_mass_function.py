@@ -233,16 +233,17 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
 
 def mass_gaussian_weighted_count_bin(logms, sigms, left, right):
     """Weighted count of stellar in bin."""
-    return sum(norm.sf(left, loc=logms, scale=sigms) -
-               norm.sf(right, loc=logms, scale=sigms))
+    return (norm.sf(left, loc=logms, scale=sigms) -
+            norm.sf(right, loc=logms, scale=sigms)).sum()
 
 
 def smf_sigma_mass_weighted(logms, sigms, volume, nbin,
-                            min_logms, max_logms, return_count=False):
+                            min_logms, max_logms,
+                            edges=None, return_count=False):
     """Stelar mass function weighted by mass error."""
     # Now only deal with constant bin size
-    smf, edges = np.histogram(logms, bins=nbin,
-                              range=[min_logms, max_logms])
+    if edges is None:
+        edges = np.linspace(min_logms, max_logms, nbin + 1)
 
     # Bin width in dex
     bin_width = edges[1:] - edges[0:-1]

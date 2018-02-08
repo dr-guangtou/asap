@@ -28,7 +28,7 @@ from asap_utils import mcmc_save_results, mcmc_initial_guess, \
 from asap_model_setup import setup_model
 from asap_likelihood import asap_flat_prior, asap_ln_like, \
     asap_smf_lnlike, asap_dsigma_lnlike, asap_flat_prior_transform
-from asap_model_prediction import asap_predict_model
+from asap_model_prediction import asap_predict_model, asap_predict_model_prob
 # from convergence import convergence_check
 
 __all__ = ['initial_model', 'asap_ln_prob_global', 'asap_ln_like_global',
@@ -77,8 +77,15 @@ def asap_ln_like_global(param_tuple):
     parameters = list(param_tuple)
 
     # Generate the model predictions
-    (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model(
-        parameters, cfg, obs_data, um_data)
+    if cfg['model_prob']:
+        (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model_prob(
+            parameters, cfg, obs_data, um_data)
+    else:
+        (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model(
+            parameters, cfg, obs_data, um_data)
+
+    if um_smf_tot is None or um_smf_inn is None or um_dsigma_profs is None:
+        return -np.inf
 
     # Check SMF
     msg = '# UM and observed SMFs should have the same size!'

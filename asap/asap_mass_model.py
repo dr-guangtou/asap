@@ -49,7 +49,7 @@ def sigma_logms_from_logmh(logm_halo, sigms_a, sigms_b,
     return sigms
 
 
-def mass_model_frac4(um_mock, parameters, random=False, min_logms=None,
+def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
                      logmh_col='logmh_vir', logms_col='logms_tot',
                      min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
@@ -79,28 +79,26 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=None,
     # predict the total stellar mass of galaxies (central + ICL).
     logms_tot_mod_all = logms_halo_mod_all + np.log10(um_mock['frac_cen_tot'])
 
+    # Mask for massive enough galaxies
+    mask_use = logms_tot_mod_all >= min_logms
+    logms_tot_mod = logms_tot_mod_all[mask_use]
+    sig_logms = sig_logms_tot[mask_use]
+
     # Fraction of ex-situ component that goes into the inner aperture
-    frac_exs = frac_from_logmh(um_mock[logmh_col],
+    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
                                frac_exs_a, frac_exs_b)
 
-    logms_ins_inn = (logms_tot_mod_all + np.log10(um_mock['frac_ins_cen']) +
+    # Stellar mass for each component
+    logms_ins_inn = (logms_tot_mod +
+                     np.log10(um_mock['frac_ins_cen'][mask_use]) +
                      np.log10(frac_ins))
-    logms_exs_inn = (logms_tot_mod_all + np.log10(um_mock['frac_exs_cen']) +
+    logms_exs_inn = (logms_tot_mod +
+                     np.log10(um_mock['frac_exs_cen'][mask_use]) +
                      np.log10(frac_exs))
 
-    logms_inn_mod_all = np.log10(10.0 ** logms_ins_inn +
-                                 10.0 ** logms_exs_inn)
+    logms_inn_mod = np.log10(10.0 ** logms_ins_inn + 10.0 ** logms_exs_inn)
 
     if random:
-        if min_logms is not None:
-            mask_use = logms_tot_mod_all >= min_logms
-            return (logms_inn_mod_all[mask_use],
-                    logms_tot_mod_all[mask_use], mask_use)
+        return logms_inn_mod, logms_tot_mod, mask_use
 
-        return logms_inn_mod_all, logms_tot_mod_all
-
-    if min_logms is not None:
-        mask_use = logms_tot_mod_all >= min_logms
-        return logms_inn_mod_all, logms_tot_mod_all, sig_logms_tot, mask_use
-
-    return logms_inn_mod_all, logms_tot_mod_all, sig_logms_tot
+    return logms_inn_mod, logms_tot_mod, sig_logms, mask_use

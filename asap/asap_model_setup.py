@@ -10,6 +10,9 @@ def setup_model(cfg, verbose=True):
     if 'model_type' not in cfg.keys():
         cfg['model_type'] = 'frac1'
 
+    if 'model_prob' not in cfg.keys():
+        cfg['model_prob'] = True
+
     if cfg['model_type'] == 'simple':
         # Number of parameters
         cfg['mcmc_ndims'] = 4

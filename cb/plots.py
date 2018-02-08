@@ -13,6 +13,7 @@ hm_scatter = r"$\sigma(log\ M_{vir})$"
 
 sm_scatter_simple = r"$\sigma(log\ M_{\ast})$"
 m_star_x_axis_simple = r"$log\ M_{\ast}$"
+m_star_cen_x_axis_simple = r"$log\ M_{\ast}^{cen}$"
 def m_star_x_axis(n_sats):
     return r"$log\ M_{\ast}^{" + str(n_sats) + "}$"
 def sm_scatter(n_sats):
@@ -22,10 +23,13 @@ def sm_scatter(n_sats):
 def resample_scatter(x, y, bins):
     bin_indexes = np.digitize(x, bins)
     stds, stdstds = np.zeros(len(bins)-1), np.zeros(len(bins)-1)
+
+    cnts = []
     for i in range(len(bins) - 1):
         # digitize is 1 indexed
         indexes_in_bin = np.where(bin_indexes == i + 1)[0]
         count_in_bin = len(indexes_in_bin)
+        cnts.append(count_in_bin)
         if count_in_bin < 5:
             print("Warning - {} items in bin {}".format(count_in_bin, i+1))
 
@@ -37,6 +41,8 @@ def resample_scatter(x, y, bins):
             this_bin_std[j] = np.std(y[ci], ddof=1)
         stds[i] = np.mean(this_bin_std)
         stdstds[i] = np.std(this_bin_std, ddof=1)
+    print(bins)
+    print(cnts)
     return stds, stdstds
 
 # This is simlar to ^ except it resamples everything which doesn't guarantee that
@@ -119,22 +125,38 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
 
-    for k, v in data.cut_config.keys()
+    for k in data.cut_config.keys():
+        print(k)
+        v = central_catalogs[k]
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
         halo_masses = np.log10(v["data"]["m"])
         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
         delta_halo_masses = halo_masses - predicted_halo_masses
 
-        bins = np.arange(
-                np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
-                np.max(stellar_masses) + 0.2, # to ensure that the last point is included
-                0.2)[:-1]
-        bin_midpoints = bins[:-1] + np.diff(bins) / 2
+        if k == "cen":
+            cent_bins = np.arange(
+                    np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
+                    np.max(stellar_masses) + 0.2, # to ensure that the last point is included
+                    0.2)[:-1]
+            bin_midpoints = cent_bins[:-1] + np.diff(cent_bins) / 2
+            count, _ = np.histogram(stellar_masses, cent_bins)
+            assert len(count) == len(bin_midpoints)
+            assert len(count) == len(cent_bins) - 1
+            bins = cent_bins
+        else:
+            # We want to use the same bin midpoints, but create new bins to have the same number
+            # in each bin as in cen.
+            # Note that we need to start from the most massive (
+            bins = []
+            s_stellar_masses = np.flip(np.sort(stellar_masses), 0) # increasing
+            for i in range(len(count), -1, -1):
+                bins.append(s_stellar_masses[np.sum(count[i:])])
+            bins = np.array(bins[::-1])
 
         std, stdstd = resample_scatter(stellar_masses, delta_halo_masses, bins)
         ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
     ax.set(
-        xlabel=m_star_x_axis_simple,
+        xlabel=m_star_cen_x_axis_simple,
         ylabel=hm_scatter,
     )
     ax.legend()

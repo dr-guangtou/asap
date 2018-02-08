@@ -8,6 +8,9 @@ def centrals_with_satellites(centrals, satellites, n):
     largest satellites (or n% largest satellites if n < 1) to the centrals.
     """
     new_centrals = np.copy(centrals)  # no mutation!
+    if n == 0:
+        return new_centrals
+
     for i, central in enumerate(new_centrals):
         # Remember sats are sorted by "upid" then the sum of stellar masses, ascending
         sats = satellites[np.searchsorted(

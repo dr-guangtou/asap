@@ -4,7 +4,7 @@ import scipy.optimize
 
 
 def get_fit_binning(x_data):
-    step = 0.1
+    step = 0.05
     # np.arange doesn't go above the max
     edges = np.arange(np.min(x_data), np.max(x_data) + step, step)
     midpoints = edges[:-1] + np.diff(edges) / 2

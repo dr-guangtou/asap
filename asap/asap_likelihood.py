@@ -131,8 +131,9 @@ def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False,
         asap_dsigma_lnlike(obs_dsigma_prof, um_dsigma_prof)
         for (obs_dsigma_prof, um_dsigma_prof) in
         zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)]).sum()
+
     if not np.isfinite(dsigma_lnlike):
-        dsigma_lnlike = -np.inf
+        return -np.inf
 
     if cfg['mcmc_smf_only']:
         return dsigma_lnlike

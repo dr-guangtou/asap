@@ -87,7 +87,8 @@ def asap_ln_like_global(param_tuple):
     # Likelihood for SMFs
     smf_lnlike = asap_smf_lnlike(
         obs_data['obs_smf_tot'], um_smf_tot,
-        obs_data['obs_smf_inn'], um_smf_inn)
+        obs_data['obs_smf_inn'], um_smf_inn,
+        obs_smf_cov=obs_data['obs_smf_cov'])
 
     # if cfg['mcmc_smf_only']:
     #    return smf_lnlike
@@ -97,8 +98,9 @@ def asap_ln_like_global(param_tuple):
         asap_dsigma_lnlike(obs_dsigma_prof, um_dsigma_prof)
         for (obs_dsigma_prof, um_dsigma_prof) in
         zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)]).sum()
+
     if not np.isfinite(dsigma_lnlike):
-        dsigma_lnlike = -np.inf
+        return -np.inf
 
     # if cfg['mcmc_wl_only']:
     #    return dsigma_lnlike

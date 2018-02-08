@@ -51,7 +51,7 @@ def initial_model(config, verbose=True):
     return config_all, obs_data_use, um_data_use
 
 
-def asap_ln_prob_global(param_tuple, chi2=False):
+def asap_ln_prob_global(param_tuple):
     """Probability function to sample in an MCMC.
 
     Parameters
@@ -64,7 +64,7 @@ def asap_ln_prob_global(param_tuple, chi2=False):
     if not np.isfinite(lp):
         return -np.inf
 
-    return lp + asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=chi2)
+    return lp + asap_ln_like(param_tuple, cfg, obs_data, um_data)
 
 
 def asap_ln_like_global(param_tuple):
@@ -73,46 +73,35 @@ def asap_ln_like_global(param_tuple):
     Using the global properties, mainly for using the nested and
     dynesty sampling method.
     """
-    # Unpack the input parameters
-    parameters = list(param_tuple)
-
     # Generate the model predictions
     if cfg['model_prob']:
         (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model_prob(
-            parameters, cfg, obs_data, um_data)
+            list(param_tuple), cfg, obs_data, um_data)
     else:
         (um_smf_tot, um_smf_inn, um_dsigma_profs) = asap_predict_model(
-            parameters, cfg, obs_data, um_data)
+            list(param_tuple), cfg, obs_data, um_data)
 
     if um_smf_tot is None or um_smf_inn is None or um_dsigma_profs is None:
         return -np.inf
 
-    # Check SMF
-    msg = '# UM and observed SMFs should have the same size!'
-    assert len(um_smf_inn) == len(obs_data['obs_smf_inn']), msg
-    assert len(um_smf_tot) == len(obs_data['obs_smf_tot']), msg
+    # Likelihood for SMFs
+    smf_lnlike = asap_smf_lnlike(
+        obs_data['obs_smf_tot'], um_smf_tot,
+        obs_data['obs_smf_inn'], um_smf_inn)
 
-    if not cfg['mcmc_wl_only']:
-        smf_lnlike = asap_smf_lnlike(
-            obs_data['obs_smf_tot'], um_smf_tot,
-            obs_smf_inn=obs_data['obs_smf_inn'],
-            um_smf_inn=um_smf_inn, chi2=False)
-    else:
-        smf_lnlike = 0.0
+    # if cfg['mcmc_smf_only']:
+    #    return smf_lnlike
 
-    # Check WL profiles
-    msg = '# UM and observed WL profiles should have the same size!'
-    assert len(um_dsigma_profs) == len(obs_data['obs_wl_dsigma'])
-    assert len(um_dsigma_profs[0]) == len(obs_data['obs_wl_dsigma'][0].r)
+    # Likelihood for DeltaSigmas
+    dsigma_lnlike = np.array([
+        asap_dsigma_lnlike(obs_dsigma_prof, um_dsigma_prof)
+        for (obs_dsigma_prof, um_dsigma_prof) in
+        zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)]).sum()
+    if not np.isfinite(dsigma_lnlike):
+        dsigma_lnlike = -np.inf
 
-    if not cfg['mcmc_smf_only']:
-        dsigma_lnlike = np.nansum([
-            asap_dsigma_lnlike(obs_dsigma_prof, um_dsigma_prof,
-                               chi2=False)
-            for (obs_dsigma_prof, um_dsigma_prof) in
-            zip(obs_data['obs_wl_dsigma'], um_dsigma_profs)])
-    else:
-        dsigma_lnlike = 0.0
+    # if cfg['mcmc_wl_only']:
+    #    return dsigma_lnlike
 
     return smf_lnlike + cfg['mcmc_wl_weight'] * dsigma_lnlike
 

@@ -205,7 +205,7 @@ def asap_predict_smf(logms_mod_tot, logms_mod_inn, cfg):
                                    cfg['obs_smf_inn_max'],
                                    n_boots=1)
 
-    return um_smf_tot, um_smf_inn
+    return np.array(um_smf_tot['smf']), np.array(um_smf_inn['smf'])
 
 
 def asap_um_dsigma(cfg, mock_use, mass_encl_use,
@@ -235,11 +235,8 @@ def asap_um_dsigma(cfg, mock_use, mass_encl_use,
 
     # Radius bins
     rp_bins = np.logspace(np.log10(cfg['um_wl_minr']),
-                          np.log10(cfg['um_wl_maxr']),
-                          cfg['um_wl_nbin'])
+                          np.log10(cfg['um_wl_maxr']), cfg['um_wl_nbin'])
 
-    if verbose:
-        print("# Deal with %d galaxies in the subsample" % np.sum(mask))
     #  Use the mask to get subsample positions and pre-computed pairs
     if mask is not None:
         subsample = mock_use[mask]
@@ -272,11 +269,9 @@ def asap_um_dsigma(cfg, mock_use, mass_encl_use,
     if r_interp is not None:
         intrp = interpolate.interp1d(rp_phys, ds_phys_msun_pc2,
                                      kind='cubic', bounds_error=False)
-        dsigma = intrp(r_interp)
+        return intrp(r_interp)
 
-        return (r_interp, dsigma)
-
-    return (rp_phys, ds_phys_msun_pc2)
+    return ds_phys_msun_pc2
 
 
 def asap_single_mhalo(mock_use, obs_prof,
@@ -297,9 +292,24 @@ def asap_single_dsigma_weight(cfg, mock_use, mass_encl_use, obs_prof,
                               add_stellar=False):
     """Weigted delta sigma profiles."""
     # "Point source" term for the central galaxy
-    weight = mtot_minn_weight(logms_mod_tot, logms_mod_inn, sig_logms,
-                              obs_prof.low_mtot, obs_prof.upp_mtot,
-                              obs_prof.low_minn, obs_prof.upp_mtot)
+    weight = np.array(
+        mtot_minn_weight(logms_mod_tot, logms_mod_inn, sig_logms,
+                         obs_prof.low_mtot, obs_prof.upp_mtot,
+                         obs_prof.low_minn, obs_prof.upp_mtot))
+
+    # TODO: Apply a mask
+    mask = (weight >= 0.03)
+
+    if mask.sum() >= 2:
+        if add_stellar:
+            mstar_lin = 10.0 ** (np.sum(weight[mask] * logms_mod_tot[mask]) /
+                                 np.sum(weight[mask]))
+        else:
+            mstar_lin = None
+
+        return asap_um_dsigma(
+            cfg, mock_use[mask], mass_encl_use[mask, :],
+            weight=weight[mask], r_interp=obs_prof.r, mstar_lin=mstar_lin)
 
     if add_stellar:
         mstar_lin = 10.0 ** (np.sum(weight * logms_mod_tot) /
@@ -307,11 +317,9 @@ def asap_single_dsigma_weight(cfg, mock_use, mass_encl_use, obs_prof,
     else:
         mstar_lin = None
 
-    _, wl_prof = asap_um_dsigma(
-        cfg, mock_use, mass_encl_use, weight=weight, r_interp=obs_prof.r,
-        mstar_lin=mstar_lin)
-
-    return wl_prof
+    return asap_um_dsigma(
+        cfg, mock_use, mass_encl_use,
+        weight=weight, r_interp=obs_prof.r, mstar_lin=mstar_lin)
 
 
 def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
@@ -418,7 +426,13 @@ def asap_predict_model_prob(param, cfg, obs_data, um_data,
      sig_logms, mask_tot) = asap_predict_mass_prob(
          param, cfg, um_data['um_mock'], return_all=return_all)
 
-    if len(logms_mod_tot) <= 100:
+    # TODO: trying to constrain the likelihood better
+    ngal_max = (cfg['obs_ngal_use'] *
+                (cfg['um_volume'] / cfg['obs_volume']) * 5)
+    ngal_min = (cfg['obs_ngal_use'] *
+                (cfg['um_volume'] / cfg['obs_volume']) / 10)
+
+    if len(logms_mod_tot) <= ngal_min or len(logms_mod_tot) >= ngal_max:
         um_smf_tot, um_smf_inn = None, None,
         um_dsigma = None
     else:

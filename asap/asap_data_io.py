@@ -66,6 +66,9 @@ def load_observed_data(cfg, verbose=True):
     cfg['obs_smf_tot_max'] = np.max(obs_smf_tot['logm_1'])
     cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
 
+    cfg['obs_ngal_use'] = ((obs_mtot >= cfg['obs_smf_tot_min']) &
+                           (obs_minn >= cfg['obs_smf_inn_min'])).sum()
+
     # TODO : test this margin
     cfg['obs_min_mtot'] = cfg['obs_smf_tot_min'] - 0.1
 

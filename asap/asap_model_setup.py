@@ -196,13 +196,13 @@ def setup_model(cfg, verbose=True):
         cfg['dynesty_bound'] = 'multi'
 
     if 'dynesty_sample' not in cfg.keys():
-        cfg['dynesty_sample'] = 'rwalk'
+        cfg['dynesty_sample'] = 'unif'
 
     if 'dynesty_nlive_ini' not in cfg.keys():
-        cfg['dynesty_nlive_ini'] = 300
+        cfg['dynesty_nlive_ini'] = 150
 
     if 'dynesty_nlive_run' not in cfg.keys():
-        cfg['dynesty_nlive_run'] = 300
+        cfg['dynesty_nlive_run'] = 150
 
     if 'dynesty_bootstrap' not in cfg.keys():
         cfg['dynesty_bootstrap'] = 40

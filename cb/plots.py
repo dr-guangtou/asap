@@ -41,7 +41,6 @@ def resample_scatter(x, y, bins):
             this_bin_std[j] = np.std(y[ci], ddof=1)
         stds[i] = np.mean(this_bin_std)
         stdstds[i] = np.std(this_bin_std, ddof=1)
-    print(bins)
     print(cnts)
     return stds, stdstds
 
@@ -144,14 +143,8 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
             assert len(count) == len(cent_bins) - 1
             bins = cent_bins
         else:
-            # We want to use the same bin midpoints, but create new bins to have the same number
-            # in each bin as in cen.
-            # Note that we need to start from the most massive (
-            bins = []
-            s_stellar_masses = np.flip(np.sort(stellar_masses), 0) # increasing
-            for i in range(len(count), -1, -1):
-                bins.append(s_stellar_masses[np.sum(count[i:])])
-            bins = np.array(bins[::-1])
+            bins = bins_for_const_num_den(count, stellar_masses)
+        print(bins)
 
         std, stdstd = resample_scatter(stellar_masses, delta_halo_masses, bins)
         ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
@@ -162,13 +155,21 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
     ax.legend()
     return ax
 
+# We want to use the same bin midpoints, but create new bins to have the same number
+# in each bin as in cen.
+# Note that we need to start from the most massive (
+def bins_for_const_num_den(bin_counts, x_data):
+    bins = []
+    x_data = np.flip(np.sort(x_data), 0)
+    for i in range(len(bin_counts), -1, -1):
+        bins.append(x_data[np.sum(bin_counts[i:])])
+    return np.array(bins[::-1])
+
 
 def sanity_check_scatter(sc_centrals, hc_centrals):
     log_halo_masses = np.log10(hc_centrals["data"]["m"])
 
-    hm_bins = np.arange(np.floor(np.min(log_halo_masses)), np.max(log_halo_masses), 0.2)
-    sm_bins = smhm_fit.f_shmr(hm_bins, *hc_centrals["fit"])
-    sm_bin_midpoints = sm_bins[:-1] + np.diff(sm_bins) / 2
+    hm_bins = np.arange(np.floor(np.min(log_halo_masses)), np.max(log_halo_masses), 0.1)
 
     # calculate SM scatter at fixed HM
     halo_masses = np.log10(hc_centrals["data"]["m"])
@@ -176,22 +177,35 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
     predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *hc_centrals["fit"])
     delta_stellar_masses = stellar_masses - predicted_stellar_masses
     std_sm, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=hm_bins)
+    count, _ = np.histogram(halo_masses, hm_bins)
+
+    # More data in HM cuts
+    std_sm, count = std_sm[8:], count[8:]
+
+    # We need this many items in our SM bins too
+    log_stellar_masses = np.log10(sc_centrals["data"]["icl"] + sc_centrals["data"]["sm"])
+    sm_bins = bins_for_const_num_den(count, log_stellar_masses)
+
+    # sm_bins = smhm_fit.f_shmr(hm_bins, *hc_centrals["fit"])
+    sm_bin_midpoints = sm_bins[:-1] + np.diff(sm_bins) / 2
 
     # calculate HM scatter at fixed SM
-    stellar_masses = np.log10(sc_centrals["data"]["icl"] + sc_centrals["data"]["sm"])
     halo_masses = np.log10(sc_centrals["data"]["m"])
-    predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *sc_centrals["fit"])
+    predicted_halo_masses = smhm_fit.f_shmr_inverse(log_stellar_masses, *sc_centrals["fit"])
     delta_halo_masses = halo_masses - predicted_halo_masses
-    std_hm, _, _ = scipy.stats.binned_statistic(stellar_masses, delta_halo_masses, statistic="std", bins=sm_bins)
+    std_hm, _, _ = scipy.stats.binned_statistic(log_stellar_masses, delta_halo_masses, statistic="std", bins=sm_bins)
+
+    std_hm, std_sm, sm_bin_midpoints = std_hm[:-3], std_sm[:-3], sm_bin_midpoints[:-3] # Last bins are pretty empty...
 
     # calculate derivative at the center of the bins
     d_hm_d_sm = smhm_fit.f_shmr_inverse_der(sm_bin_midpoints, *sc_centrals["fit"][1:])
+
 
     _, ax = plt.subplots()
     ax.plot(sm_bin_midpoints, std_hm / std_sm, label=r"$\sigma_{hm}/\sigma_{sm}$")
     ax.plot(sm_bin_midpoints, d_hm_d_sm, label=r"$dlog_{hm}/dlog_{sm}$")
     ax.set(
-            xlabel="Stellar Mass",
+            xlabel="The number density of a Stellar Mass of X",
     )
     ax.legend()
 
@@ -206,7 +220,7 @@ def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
     y = np.log10(catalog["m"])
 
     # Find various stats on our data
-    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
+    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.1)
     sm_bin_midpoints = sm_bin_edges[:-1] + np.diff(sm_bin_edges) / 2
     mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
     std_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=sm_bin_edges)
@@ -238,7 +252,7 @@ def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     x = np.log10(catalog["m"])
 
     # Find various stats on our data
-    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.2)
+    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.1)
     hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
     mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
     std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)

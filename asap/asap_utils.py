@@ -70,8 +70,9 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
         (-1, mcmc_ndims))
     mcmc_chains = mcmc_sampler.chain
     mcmc_lnprob = mcmc_sampler.lnprobability
-    mcmc_best = mcmc_chains[np.argmax(mcmc_lnprob)]
-
+    ind_1, ind_2 = np.unravel_index(np.argmax(mcmc_lnprob, axis=None),
+                                    mcmc_lnprob.shape)
+    mcmc_best = mcmc_chains[ind_2, ind_1, :]
     mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
 
     np.savez(mcmc_file,

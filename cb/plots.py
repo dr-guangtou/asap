@@ -118,6 +118,8 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
     ax.legend()
     return ax
 
+# I think that I probably need to rework this to plot at number density
+# and then add the mass as an after thought rather than vice-versa (what I am doing now)
 def sm_vs_hm_scatter(central_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
@@ -136,6 +138,7 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
                     np.max(stellar_masses) + 0.2, # to ensure that the last point is included
                     0.2)[:-1]
             bin_midpoints = cent_bins[:-1] + np.diff(cent_bins) / 2
+            print(bin_midpoints)
             count, _ = np.histogram(stellar_masses, cent_bins)
             assert len(count) == len(bin_midpoints)
             assert len(count) == len(cent_bins) - 1
@@ -149,10 +152,14 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         xlabel=m_star_cen_x_axis_simple,
         ylabel=hm_scatter,
     )
-    # Move mass labels to the top
-    ax.get_xaxis().set_ticks_position("top")
-    ax.get_xaxis().set_label_position("top")
-    # And put number density labels on the bottom
+
+    ax2 = ax.twiny()
+    lims = ax.get_xlim()
+    ax2.set_xticklabels(count) # This will become number density, now is just count
+    ax2.set_xticks(bin_midpoints - lims[0])
+    ax2.set_xlim(left=0, right=lims[1]-lims[0])
+    ax2.set(xlabel="Count")
+
     ax.legend()
     return ax
 

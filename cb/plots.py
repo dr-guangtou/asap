@@ -41,7 +41,6 @@ def resample_scatter(x, y, bins):
             this_bin_std[j] = np.std(y[ci], ddof=1)
         stds[i] = np.mean(this_bin_std)
         stdstds[i] = np.std(this_bin_std, ddof=1)
-    print(cnts)
     return stds, stdstds
 
 # This is simlar to ^ except it resamples everything which doesn't guarantee that
@@ -125,7 +124,6 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         # fig.set_size_inches(18.5, 10.5)
 
     for k in data.cut_config.keys():
-        print(k)
         v = central_catalogs[k]
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
         halo_masses = np.log10(v["data"]["m"])
@@ -144,7 +142,6 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
             bins = cent_bins
         else:
             bins = bins_for_const_num_den(count, stellar_masses)
-        print(bins)
 
         std, stdstd = resample_scatter(stellar_masses, delta_halo_masses, bins)
         ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
@@ -152,6 +149,10 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         xlabel=m_star_cen_x_axis_simple,
         ylabel=hm_scatter,
     )
+    # Move mass labels to the top
+    ax.get_xaxis().set_ticks_position("top")
+    ax.get_xaxis().set_label_position("top")
+    # And put number density labels on the bottom
     ax.legend()
     return ax
 

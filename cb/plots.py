@@ -160,6 +160,11 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
     ax2.set_xlim(left=0, right=lims[1]-lims[0])
     ax2.set(xlabel="Count")
 
+    ax.get_xaxis().set_ticks_position("top")
+    ax.get_xaxis().set_label_position("top")
+    ax2.get_xaxis().set_ticks_position("bottom")
+    ax2.get_xaxis().set_label_position("bottom")
+
     ax.legend()
     return ax
 

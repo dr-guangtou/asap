@@ -741,26 +741,33 @@ def plot_mtot_minn_trend(
         x_arr, y_arr, z_arr, method='count',
         x_bins=40, y_bins=30, z_min=None, z_max=None,
         contour=True, nticks=10, x_lim=None, y_lim=None,
-        n_contour=6,
+        n_contour=6, scatter=False, gaussian=0.05,
         xlabel=r'$\log (M_{\star,\ \mathrm{Total}}/M_{\odot})$',
         ylabel=r'$\log (M_{\star,\ \mathrm{Inner}}/M_{\odot})$',
-        title=r'$\log M_{\mathrm{Halo}}$'):
+        title=r'$\log M_{\mathrm{Halo}}$',
+        x_title=0.6, y_title=0.1, s_alpha=0.08, s_size=10):
     """Density plot."""
-    z_stats, x_edges, y_edges = binned_statistic_2d(
-        x_arr, y_arr, z_arr, method, bins=(x_bins, y_bins))
-
     if x_lim is None:
         x_lim = [np.nanmin(x_arr), np.nanmax(x_arr)]
     if y_lim is None:
         y_lim = [np.nanmin(y_arr), np.nanmax(y_arr)]
+
+    x_mask = ((x_arr >= x_lim[0]) & (x_arr <= x_lim[1]))
+    y_mask = ((y_arr >= y_lim[0]) & (y_arr <= y_lim[1]))
+    x_arr = x_arr[x_mask & y_mask]
+    y_arr = y_arr[x_mask & y_mask]
+    z_arr = z_arr[x_mask & y_mask]
+
+    z_stats, x_edges, y_edges = binned_statistic_2d(
+        x_arr, y_arr, z_arr, method, bins=(x_bins, y_bins))
 
     if z_min is None:
         z_min = np.nanmin(z_stats)
     if z_max is None:
         z_max = np.nanmax(z_stats)
 
-    fig = plt.figure(figsize=(9, 7))
-    fig.subplots_adjust(left=0.19, right=0.995,
+    fig = plt.figure(figsize=(9.2, 7))
+    fig.subplots_adjust(left=0.19, right=0.89,
                         bottom=0.13, top=0.995,
                         wspace=0.00, hspace=0.00)
     ax1 = fig.add_subplot(111)
@@ -773,11 +780,15 @@ def plot_mtot_minn_trend(
                     aspect='auto', interpolation='nearest',
                     cmap=ORG)
 
+    if scatter:
+        ax1.scatter(x_arr, y_arr, c=BLU(0.9), alpha=s_alpha, s=s_size,
+                    label='__no_label__')
+
     if contour:
         CT = ax1.contour(x_edges[:-1], y_edges[:-1],
-                         gaussian_filter(z_stats.T, 0.25),
-                         n_contour, linewidths=2.0,
-                         colors=[BLK(0.8), BLK(0.9)],
+                         gaussian_filter(z_stats.T, gaussian),
+                         n_contour, linewidths=1.5,
+                         colors=[BLK(0.6), BLK(0.7)],
                          extend='neither')
         ax1.clabel(CT, inline=1, fontsize=15)
 
@@ -795,7 +806,7 @@ def plot_mtot_minn_trend(
     cbar = plt.colorbar(HM, cax=cax, ticks=cbar_ticks)
     cbar.solids.set_edgecolor("face")
 
-    ax1.text(0.6, 0.1, title, size=30, transform=ax1.transAxes)
+    ax1.text(x_title, y_title, title, size=30, transform=ax1.transAxes)
 
     ax1.set_xlim(x_lim)
     ax1.set_ylim(y_lim)
@@ -803,7 +814,9 @@ def plot_mtot_minn_trend(
     return fig
 
 
-def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
+def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12,
+                                  logmh_range=[13.0, 15.2],
+                                  logms_range=[11.0, 12.4]):
     """Plot the trends among mass and scatters."""
     mask_cen = um_mock['upid'] == -1
 
@@ -813,10 +826,8 @@ def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
     logms_all = logms_tot_mod
     logmh_all = um_mock['logmh_vir']
 
-    logms_bin = np.linspace(np.nanmin(logms_all),
-                            np.nanmax(logms_all), nbin)
-    logmh_bin = np.linspace(np.nanmin(logmh_all),
-                            np.nanmax(logmh_all), nbin)
+    logms_bin = np.linspace(logms_range[0], logms_range[1], nbin)
+    logmh_bin = np.linspace(logmh_range[0], logmh_range[1], nbin)
 
     idx_logms_cen = np.digitize(logms_cen, logms_bin)
     idx_logmh_cen = np.digitize(logmh_cen, logmh_bin)
@@ -843,6 +854,8 @@ def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
                           (len(um_mock[idx_logms_all == k])))
                          for k in range(len(logms_bin))])
 
+    frac_sat = (1.0 - frac_cen) * 100.0
+
     fig, axes = plt.subplots(3, figsize=(7, 15))
 
     ax1 = axes[0]
@@ -852,10 +865,15 @@ def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
                 label=r'$\mathrm{All}$')
     ax1.scatter(logmh_mean, sigms_cen, s=30, alpha=0.7,
                 label=r'$\mathrm{Cen}$')
-    ax1.set_xlabel(r'$\log M_{\rm Vir}$', fontsize=25)
-    ax1.set_ylabel(r'$\sigma_{\log M_{\star, 100\mathrm{kpc,\ Model}}}$',
+
+    ax1.set_xlim(logmh_range)
+    ax1.set_ylim(np.nanmin(sigms_cen[1:]) - 0.05,
+                 np.nanmax(sigms_all[1:]) + 0.05)
+
+    ax1.set_xlabel(r'$\log M_{\rm Halo}$', fontsize=25)
+    ax1.set_ylabel(r'$\sigma_{\log M_{\star, \mathrm{Model}}}$',
                    fontsize=25)
-    ax1.legend(fontsize=15, loc='lower left')
+    ax1.legend(fontsize=15, loc='upper right')
 
     for tick in ax1.xaxis.get_major_ticks():
         tick.label.set_fontsize(15)
@@ -868,8 +886,11 @@ def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
     ax2.scatter(logms_mean, sigmh_all, s=50)
     ax2.scatter(logms_mean, sigmh_cen, s=30, alpha=0.7)
 
-    ax2.set_xlabel(r'$\log M_{\star, 100\mathrm{kpc,\ Model}}$', fontsize=25)
-    ax2.set_ylabel(r'$\sigma_{\log M_{\rm Vir}}$', fontsize=25)
+    ax2.set_xlabel(r'$\log M_{\star, \mathrm{Model}}$', fontsize=25)
+    ax2.set_ylabel(r'$\sigma_{\log M_{\rm Halo}}$', fontsize=25)
+    ax2.set_xlim(logms_range)
+    ax2.set_ylim(np.nanmin(sigmh_cen[1:]) - 0.05,
+                 np.nanmax(sigmh_all[1:]) + 0.05)
 
     for tick in ax2.xaxis.get_major_ticks():
         tick.label.set_fontsize(15)
@@ -879,10 +900,13 @@ def plot_mass_scatter_fsat_trends(um_mock, logms_tot_mod, nbin=12):
     ax3 = axes[2]
     ax3.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
 
-    ax3.scatter(logms_mean, (1.0 - frac_cen) * 100.0, s=50, alpha=0.8)
+    ax3.scatter(logms_mean, frac_sat, s=50, alpha=0.8)
 
-    ax3.set_xlabel(r'$\log M_{\star, 100\mathrm{kpc,\ Model}}$', fontsize=25)
+    ax3.set_xlabel(r'$\log M_{\star, \mathrm{Model}}$', fontsize=25)
     ax3.set_ylabel(r'$f_{\rm Satellites}$', fontsize=25)
+    ax3.set_xlim(logms_range)
+    ax3.set_ylim(np.nanmin(frac_sat[1:]) - 5,
+                 np.nanmax(frac_sat[1:]) + 10)
 
     for tick in ax3.xaxis.get_major_ticks():
         tick.label.set_fontsize(15)

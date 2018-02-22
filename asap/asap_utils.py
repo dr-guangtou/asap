@@ -98,16 +98,18 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
 
 def mcmc_setup_moves(cfg):
     """Choose the Move object for emcee."""
-    if cfg['mcmc_moves'] == 'redblue':
-        emcee_moves = emcee.moves.RedBlueMove(randomize_split=False)
+    if cfg['mcmc_moves'] == 'snooker':
+        emcee_moves = emcee.moves.DESnookerMove()
     elif cfg['mcmc_moves'] == 'stretch':
         emcee_moves = emcee.moves.StretchMove(a=cfg['mcmc_stretch_a'])
     elif cfg['mcmc_moves'] == 'walk':
         emcee_moves = emcee.moves.WalkMove(s=cfg['mcmc_walk_s'])
     elif cfg['mcmc_moves'] == 'kde':
         emcee_moves = emcee.moves.KDEMove()
+    elif cfg['mcmc_moves'] == 'de':
+        emcee_moves = emcee.moves.DEMove(cfg['mcmc_de_sigma'])
     else:
-        raise Exception("Wrong option: redblue, stretch, walk, kde")
+        raise Exception("Wrong option: stretch, walk, kde, de, snooker")
 
     return emcee_moves
 

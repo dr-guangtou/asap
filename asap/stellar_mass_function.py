@@ -9,9 +9,13 @@ from scipy.stats import norm
 
 import numpy as np
 
+from asap_utils import mtot_minn_weight
+
+
 __all__ = ['get_smf_bootstrap', 'bootstrap_smf', 'bootstrap_resample',
-           'compute_smf', 'mass_gaussian_weighted_count_bin',
-           'smf_sigma_mass_weighted']
+           'compute_smf', 'ngal_weighted_mass_bin_1d',
+           'ngal_weighted_mass_bin_2d',
+           'smf_sigma_mass_weighted', 'smf_sigma_mass_weighted_2d']
 
 
 def compute_smf(sm_array, volume, nb, sm_min, sm_max,
@@ -231,10 +235,17 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
     return smf_table
 
 
-def mass_gaussian_weighted_count_bin(logms, sigms, left, right):
-    """Weighted count of stellar in bin."""
+def ngal_weighted_mass_bin_1d(logms, sigms, left, right):
+    """Weighted count of galaxies in one mass bin."""
     return (norm.sf(left, loc=logms, scale=sigms) -
             norm.sf(right, loc=logms, scale=sigms)).sum()
+
+
+def ngal_weighted_mass_bin_2d(logms_1, logms_2, sigms, low, upp,
+                              left, right):
+    """Weigthed count of galaxies in bin using two masses."""
+    return np.array(mtot_minn_weight(logms_1, logms_2, sigms,
+                                     low, upp, left, right)).sum()
 
 
 def smf_sigma_mass_weighted(logms, sigms, volume, nbin,
@@ -250,7 +261,32 @@ def smf_sigma_mass_weighted(logms, sigms, volume, nbin,
 
     # SMF using weighted count in each bin
     smf = np.array([
-        mass_gaussian_weighted_count_bin(logms, sigms, left, right)
+        ngal_weighted_mass_bin_1d(logms, sigms, left, right)
+        for left, right in zip(edges[0:-1], edges[1:])])
+
+    # Normalize
+    if return_count:
+        return smf
+
+    return smf / volume / bin_width
+
+
+def smf_sigma_mass_weighted_2d(logms_1, logms_2, sigms,
+                               volume, nbin, min_logms, max_logms,
+                               low=11.5, upp=12.5,
+                               edges=None, return_count=False):
+    """Stelar mass function weighted by mass error."""
+    # Now only deal with constant bin size
+    if edges is None:
+        edges = np.linspace(min_logms, max_logms, nbin + 1)
+
+    # Bin width in dex
+    bin_width = edges[1:] - edges[0:-1]
+
+    # SMF using weighted count in each bin
+    smf = np.array([
+        ngal_weighted_mass_bin_2d(logms_1, logms_2, sigms,
+                                  low, upp, left, right)
         for left, right in zip(edges[0:-1], edges[1:])])
 
     # Normalize

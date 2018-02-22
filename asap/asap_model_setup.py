@@ -183,6 +183,9 @@ def setup_model(cfg, verbose=True):
     if 'mcmc_walk_s' not in cfg.keys():
         cfg['mcmc_walk_s'] = None
 
+    if 'mcmc_de_sigma' not in cfg.keys():
+        cfg['mcmc_de_sigma'] = 0.2
+
     cfg['mcmc_burnin_file'] = os.path.join(
         cfg['mcmc_out_dir'], cfg['mcmc_prefix'] + '_burnin.npz')
     cfg['mcmc_run_file'] = os.path.join(

@@ -343,11 +343,9 @@ def asap_single_dsigma(cfg, mock_use, mass_encl_use, obs_prof,
         if verbose:
             print("# Not enough UM galaxy in bin %d !" % obs_prof.bin_id)
     else:
-        _, wl_prof = asap_um_dsigma(
+        return asap_um_dsigma(
             cfg, mock_use, mass_encl_use, mask=bin_mask,
             r_interp=obs_prof.r, mstar_lin=mstar_lin)
-
-    return wl_prof
 
 
 def asap_predict_mhalo(obs_dsigma, mock_use,
@@ -472,7 +470,8 @@ def asap_predict_model_prob(param, cfg, obs_data, um_data,
 
     if return_all:
         return (um_smf_tot, um_smf_inn, um_dsigma,
-                logms_mod_inn, logms_mod_tot, sig_logms)
+                logms_mod_inn, logms_mod_tot,
+                sig_logms, mask_tot)
 
     return um_smf_tot, um_smf_inn, um_dsigma
 
@@ -535,7 +534,7 @@ def asap_predict_model(param, cfg, obs_data, um_data,
     if show_smf:
         um_smf_tot_all = get_smf_bootstrap(logms_mod_tot_all,
                                            cfg['um_volume'],
-                                           20, 10.5, 12.5,
+                                           20, cfg['obs_min_mtot'], 12.5,
                                            n_boots=1)
         _ = plot_mtot_minn_smf(
             obs_data['obs_smf_tot'], obs_data['obs_smf_inn'],
@@ -543,7 +542,8 @@ def asap_predict_model(param, cfg, obs_data, um_data,
             um_smf_tot, um_smf_inn,
             logms_mod_tot, logms_mod_inn,
             obs_smf_full=obs_data['obs_smf_full'],
-            um_smf_tot_all=um_smf_tot_all)
+            um_smf_tot_all=um_smf_tot_all,
+            not_table=True)
 
     if show_dsigma:
         um_mhalo_tuple = asap_predict_mhalo(

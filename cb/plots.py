@@ -5,6 +5,8 @@ import scipy.optimize
 
 import smhm_fit
 import data
+from lit_scatter import lit
+
 
 solarMassUnits = r"($M_{\odot}$)"
 
@@ -67,6 +69,7 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
 
     for cat in ["insitu", "cen", "halo"]:
         v = central_catalogs[cat]
+        if cat == "insitu": cat = "in" #hack hack hack
         halo_masses = np.log10(v["data"]["m"])
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
 
@@ -85,6 +88,8 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
         xlabel=m_vir_x_axis,
         ylabel=sm_scatter_simple,
     )
+    for _, v in lit.items():
+        ax.plot(v["x"], v["y"], label=v["label"])
     ax.legend(loc="upper left")
     ax.set_ylim(top = 0.62) # to make room for the legend
     return ax

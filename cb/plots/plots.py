@@ -5,21 +5,9 @@ import scipy.optimize
 
 import smhm_fit
 import data
-from lit_scatter import lit
+from plots.lit_scatter import lit
+from plots import labels as l
 
-
-solarMassUnits = r"($M_{\odot}$)"
-
-m_vir_x_axis = r"$log\ M_{vir}$"
-hm_scatter = r"$\sigma(log\ M_{vir})$"
-
-sm_scatter_simple = r"$\sigma(log\ M_{\ast})$"
-m_star_x_axis_simple = r"$log\ M_{\ast}$"
-m_star_cen_x_axis_simple = r"$log\ M_{\ast}^{cen}$"
-def m_star_x_axis(n_sats):
-    return r"$log\ M_{\ast}^{" + str(n_sats) + "}$"
-def sm_scatter(n_sats):
-    return r"$\sigma(log\ M_{\ast}^{" + str(n_sats) + "})$"
 
 # See https://arxiv.org/pdf/0810.1885.pdf
 def resample_scatter(x, y, bins):
@@ -85,8 +73,8 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
         std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
         ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(cat) + "}$", capsize=1.5, linewidth=1)
     ax.set(
-        xlabel=m_vir_x_axis,
-        ylabel=sm_scatter_simple,
+        xlabel=l.m_vir_x_axis,
+        ylabel=l.sm_scatter_simple,
     )
     for _, v in lit.items():
         ax.plot(v["x"], v["y"], label=v["label"])
@@ -117,8 +105,8 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
         std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
         ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
     ax.set(
-        xlabel=m_vir_x_axis,
-        ylabel=sm_scatter_simple,
+        xlabel=l.m_vir_x_axis,
+        ylabel=l.sm_scatter_simple,
     )
     ax.legend()
     return ax
@@ -154,8 +142,8 @@ def sm_vs_hm_scatter(central_catalogs, ax = None):
         std, stdstd = resample_scatter(stellar_masses, delta_halo_masses, bins)
         ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
     ax.set(
-        xlabel=m_star_cen_x_axis_simple,
-        ylabel=hm_scatter,
+        xlabel=l.m_star_cen_x_axis_simple,
+        ylabel=l.hm_scatter,
     )
 
     ax2 = ax.twiny()
@@ -251,8 +239,8 @@ def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
     ax.fill_between(sm_bin_midpoints, mean_hm-(2*std_hm), mean_hm-(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(sm_bin_midpoints, mean_hm+(2*std_hm), mean_hm+(3*std_hm), alpha=0.125, facecolor="tab:blue")
     ax.set(
-        xlabel=m_star_x_axis(n_sats),
-        ylabel=m_vir_x_axis,
+        xlabel=l.m_star_x_axis(n_sats),
+        ylabel=l.m_vir_x_axis,
     )
 
     if fit is not None:
@@ -283,8 +271,8 @@ def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
     ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
     ax.set(
-        xlabel=m_vir_x_axis,
-        ylabel=m_star_x_axis(n_sats),
+        xlabel=l.m_vir_x_axis,
+        ylabel=l.m_star_x_axis(n_sats),
     )
 
     if fit is not None:

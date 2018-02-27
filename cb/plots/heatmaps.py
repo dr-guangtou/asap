@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 
-import cluster_sum
-import plots
+import halo_info
+from plots import labels as l
 import smhm_fit
 
 def age_and_hm_vs_sm_scatter(centrals, fit, n_sats):
@@ -21,10 +21,10 @@ def age_and_hm_vs_sm_scatter(centrals, fit, n_sats):
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
             yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_vir_x_axis,
+            xlabel=l.m_vir_x_axis,
             ylabel=r"Scale factor at halo half mass",
     )
-    fig.colorbar(image, label=plots.sm_scatter(n_sats))
+    fig.colorbar(image, label=l.sm_scatter(n_sats))
     return ax
 
 def age_and_sm_vs_hm_scatter(centrals, fit, n_sats):
@@ -42,10 +42,10 @@ def age_and_sm_vs_hm_scatter(centrals, fit, n_sats):
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
             yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_star_x_axis(n_sats),
+            xlabel=l.m_star_x_axis(n_sats),
             ylabel=r"Scale factor at halo half mass",
     )
-    fig.colorbar(image, label=plots.hm_scatter)
+    fig.colorbar(image, label=l.hm_scatter)
     return ax
 
 def mm_and_hm_vs_sm_scatter(centrals, fit, n_sats):
@@ -63,10 +63,10 @@ def mm_and_hm_vs_sm_scatter(centrals, fit, n_sats):
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
             yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_vir_x_axis,
+            xlabel=l.m_vir_x_axis,
             ylabel=r"Scale factor at last major merger",
     )
-    fig.colorbar(image, label=plots.sm_scatter(n_sats))
+    fig.colorbar(image, label=l.sm_scatter(n_sats))
     return ax
 
 def mm_and_sm_vs_hm_scatter(centrals, fit, n_sats):
@@ -84,10 +84,10 @@ def mm_and_sm_vs_hm_scatter(centrals, fit, n_sats):
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
             yticklabels=["{0:.2f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_star_x_axis(n_sats),
+            xlabel=l.m_star_x_axis(n_sats),
             ylabel=r"Scale factor at last major merger",
     )
-    fig.colorbar(image, label=plots.hm_scatter)
+    fig.colorbar(image, label=l.hm_scatter)
     return ax
 
 def concentration_and_hm_vs_sm_scatter(centrals, fit, n_sats):
@@ -105,10 +105,10 @@ def concentration_and_hm_vs_sm_scatter(centrals, fit, n_sats):
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=binned_stats.y_edge[::2],
             yticklabels=["{0:.0f}".format(i) for i in binned_stats.y_edge[::2]],
-            xlabel=plots.m_vir_x_axis,
+            xlabel=l.m_vir_x_axis,
             ylabel=r"Concentration",
     )
-    fig.colorbar(image, label=plots.sm_scatter(n_sats))
+    fig.colorbar(image, label=l.sm_scatter(n_sats))
     return ax
 
 def concentration_and_sm_vs_hm_scatter(centrals, fit, n_sats):
@@ -126,16 +126,16 @@ def concentration_and_sm_vs_hm_scatter(centrals, fit, n_sats):
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(np.min(binned_stats.y_edge), np.max(binned_stats.y_edge), num=len(binned_stats.y_edge)),
             yticklabels=["{0:.1f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_star_x_axis(n_sats),
+            xlabel=l.m_star_x_axis(n_sats),
             ylabel=r"Concentration",
     )
-    fig.colorbar(image, label=plots.hm_scatter)
+    fig.colorbar(image, label=l.hm_scatter)
     return ax
 
 def richness_and_hm_vs_sm_scatter(centrals, satellites, min_mass_for_richness, fit, n_sats):
     stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
     halo_masses = np.log10(centrals["m"])
-    richnesses = cluster_sum.get_richness(centrals, satellites, min_mass_for_richness)
+    richnesses = halo_info.get_richness(centrals, satellites, min_mass_for_richness)
     x_bin_edges = np.arange(
             np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
             np.max(halo_masses) + 0.2, # to ensure that the last point is included
@@ -147,29 +147,29 @@ def richness_and_hm_vs_sm_scatter(centrals, satellites, min_mass_for_richness, f
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(0, 64, num=8),
             yticklabels=["{0:.0f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_vir_x_axis,
+            xlabel=l.m_vir_x_axis,
             ylabel=r"$Richness$",
     )
-    fig.colorbar(image, label=plots.sm_scatter(n_sats))
+    fig.colorbar(image, label=l.sm_scatter(n_sats))
     return ax
 
 def richness_and_sm_vs_hm_scatter(centrals, satellites, min_mass_for_richness, fit, n_sats):
     stellar_masses = np.log10(centrals["icl"] + centrals["sm"])
     halo_masses = np.log10(centrals["m"])
-    richnesses = cluster_sum.get_richness(centrals, satellites, min_mass_for_richness)
+    richnesses = halo_info.get_richness(centrals, satellites, min_mass_for_richness)
     x_bin_edges = np.arange(
             np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
             np.max(stellar_masses) + 0.2, # to ensure that the last point is included
             0.2)
     y_bin_edges = np.array([0, 1, 2, 4, 8, 16, 32, 64])
     fig, ax, image, binned_stats = generalised_heatmap(stellar_masses, richnesses, halo_masses, False, fit, x_bin_edges, y_bin_edges)
-    fig.colorbar(image, label=plots.hm_scatter)
+    fig.colorbar(image, label=l.hm_scatter)
     ax.set(
             xticks=binned_stats.x_edge[::2],
             xticklabels=["{0:.1f}".format(i) for i in binned_stats.x_edge[::2]],
             yticks=np.linspace(0, 64, num=8),
             yticklabels=["{0:.0f}".format(i) for i in binned_stats.y_edge],
-            xlabel=plots.m_star_x_axis(n_sats),
+            xlabel=l.m_star_x_axis(n_sats),
             ylabel=r"$Richness$",
     )
     return ax

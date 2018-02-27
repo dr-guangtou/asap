@@ -1,6 +1,7 @@
 import os
 import numpy as np
-import cluster_sum
+
+from data import cluster_sum
 
 def load():
     datadir = os.getenv("dataDir") + "/universe_machine/"
@@ -13,6 +14,7 @@ def load():
 
 # This should be ordered in an appropriate way
 # As I understand it at the moment this probably just means central first.
+# (Later) What did I mean by this???
 cut_config = {
         "cen": {"n_sats": 0, "mass_limit": 11.6},
         1: {"n_sats": 1, "mass_limit": 11.7},

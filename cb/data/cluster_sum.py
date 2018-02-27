@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def centrals_with_satellites(centrals, satellites, n):
     """
     Given an array of centrals and satellites where the satellites are sorted by
@@ -32,21 +31,3 @@ def get_n(n, total_sats):
         return int(np.ceil(n * total_sats))
     # Return n (at most the total_sats) if it is a number
     return min(n, total_sats)
-
-
-def get_richness(halos, satellites, min_mass):
-    richness = np.zeros(len(halos), int)
-    for i, central in enumerate(halos):
-        sats = satellites[np.searchsorted(
-            satellites["upid"], central["id"], side="left"):np.searchsorted(
-                satellites["upid"], central["id"], side="right")]
-        sats = sats[::-1]
-
-        for j in range(len(sats)):
-            if sats[j]["icl"] + sats[j]["sm"] < min_mass:
-                richness[i] = j
-                break
-        else:
-            richness[i] = len(sats)
-
-    return richness

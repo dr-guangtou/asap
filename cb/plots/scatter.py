@@ -1,3 +1,7 @@
+"""
+Graphs plotting the scatter in one of stellar mass or halo mass against the other
+Or now also plotting the scatter in some other observable (richness) against HM.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
@@ -7,7 +11,6 @@ import smhm_fit
 import data
 from plots.lit_scatter import lit
 from plots import labels as l
-
 
 # See https://arxiv.org/pdf/0810.1885.pdf
 def resample_scatter(x, y, bins):
@@ -110,6 +113,28 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
     )
     ax.legend()
     return ax
+
+
+def in_richness_at_fixed_hm(combined_catalogs, ax = None):
+    if ax is None:
+        _, ax = plt.subplots()
+
+    catalog = combined_catalogs["cen"]["richness"]
+    halo_masses = np.log10(catalog["m"])
+    bins = np.arange(
+            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+            np.max(halo_masses) + 0.2, # to ensure that the last point is included
+            0.2)[:-1]
+    bin_midpoints = bins[:-1] + np.diff(bins) / 2
+
+    y, yerr = resample_scatter(halo_masses, catalog["richness"], bins)
+    ax.errorbar(bin_midpoints, y, yerr=yerr)
+
+
+    print(bins)
+    return ax
+
+
 
 # I think that I probably need to rework this to plot at number density
 # and then add the mass as an after thought rather than vice-versa (what I am doing now)
@@ -214,69 +239,5 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
             xlabel="The number density of a Stellar Mass of X",
     )
     ax.legend()
-
-    return ax
-
-# HM (y axis) at fixed SM (x axis)
-def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
-    if ax is None:
-        _, ax = plt.subplots()
-        # fig.set_size_inches(18.5, 10.5)
-    x = np.log10(catalog["icl"] + catalog["sm"])
-    y = np.log10(catalog["m"])
-
-    # Find various stats on our data
-    sm_bin_edges = np.arange(np.min(x), np.max(x), 0.1)
-    sm_bin_midpoints = sm_bin_edges[:-1] + np.diff(sm_bin_edges) / 2
-    mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
-    std_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=sm_bin_edges)
-
-    # Plot data and colored error regions
-    ax.plot(sm_bin_midpoints, mean_hm, marker="o", label="Universe Machine", linewidth=1)
-    ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm+std_hm, alpha=0.5, facecolor="tab:blue")
-    ax.fill_between(sm_bin_midpoints, mean_hm-std_hm, mean_hm-(2*std_hm), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(sm_bin_midpoints, mean_hm+std_hm, mean_hm+(2*std_hm), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(sm_bin_midpoints, mean_hm-(2*std_hm), mean_hm-(3*std_hm), alpha=0.125, facecolor="tab:blue")
-    ax.fill_between(sm_bin_midpoints, mean_hm+(2*std_hm), mean_hm+(3*std_hm), alpha=0.125, facecolor="tab:blue")
-    ax.set(
-        xlabel=l.m_star_x_axis(n_sats),
-        ylabel=l.m_vir_x_axis,
-    )
-
-    if fit is not None:
-        ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
-    ax.legend()
-
-    return ax
-
-# SM (y axis) at fixed HM (x axis)
-def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
-    if ax is None:
-        _, ax = plt.subplots()
-        # fig.set_size_inches(18.5, 10.5)
-    y = np.log10(catalog["icl"] + catalog["sm"])
-    x = np.log10(catalog["m"])
-
-    # Find various stats on our data
-    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.1)
-    hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
-    mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
-    std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)
-
-    # Plot data and colored error regions
-    ax.plot(hm_bin_midpoints, mean_sm, marker="o", label="Universe Machine", linewidth=1)
-    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.5, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
-    ax.set(
-        xlabel=l.m_vir_x_axis,
-        ylabel=l.m_star_x_axis(n_sats),
-    )
-
-    if fit is not None:
-        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
-    ax.legend(loc="lower right")
 
     return ax

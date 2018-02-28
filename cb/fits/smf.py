@@ -5,7 +5,7 @@ import numpy as np
 
 # Import from Song's stuff
 import sys
-sys.path.append("../..")
+sys.path.append("..")
 import lib.stellar_mass_function as smf
 
 def _cumulate(x):

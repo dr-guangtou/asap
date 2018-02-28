@@ -2,6 +2,7 @@ import os
 import numpy as np
 
 from data import cluster_sum
+from halo_info import get_richness
 
 def load():
     datadir = os.getenv("dataDir") + "/universe_machine/"
@@ -22,6 +23,8 @@ cut_config = {
         5: {"n_sats": 5, "mass_limit": 11.8},
         "halo": {"n_sats": 0.999999999, "mass_limit": 11.9},
 }
+
+min_mass_for_richness = 10**10.8
 
 def sm_cuts_with_sats(centrals, satellites, f):
     res = {}
@@ -69,4 +72,16 @@ def hm_cuts_with_sats(centrals, satellites, f):
             "data": insitu_only,
             "fit": f(insitu_only),
     }
+
+    # Add richness data to centrals
+    cen_data = res["cen"]["data"]
+    richness = get_richness(
+            cen_data,
+            satellites,
+            min_mass_for_richness,
+    )
+    out = np.zeros(len(richness), dtype=[("m", "float64"), ("richness", "float64")])
+    out["m"], out["richness"] = cen_data["m"], richness
+    res["cen"]["richness"] = out
+
     return res

@@ -1,3 +1,5 @@
+import numpy as np
+
 def get_richness(halos, satellites, min_mass):
     richness = np.zeros(len(halos), int)
     for i, central in enumerate(halos):

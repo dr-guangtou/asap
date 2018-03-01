@@ -165,21 +165,46 @@ def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    # v = combined_catalogs["cen"]
-    # stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
-    # halo_masses = np.log10(v["data"]["m"])
-    # predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
-    # delta_halo_masses = halo_masses - predicted_halo_masses
+    v = combined_catalogs["cen"]
 
-    number_densities = np.logspace(-1.9, -4.2, num=10)
+    number_densities = np.logspace(-3.5, -6.5, num=12)
     number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
+    # Convert number density to richness so that we can use that
+    r_bins = np.array([fits.richness_at_density(combined_catalogs, "cen", d) for d in number_densities])
 
-    catalog = np.sort(combined_catalogs["cen"]["richness"], order="richness")[::-1]
+    # Delta halo masses
+    stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+    halo_masses = np.log10(v["data"]["m"])
+    predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
+    delta_halo_masses = halo_masses - predicted_halo_masses
+    richnesses = v["richness"]["richness"]
+
+    y, yerr = resample_scatter(richnesses, delta_halo_masses, r_bins)
+
+    ax.errorbar(number_densities_mid, y, yerr=yerr)
+    ax.set(
+            xscale="log",
+            ylim=0,
+            xlabel=l.number_density_richness,
+            ylabel=l.hm_scatter,
+    )
+    ax.invert_xaxis()
+    ax.legend(fontsize="xx-small", loc="upper right")
+
+    # Add the mass at the top
+    ax2 = ax.twiny()
+    richnesses = [0, 10, 20, 30, 40, 50]
+
+    lims = [fits.richness_at_density(combined_catalogs, "cen", m) for m in ax.get_xlim()]
+    ax2.set(
+            xlim=lims,
+            xticks=richnesses,
+            xticklabels=richnesses,
+            xlabel=l.richness,
+    )
+    return ax
 
 
-    richness_bins = [catalog[int(n * len(catalog))]["richness"] for n in number_densities]
-
-    print(richness_bins)
 
 
 def in_richness_at_fixed_hm(combined_catalogs, ax = None):

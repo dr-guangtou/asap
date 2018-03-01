@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import scipy.stats
 import scipy.optimize
 
+import fits
 import smhm_fit
 import data
 from plots.lit_scatter import lit
@@ -85,11 +86,9 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
     ax.set_ylim(top = 0.62) # to make room for the legend
     return ax
 
-# central_catalogs look like: {label1: {data: [ ], fit: [ ]}, label2: ...}
-def hm_vs_sm_scatter(central_catalogs, ax = None):
+def in_sm_at_fixed_hm(central_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
-        # fig.set_size_inches(18.5, 10.5)
 
     for k, v in central_catalogs.items():
         if k == "insitu":
@@ -105,13 +104,14 @@ def hm_vs_sm_scatter(central_catalogs, ax = None):
                 0.2)[:-1]
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
 
-        std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
-        ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
+        y, yerr = resample_scatter(halo_masses, delta_stellar_masses, bins)
+        ax.errorbar(bin_midpoints, y, yerr=yerr, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
+
     ax.set(
         xlabel=l.m_vir_x_axis,
         ylabel=l.sm_scatter_simple,
     )
-    ax.legend()
+    ax.legend(fontsize="xx-small", loc="upper right")
     return ax
 
 
@@ -130,61 +130,52 @@ def in_richness_at_fixed_hm(combined_catalogs, ax = None):
     y, yerr = resample_scatter(halo_masses, catalog["richness"], bins)
     ax.errorbar(bin_midpoints, y, yerr=yerr)
 
-
-    print(bins)
     return ax
 
-
-
-# I think that I probably need to rework this to plot at number density
-# and then add the mass as an after thought rather than vice-versa (what I am doing now)
-def sm_vs_hm_scatter(central_catalogs, ax = None):
+def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
-        # fig.set_size_inches(18.5, 10.5)
 
+    number_densities = np.logspace(-1.9, -4.2, num=10)
+    number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
     for k in data.cut_config.keys():
-        v = central_catalogs[k]
+        # Convert number densities to SM so that we can use that
+        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in number_densities])
+
+        v = combined_catalogs[k]
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
         halo_masses = np.log10(v["data"]["m"])
         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
         delta_halo_masses = halo_masses - predicted_halo_masses
 
-        if k == "cen":
-            cent_bins = np.arange(
-                    np.floor(10*np.min(stellar_masses))/10, # round down to nearest tenth
-                    np.max(stellar_masses) + 0.2, # to ensure that the last point is included
-                    0.2)[:-1]
-            bin_midpoints = cent_bins[:-1] + np.diff(cent_bins) / 2
-            print(bin_midpoints)
-            count, _ = np.histogram(stellar_masses, cent_bins)
-            assert len(count) == len(bin_midpoints)
-            assert len(count) == len(cent_bins) - 1
-            bins = cent_bins
-        else:
-            bins = bins_for_const_num_den(count, stellar_masses)
+        y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
 
-        std, stdstd = resample_scatter(stellar_masses, delta_halo_masses, bins)
-        ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
+        ax.errorbar(number_densities_mid, y, yerr=yerr, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
+
     ax.set(
-        xlabel=l.m_star_cen_x_axis_simple,
-        ylabel=l.hm_scatter,
+            xscale="log",
+            ylim=0,
+            xlabel=l.number_density,
+            ylabel=l.hm_scatter,
+    )
+    ax.invert_xaxis()
+    ax.legend(fontsize="xx-small", loc="upper right")
+
+
+    # Add the mass at the top
+    ax2 = ax.twiny()
+    masses = [11.8, 12, 12.2, 12.4] # manually found
+
+    lims = [fits.mass_at_density(combined_catalogs, "cen", m) for m in ax.get_xlim()]
+    ax2.set(
+            xlim=lims,
+            xticks=masses,
+            xticklabels=masses,
+            xlabel=l.m_star_x_axis("cen"),
     )
 
-    ax2 = ax.twiny()
-    lims = ax.get_xlim()
-    ax2.set_xticklabels(count) # This will become number density, now is just count
-    ax2.set_xticks(bin_midpoints - lims[0])
-    ax2.set_xlim(left=0, right=lims[1]-lims[0])
-    ax2.set(xlabel="Count")
-
-    ax.get_xaxis().set_ticks_position("top")
-    ax.get_xaxis().set_label_position("top")
-    ax2.get_xaxis().set_ticks_position("bottom")
-    ax2.get_xaxis().set_label_position("bottom")
-
-    ax.legend()
     return ax
+
 
 # We want to use the same bin midpoints, but create new bins to have the same number
 # in each bin as in cen.

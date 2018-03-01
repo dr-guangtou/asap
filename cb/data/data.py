@@ -47,6 +47,16 @@ def sm_cuts_with_sats(centrals, satellites, f):
             "data": insitu_only,
             "fit": f(insitu_only),
     }
+    # Add richness data to centrals
+    cen_data = res["cen"]["data"]
+    richness = get_richness(
+            cen_data,
+            satellites,
+            min_mass_for_richness,
+    )
+    out = np.zeros(len(richness), dtype=[("m", "float64"), ("richness", "float64")])
+    out["m"], out["richness"] = cen_data["m"], richness
+    res["cen"]["richness"] = out
 
     return res
 

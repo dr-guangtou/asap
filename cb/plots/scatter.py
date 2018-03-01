@@ -115,23 +115,7 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
     return ax
 
 
-def in_richness_at_fixed_hm(combined_catalogs, ax = None):
-    if ax is None:
-        _, ax = plt.subplots()
-
-    catalog = combined_catalogs["cen"]["richness"]
-    halo_masses = np.log10(catalog["m"])
-    bins = np.arange(
-            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
-            np.max(halo_masses) + 0.2, # to ensure that the last point is included
-            0.2)[:-1]
-    bin_midpoints = bins[:-1] + np.diff(bins) / 2
-
-    y, yerr = resample_scatter(halo_masses, catalog["richness"], bins)
-    ax.errorbar(bin_midpoints, y, yerr=yerr)
-
-    return ax
-
+# this is number density by stellar mass
 def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
@@ -175,6 +159,48 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     )
 
     return ax
+
+# this is
+def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
+    if ax is None:
+        _, ax = plt.subplots()
+
+    # v = combined_catalogs["cen"]
+    # stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+    # halo_masses = np.log10(v["data"]["m"])
+    # predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
+    # delta_halo_masses = halo_masses - predicted_halo_masses
+
+    number_densities = np.logspace(-1.9, -4.2, num=10)
+    number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
+
+    catalog = np.sort(combined_catalogs["cen"]["richness"], order="richness")[::-1]
+
+
+    richness_bins = [catalog[int(n * len(catalog))]["richness"] for n in number_densities]
+
+    print(richness_bins)
+
+
+def in_richness_at_fixed_hm(combined_catalogs, ax = None):
+    if ax is None:
+        _, ax = plt.subplots()
+
+    catalog = combined_catalogs["cen"]["richness"]
+    halo_masses = np.log10(catalog["m"])
+    bins = np.arange(
+            np.floor(10*np.min(halo_masses))/10, # round down to nearest tenth
+            np.max(halo_masses) + 0.2, # to ensure that the last point is included
+            0.2)[:-1]
+    bin_midpoints = bins[:-1] + np.diff(bins) / 2
+
+    y, yerr = resample_scatter(halo_masses, catalog["richness"], bins)
+    ax.errorbar(bin_midpoints, y, yerr=yerr)
+
+    return ax
+
+
+#### Would consider the following "non-prod"
 
 
 # We want to use the same bin midpoints, but create new bins to have the same number

@@ -10,6 +10,8 @@ sys.path.append("..")
 import lib.stellar_mass_function as smf
 
 
+# Consider normalising all of these - don't divide by bin width.
+
 # given a list of stellar masses, return the smf
 def build_csmf(catalog, key):
     sm = np.log10(catalog[key]["data"]["sm"] + catalog[key]["data"]["icl"])

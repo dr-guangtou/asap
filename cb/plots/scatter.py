@@ -54,11 +54,12 @@ def resample_scatter_simple(x, y, bins):
     return np.mean(stds, axis=0), np.std(stds, axis=0, ddof=1)
 
 # plots m_star_all_halo, m_star_all_cen, m_star_insitu
-def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
+def im_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
 
+    our_lines = []
     for cat in ["insitu", "cen", "halo"]:
         v = central_catalogs[cat]
         if cat == "insitu": cat = "in" #hack hack hack
@@ -75,14 +76,20 @@ def hm_vs_sm_scatter_variant(central_catalogs, ax = None):
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
 
         std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
-        ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(cat) + "}$", capsize=1.5, linewidth=1)
+        our_lines.append(
+            ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(cat) + "}$", capsize=1.5, linewidth=1)
+        )
     ax.set(
         xlabel=l.m_vir_x_axis,
         ylabel=l.sm_scatter_simple,
     )
+    ax.add_artist(ax.legend(handles=our_lines, loc="upper right", fontsize="xx-small"))
+
+    # And now for the lit values
+    lit_lines = []
     for _, v in lit.items():
-        ax.plot(v["x"], v["y"], label=v["label"])
-    ax.legend(loc="upper left")
+        lit_lines.append(ax.plot(v["x"], v["y"], label=v["label"])[0])
+    ax.add_artist(ax.legend(handles=lit_lines, loc="upper left", fontsize="xx-small"))
     ax.set_ylim(top = 0.62) # to make room for the legend
     return ax
 
@@ -150,10 +157,10 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     ax2 = ax.twiny()
     masses = [11.8, 12, 12.2, 12.4] # manually found
 
-    lims = [fits.mass_at_density(combined_catalogs, "cen", m) for m in ax.get_xlim()]
+    ticks = [fits.density_at_mass(combined_catalogs, "cen", m) for m in masses]
     ax2.set(
-            xlim=lims,
-            xticks=masses,
+            xlim=np.log10(ax.get_xlim()),
+            xticks=np.log10(ticks),
             xticklabels=masses,
             xlabel=l.m_star_x_axis("cen"),
     )
@@ -167,7 +174,7 @@ def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
 
     v = combined_catalogs["cen"]
 
-    number_densities = np.logspace(-3.5, -6.5, num=12)
+    number_densities = np.logspace(-3.5, -6, num=12)
     number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
     # Convert number density to richness so that we can use that
     r_bins = np.array([fits.richness_at_density(combined_catalogs, "cen", d) for d in number_densities])
@@ -181,7 +188,7 @@ def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
 
     y, yerr = resample_scatter(richnesses, delta_halo_masses, r_bins)
 
-    ax.errorbar(number_densities_mid, y, yerr=yerr)
+    ax.errorbar(number_densities_mid, y, yerr=yerr, label="UM")
     ax.set(
             xscale="log",
             ylim=0,
@@ -189,22 +196,23 @@ def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
             ylabel=l.hm_scatter,
     )
     ax.invert_xaxis()
-    ax.legend(fontsize="xx-small", loc="upper right")
 
-    # Add the mass at the top
+    # Add the richness at the top
     ax2 = ax.twiny()
-    richnesses = [0, 10, 20, 30, 40, 50]
+    richnesses = [10, 20, 30, 40]
 
-    lims = [fits.richness_at_density(combined_catalogs, "cen", m) for m in ax.get_xlim()]
+    ticks = [fits.density_at_richness(combined_catalogs, "cen", r) for r in richnesses]
     ax2.set(
-            xlim=lims,
-            xticks=richnesses,
+            xlim=np.log10(ax.get_xlim()), # because the other axis is log?
+            xticks=np.log10(ticks),
             xticklabels=richnesses,
             xlabel=l.richness,
     )
+
+    ax.axhline(0.28, color="r", linestyle="dashed", label="Rozo2009")
+    ax.axhline(0.11, color="r", linestyle="dashed")
+    ax.legend(fontsize="xx-small", loc="upper left")
     return ax
-
-
 
 
 def in_richness_at_fixed_hm(combined_catalogs, ax = None):

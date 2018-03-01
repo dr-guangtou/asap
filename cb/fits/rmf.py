@@ -19,5 +19,5 @@ def build_rmf(catalog):
 def richness_at_density(catalog, key, density):
     return c._x_at_density(catalog, key, "rmf", density)
 
-def density_at_richness(catalog, key, mass):
-    return c._density_at_x(catalog, key, "rmf", mass)
+def density_at_richness(catalog, key, richness):
+    return c._density_at_x(catalog, key, "rmf", richness)

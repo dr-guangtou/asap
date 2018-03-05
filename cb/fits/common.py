@@ -1,14 +1,24 @@
 import numpy as np
+import collections
 
-_sim_volume = 400**3
-_number_of_bins = 500
+number_of_bins = 500
+# sim_volume = 400**3
+def build_density_function(vals):
+    smf, bin_edges = np.histogram(vals, bins=number_of_bins)
+    bin_centers = bin_edges[:-1] + ((bin_edges[1:] - bin_edges[:-1]) / 2)
+    return bin_centers, cumulate(smf)
 
-def _cumulate(x):
+def cumulate(x):
     cum_x = np.zeros_like(x)
     cum_x[-1] = x[-1]
     for i in range(len(x)-2, -1, -1):
         cum_x[i] += cum_x[i+1] + x[i]
     return cum_x
+
+def x_at_density(catalog, key, xmf, density):
+    if isinstance(density, collections.Iterable):
+        return [_x_at_density(catalog, key, xmf, d) for d in density]
+    return _x_at_density(catalog, key, xmf, density)
 
 def _x_at_density(catalog, key, xmf, density):
     densities = catalog[key][xmf][1] # monotonically decreasing
@@ -22,6 +32,11 @@ def _x_at_density(catalog, key, xmf, density):
         raise Exception("Given density is lower than everything in our CSMF")
 
     return np.mean([catalog[key][xmf][0][index], catalog[key][xmf][0][index-1]])
+
+def density_at_x(catalog, key, xmf, mass):
+    if isinstance(mass, collections.Iterable):
+        return [_density_at_x(catalog, key, xmf, m) for m in mass]
+    return _density_at_x(catalog, key, xmf, mass)
 
 def _density_at_x(catalog, key, xmf, mass):
     masses = catalog[key][xmf][0] # monotonically increasing

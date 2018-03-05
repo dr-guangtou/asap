@@ -16,6 +16,7 @@ from plots import labels as l
 # See https://arxiv.org/pdf/0810.1885.pdf
 def resample_scatter(x, y, bins):
     bin_indexes = np.digitize(x, bins)
+    # print(np.histogram(bin_indexes))
     stds, stdstds = np.zeros(len(bins)-1), np.zeros(len(bins)-1)
 
     cnts = []
@@ -35,6 +36,7 @@ def resample_scatter(x, y, bins):
             this_bin_std[j] = np.std(y[ci], ddof=1)
         stds[i] = np.mean(this_bin_std)
         stdstds[i] = np.std(this_bin_std, ddof=1)
+    print(cnts)
     return stds, stdstds
 
 # This is simlar to ^ except it resamples everything which doesn't guarantee that
@@ -127,7 +129,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    number_densities = np.logspace(-1.9, -4.2, num=10)
+    number_densities = np.logspace(0.8, 3.2, num=8)
     number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
     for k in data.cut_config.keys():
         # Convert number densities to SM so that we can use that
@@ -146,7 +148,8 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     ax.set(
             xscale="log",
             ylim=0,
-            xlabel=l.number_density,
+            # xlabel=l.number_density,
+            xlabel=l.cum_count,
             ylabel=l.hm_scatter,
     )
     ax.invert_xaxis()
@@ -156,13 +159,17 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     # Add the mass at the top
     ax2 = ax.twiny()
     masses = [11.8, 12, 12.2, 12.4] # manually found
+    halo_masses = ["{:.2f}".format(i) for i in fits.hmass_at_density(combined_catalogs, "cen",
+        fits.density_at_mass(combined_catalogs, "cen", masses))]
 
     ticks = [fits.density_at_mass(combined_catalogs, "cen", m) for m in masses]
     ax2.set(
             xlim=np.log10(ax.get_xlim()),
             xticks=np.log10(ticks),
-            xticklabels=masses,
-            xlabel=l.m_star_x_axis("cen"),
+            xticklabels=halo_masses,
+            xlabel=l.m_vir_x_axis,
+            # xticklabels=masses,
+            # xlabel=l.m_star_x_axis("cen"),
     )
 
     return ax

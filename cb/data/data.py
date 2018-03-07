@@ -4,9 +4,9 @@ import numpy as np
 from data import cluster_sum
 from halo_info import get_richness
 
-def load():
+def load(f=None):
     datadir = os.getenv("dataDir") + "/universe_machine/"
-    catalog_file = "sfr_catalog_insitu_exsitu_0.712400_final_extended.npz"
+    catalog_file = f or "sfr_catalog_insitu_exsitu_0.712400_final_extended.npz"
 
     catalog = np.load(datadir + catalog_file)
     centrals = catalog["centrals"]
@@ -34,6 +34,12 @@ cut_config = {
         2: {"n_sats": 2, "mass_limit": 11.4},
         5: {"n_sats": 5, "mass_limit": 11.4},
         "halo": {"n_sats": 0.999999999, "mass_limit": 11.4},
+        # cen 37476 36491
+        # 1 39068 36491
+        # 2 30102 36491
+        # 5 33991 36491
+        # halo 34877 36491
+        # insitu 33178 36490
 }
 
 min_mass_for_richness = 10**10.8

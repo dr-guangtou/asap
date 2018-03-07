@@ -128,7 +128,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    number_densities = np.logspace(0.8, 3.2, num=8)
+    number_densities = np.logspace(0.8, 4.3, num=14)
     number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
     for k in data.cut_config.keys():
         # Convert number densities to SM so that we can use that
@@ -158,8 +158,9 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     # Add the mass at the top
     ax2 = ax.twiny()
     masses = [11.8, 12, 12.2, 12.4] # manually found
-    halo_masses = ["{:.2f}".format(i) for i in fits.hmass_at_density(combined_catalogs, "cen",
-        fits.density_at_mass(combined_catalogs, "cen", masses))]
+    halo_masses = [13, 13.5, 14, 14.5, 15]
+    # ["{:.2f}".format(i) for i in fits.hmass_at_density(combined_catalogs, "cen",
+    #     fits.density_at_mass(combined_catalogs, "cen", masses))]
 
     ticks = [fits.density_at_mass(combined_catalogs, "cen", m) for m in masses]
     ax2.set(

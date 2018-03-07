@@ -54,7 +54,22 @@ lit2 = {
             "color": "orange",
             "ls": "--",
         },
-
+        "tinker2013": { # I didn't understand this - just copied from gu
+            "x": np.linspace(13, 15, num=n), # Check this!
+            "y": np.array([0.28] * n),
+            "error": 0.03,
+            "label": r"Tinker2013 $M_{\ast}^{cen}$",
+            "color": "orange",
+            "ls": "-.",
+        },
+        "gu2016": {
+            "x": np.linspace(12, 15, num=n),
+            "y": np.array([0.2] * n),
+            "error": 0,
+            "label": r"Gu2013 $M_{\ast}^{cen}$",
+            "color": "b",
+            "ls": "--",
+        },
 }
 
 lit = {

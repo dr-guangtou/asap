@@ -17,11 +17,23 @@ def load():
 # As I understand it at the moment this probably just means central first.
 # (Later) What did I mean by this???
 cut_config = {
-        "cen": {"n_sats": 0, "mass_limit": 11.6},
-        1: {"n_sats": 1, "mass_limit": 11.7},
-        2: {"n_sats": 2, "mass_limit": 11.7},
-        5: {"n_sats": 5, "mass_limit": 11.8},
-        "halo": {"n_sats": 0.999999999, "mass_limit": 11.9},
+        # "cen": {"n_sats": 0, "mass_limit": 11.6},
+        # 1: {"n_sats": 1, "mass_limit": 11.7},
+        # 2: {"n_sats": 2, "mass_limit": 11.7},
+        # 5: {"n_sats": 5, "mass_limit": 11.8},
+        # "halo": {"n_sats": 0.999999999, "mass_limit": 11.9},
+        # vs the other cuts which have 36491
+        # cen 4237
+        # 1 5219
+        # 2 7425
+        # 5 6718
+        # halo 5632
+        # insitu 7648
+        "cen": {"n_sats": 0, "mass_limit": 11.2},
+        1: {"n_sats": 1, "mass_limit": 11.3},
+        2: {"n_sats": 2, "mass_limit": 11.4},
+        5: {"n_sats": 5, "mass_limit": 11.4},
+        "halo": {"n_sats": 0.999999999, "mass_limit": 11.4},
 }
 
 min_mass_for_richness = 10**10.8
@@ -41,7 +53,7 @@ def sm_cuts_with_sats(centrals, satellites, f):
     insitu_only = np.copy(centrals)
     insitu_only["icl"] = 0
     insitu_only = insitu_only[
-            insitu_only["sm"] > 10**11.3
+            insitu_only["sm"] > 10**11.1
     ]
     res["insitu"] = {
             "data": insitu_only,
@@ -68,7 +80,7 @@ def hm_cuts_with_sats(centrals, satellites, f):
         centrals_with_n_sats = centrals_with_n_sats[centrals_with_n_sats["m"] > 10**13]
         res[k] = {
             "data": centrals_with_n_sats,
-            "fit": f(centrals_with_n_sats, restrict_to_power_law = (k == "halo")),
+            "fit": f(centrals_with_n_sats, restrict_to_power_law = (k in set(["halo", "cen"]))),
         }
     # Add insitu
     insitu_only = np.copy(centrals)

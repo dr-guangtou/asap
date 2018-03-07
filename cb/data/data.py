@@ -68,7 +68,7 @@ def hm_cuts_with_sats(centrals, satellites, f):
         centrals_with_n_sats = centrals_with_n_sats[centrals_with_n_sats["m"] > 10**13]
         res[k] = {
             "data": centrals_with_n_sats,
-            "fit": f(centrals_with_n_sats),
+            "fit": f(centrals_with_n_sats, restrict_to_power_law = (k == "halo")),
         }
     # Add insitu
     insitu_only = np.copy(centrals)

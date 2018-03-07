@@ -4,17 +4,65 @@ import numpy as np
 
 hm0, hm1, n = 13, 15, 50
 
+def plot_lit(ax):
+    lit_lines = []
+    for _, v in lit2.items():
+        line = ax.plot(v["x"], v["y"], label=v["label"], linestyle=v["ls"], color=v["color"])[0]
+        ax.fill_between(v["x"], v["y"]-v["error"], v["y"]+v["error"], alpha=0.2, facecolor=v["color"])
+        lit_lines.append(line)
+    ax.add_artist(ax.legend(handles=lit_lines, loc="upper left", fontsize="xx-small"))
+    return ax
+
+
+def plot_lit_old(ax):
+    lit_lines = []
+    for _, v in lit.items():
+        lit_lines.append(ax.plot(v["x"], v["y"], label=v["label"])[0])
+    ax.add_artist(ax.legend(handles=lit_lines, loc="upper left", fontsize="xx-small"))
+    return ax
+
+lit2 = {
+        "kravtsov2018a_cen": {
+            "x": np.linspace(np.log10(5e13), np.log10(1.5e15), num=n),
+            "y": np.array([0.17] * n),
+            "error": 0.03,
+            "label": r"Kravtsov2018 $M_{\ast}^{cen}$",
+            "color": "orange",
+            "ls": ":",
+        },
+        "kravtsov2018a_halo": {
+            "x": np.linspace(np.log10(5e13), np.log10(1.5e15), num=n),
+            "y": np.array([0.11] * n),
+            "error": 0.03,
+            "label": r"Kravtsov2018 $M_{\ast}^{halo}$",
+            "color": "green",
+            "ls": ":",
+        },
+        "lin2012": {
+            "x": np.linspace(np.log10(8e13), np.log10(2e15), num=n),
+            "y": np.array([0.12] * n),
+            "error": 0.00, # No error on the scatter quoted
+            "label": r"Lin2012 $M_{\ast}^{halo}$",
+            "color": "green",
+            "ls": "--",
+        },
+        "leauthaud2012": {
+            "x": np.linspace(13, 15, num=n), # Check this!
+            "y": np.array([0.192] * n),
+            "error": 0.031,
+            "label": r"Leauthaud2012 $M_{\ast}^{cen}$",
+            "color": "orange",
+            "ls": "--",
+        },
+
+}
+
 lit = {
         # "gu2016": {
         #     "x": np.linspace(hm0, hm1, num=n),
         #     "y": np.array([0.2] * n),
         #     "label": "Gu2016",
         # },
-        "kravtsov2018a": {
-            "x": np.linspace(hm0, hm1, num=n),
-            "y": np.array([0.2] * n),
-            "label": r"Kravtsov2018 $M_{\ast}^{cen}$",
-        },
         "kravtsov2018b": {
             "x": np.linspace(hm0, hm1, num=n),
             "y": np.array([0.1] * n),

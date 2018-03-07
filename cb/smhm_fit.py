@@ -3,88 +3,56 @@ import scipy.stats
 import scipy.optimize
 
 
-def get_fit_binning(x_data):
-    step = 0.05
-    # np.arange doesn't go above the max
-    edges = np.arange(np.min(x_data), np.max(x_data) + step, step)
-    midpoints = edges[:-1] + np.diff(edges) / 2
-    return edges, midpoints
-
-def drop_nans(bin_midpoints, y):
-    indexes = np.isfinite(y)
-    return bin_midpoints[indexes], y[indexes]
-
 # Returns the parameters needed to fit SM (on the x axis) to HM (on the y axis)
 # Uses the functional form in the paper...
-def get_fit(catalog):
+def get_hm_at_fixed_sm_fit(catalog, restrict_to_power_law = False):
     x = np.log10(catalog["icl"] + catalog["sm"])
     y = np.log10(catalog["m"])
 
     # Find various stats on our data
-    sm_bin_edges, sm_bin_midpoints = get_fit_binning(x)
+    sm_bin_edges, sm_bin_midpoints = _get_fit_binning(x)
     mean_hm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_bin_edges)
 
     # Drop nans (from empty bins)
-    sm_bin_midpoints, mean_hm = drop_nans(sm_bin_midpoints, mean_hm)
+    sm_bin_midpoints, mean_hm = _drop_nans(sm_bin_midpoints, mean_hm)
 
-    # Start with the default values from the paper
-    m1 = 10**12.73
-    sm0 = 10**11.04
-    beta = 0.47
-    delta = 0.60
-    gamma = 1.96
+    return do_fit(sm_bin_midpoints, mean_hm, f_shmr_inverse, restrict_to_power_law)
 
-    # Now try fit
-    popt, _ = scipy.optimize.curve_fit(
-            f_shmr_inverse,
-            sm_bin_midpoints, # log
-            mean_hm, # log
-            p0=[m1, sm0, beta, delta, gamma],
-            bounds=(
-                [m1/1e7, sm0/1e7, 0, 0, 0],
-                [m1*1e7, sm0*1e7, 10, 10, 20],
-            ),
-            # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
-            # sm0 will be larger for a similar reason as ^
-            # beta should be unchanged - it only affects the low mass end
-            # delta has large freedom
-    )
-    return popt
 
-def get_fit_2(catalog):
+def get_sm_at_fixed_hm_fit(catalog, restrict_to_power_law = False):
     y = np.log10(catalog["icl"] + catalog["sm"])
     x = np.log10(catalog["m"])
 
     # Find various stats on our data
-    hm_bin_edges, hm_bin_midpoints  = get_fit_binning(x)
+    hm_bin_edges, hm_bin_midpoints  = _get_fit_binning(x)
     mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
 
     # Drop nans (from empty bins)
-    hm_bin_midpoints, mean_sm = drop_nans(hm_bin_midpoints, mean_sm)
+    hm_bin_midpoints, mean_sm = _drop_nans(hm_bin_midpoints, mean_sm)
 
+    return do_fit(hm_bin_midpoints, mean_sm, f_shmr, restrict_to_power_law)
+
+def do_fit(x, y, f, restrict_to_power_law):
     # Start with the default values from the paper
-    m1 = 10**12.73
-    sm0 = 10**11.04
-    beta = 0.47
-    delta = 0.60
-    gamma = 1.96
+    m1, sm0, beta, delta, gamma = 10**12.73, 10**11.04, 0.47, 0.60, 1.96
+
+    upper_bound = [m1*1e7, sm0*1e7, 10, 10, 20]
+    # If we push delta and gamma to 0, this becomes a power law
+    if restrict_to_power_law:
+        delta, gamma = 0, 0
+        upper_bound = [m1*1e7, sm0*1e7, 10, 1e-9, 1e-9]
+    print(upper_bound)
 
     # Now try fit
     popt, _ = scipy.optimize.curve_fit(
-            f_shmr,
-            hm_bin_midpoints, # log
-            mean_sm, # log
+            f,
+            x,
+            y,
             p0=[m1, sm0, beta, delta, gamma],
-            bounds=(
-                [m1/1e7, sm0/1e7, 0, 0, 0],
-                [m1*1e7, sm0*1e7, 10, 10, 20],
-            ),
-            # m1 will be smaller because we have total stellar mass (not galaxy mass). So smaller halos will have galaxies of mass M
-            # sm0 will be larger for a similar reason as ^
-            # beta should be unchanged - it only affects the low mass end
-            # delta has large freedom
+            bounds=([m1/1e7, sm0/1e7, 0, 0, 0], upper_bound),
     )
     return popt
+
 
 # The functional form from https://arxiv.org/pdf/1103.2077.pdf
 # This is the fitting function
@@ -146,3 +114,14 @@ def f_shmr(log_halo_masses, m1, sm0, beta, delta, gamma):
     if not x.success:
         raise Exception("Failure to invert {}".format(x.message))
     return x.x
+
+def _get_fit_binning(x_data):
+    step = 0.05
+    # np.arange doesn't go above the max
+    edges = np.arange(np.min(x_data), np.max(x_data) + step, step)
+    midpoints = edges[:-1] + np.diff(edges) / 2
+    return edges, midpoints
+
+def _drop_nans(bin_midpoints, y):
+    indexes = np.isfinite(y)
+    return bin_midpoints[indexes], y[indexes]

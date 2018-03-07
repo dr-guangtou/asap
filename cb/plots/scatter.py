@@ -10,7 +10,7 @@ import scipy.optimize
 import fits
 import smhm_fit
 import data
-from plots.lit_scatter import lit
+from plots.lit_scatter import plot_lit
 from plots import labels as l
 
 # See https://arxiv.org/pdf/0810.1885.pdf
@@ -56,7 +56,7 @@ def resample_scatter_simple(x, y, bins):
     return np.mean(stds, axis=0), np.std(stds, axis=0, ddof=1)
 
 # plots m_star_all_halo, m_star_all_cen, m_star_insitu
-def im_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
+def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
@@ -84,15 +84,14 @@ def im_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
     ax.set(
         xlabel=l.m_vir_x_axis,
         ylabel=l.sm_scatter_simple,
+        xlim=ax.get_xlim(), # don't let the lit values move this around
     )
     ax.add_artist(ax.legend(handles=our_lines, loc="upper right", fontsize="xx-small"))
 
     # And now for the lit values
-    lit_lines = []
-    for _, v in lit.items():
-        lit_lines.append(ax.plot(v["x"], v["y"], label=v["label"])[0])
-    ax.add_artist(ax.legend(handles=lit_lines, loc="upper left", fontsize="xx-small"))
-    ax.set_ylim(top = 0.62) # to make room for the legend
+    ax = plot_lit(ax)
+    # to make room for the legend
+    ax.set_ylim(top = 0.62)
     return ax
 
 def in_sm_at_fixed_hm(central_catalogs, ax = None):

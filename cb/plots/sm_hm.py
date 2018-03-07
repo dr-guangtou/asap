@@ -43,7 +43,7 @@ def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
 def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()
-        # fig.set_size_inches(18.5, 10.5)
+
     y = np.log10(catalog["icl"] + catalog["sm"])
     x = np.log10(catalog["m"])
 

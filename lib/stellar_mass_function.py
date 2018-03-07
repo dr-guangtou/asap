@@ -2,6 +2,8 @@
 Python functions related to stellar mass function.
 """
 
+from astropy.table import Table
+
 import numpy as np
 
 
@@ -137,3 +139,78 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
     )
 
     return x, smf, err_poison, smf_boots, bins
+
+
+def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
+                      add_err=None, n_boots=5000):
+    """Estimate the observed SMF and bootstrap errors.
+
+    Parameters
+    ----------
+    logms : ndarray
+        Log10 stellar mass.
+
+    volume : float
+        The volume of the data, in unit of Mpc^3.
+
+    nbin : int
+        Number of bins in log10 stellar mass.
+
+    min_logms : float
+        Minimum stellar mass.
+
+    max_logms : float
+        Maximum stellar mass.
+
+    add_err : float, optional
+        Additional error to be added to the SMF.
+        e.g. 0.1 == 10%
+        Default: None
+
+    bootstrap : bool, optional
+        Use bootstrap resampling to measure the error of SMF.
+        Default: True
+
+    n_boots : int, optional
+        Number of bootstrap resamplings.
+        Default: 5000
+
+    """
+    smf_boot = bootstrap_smf(logms, volume, nbin,
+                             min_logms, max_logms,
+                             n_boots=n_boots)
+    mass_cen, smf_s, smf_err, smf_b, mass_bins = smf_boot
+
+    # Median values
+    smf = np.nanmedian(smf_b, axis=0)
+    # 1-sigma errors
+    smf_low = np.nanpercentile(smf_b, 16, axis=0,
+                               interpolation='midpoint')
+    smf_upp = np.nanpercentile(smf_b, 84, axis=0,
+                               interpolation='midpoint')
+
+    if add_err is not None:
+        smf_err += (smf * add_err)
+        smf_low -= (smf * add_err)
+        smf_upp += (smf * add_err)
+
+    # Make sure the SMF is above zero
+    smf = np.where(smf <= 0.0, 1E-8, smf)
+    smf_low = np.where(smf_low <= 0.0, 1E-9, smf_low)
+    smf_upp = np.where(smf_upp <= 0.0, 5E-8, smf_upp)
+
+    # Left and right edges of the mass bins
+    bins_0 = mass_bins[0:-1]
+    bins_1 = mass_bins[1:]
+
+    smf_table = Table()
+    smf_table['logm_mean'] = mass_cen
+    smf_table['logm_0'] = bins_0
+    smf_table['logm_1'] = bins_1
+    smf_table['smf'] = smf
+    smf_table['smf_single'] = smf_s
+    smf_table['smf_err'] = smf_err
+    smf_table['smf_low'] = smf_low
+    smf_table['smf_upp'] = smf_upp
+
+    return smf_table

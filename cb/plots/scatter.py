@@ -128,7 +128,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    number_densities = np.logspace(0.8, 4.3, num=14)
+    number_densities = np.logspace(0.9, 4.3, num=10)
     number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
     for k in data.cut_config.keys():
         # Convert number densities to SM so that we can use that
@@ -157,19 +157,17 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 
     # Add the mass at the top
     ax2 = ax.twiny()
-    masses = [11.8, 12, 12.2, 12.4] # manually found
-    halo_masses = [13, 13.5, 14, 14.5, 15]
-    # ["{:.2f}".format(i) for i in fits.hmass_at_density(combined_catalogs, "cen",
-    #     fits.density_at_mass(combined_catalogs, "cen", masses))]
-
-    ticks = [fits.density_at_mass(combined_catalogs, "cen", m) for m in masses]
+    # halo_masses = [13, 13.5, 14, 14.5, 15]
+    # ticks = fits.density_at_hmass(combined_catalogs, "cen", m)
+    cen_masses = [11.5, 11.8, 12.1, 12.4]
+    ticks = fits.density_at_mass(combined_catalogs, "cen", cen_masses)
     ax2.set(
             xlim=np.log10(ax.get_xlim()),
             xticks=np.log10(ticks),
-            xticklabels=halo_masses,
-            xlabel=l.m_vir_x_axis,
-            # xticklabels=masses,
-            # xlabel=l.m_star_x_axis("cen"),
+            xticklabels=cen_masses,
+            xlabel=l.m_star_x_axis("cen"),
+            # xticklabels=halo_masses,
+            # xlabel=l.m_vir_x_axis,
     )
 
     return ax
@@ -179,46 +177,48 @@ def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    v = combined_catalogs["cen"]
+    v = combined_catalogs["cen"]["richness"]
 
-    number_densities = np.logspace(-3.5, -6, num=12)
-    number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
-    # Convert number density to richness so that we can use that
-    r_bins = np.array([fits.richness_at_density(combined_catalogs, "cen", d) for d in number_densities])
+    r_bins = np.array([0, 1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 33, 38, 45])
+    r_bins_mid = _bins_mid(r_bins).astype(int)
+    print(r_bins_mid)
 
-    # Delta halo masses
-    stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
-    halo_masses = np.log10(v["data"]["m"])
-    predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
-    delta_halo_masses = halo_masses - predicted_halo_masses
-    richnesses = v["richness"]["richness"]
+    # number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
+    # # Convert number density to richness so that we can use that
+    # r_bins = np.array(fits.richness_at_density(combined_catalogs, "cen", number_densities))
 
-    y, yerr = resample_scatter(richnesses, delta_halo_masses, r_bins)
+    halo_masses = np.log10(v["m"])
+    richnesses = v["richness"]
 
-    ax.errorbar(number_densities_mid, y, yerr=yerr, label="UM")
+    y, yerr = resample_scatter(richnesses, halo_masses, r_bins)
+
+    ax.errorbar(r_bins_mid, y, yerr=yerr, label="UM")
     ax.set(
-            xscale="log",
+            # xscale="log",
             ylim=0,
-            xlabel=l.number_density_richness,
+            # xlabel=l.number_density_richness,
+            xlabel=l.richness,
             ylabel=l.hm_scatter,
     )
-    ax.invert_xaxis()
 
-    # Add the richness at the top
+
+    # Add the ND at the top
     ax2 = ax.twiny()
-    richnesses = [10, 20, 30, 40]
+    number_densities = np.logspace(3.5, 1, num=6)
+    ticks = fits.richness_at_density(combined_catalogs, "cen", number_densities)
 
-    ticks = [fits.density_at_richness(combined_catalogs, "cen", r) for r in richnesses]
     ax2.set(
-            xlim=np.log10(ax.get_xlim()), # because the other axis is log?
-            xticks=np.log10(ticks),
-            xticklabels=richnesses,
-            xlabel=l.richness,
+            # xscale="log",
+            xlim=ax.get_xlim(),
+            xticks=ticks,
+            xticklabels=["{:.1f}".format(i) for i in np.log10(number_densities)],
+            xlabel=l.log_cum_count,
     )
+    # ax2.invert_xaxis()
 
-    ax.axhline(0.28, color="r", linestyle="dashed", label="Rozo2009")
-    ax.axhline(0.11, color="r", linestyle="dashed")
-    ax.legend(fontsize="xx-small", loc="upper left")
+    ax.plot([10, 40], [0.2, 0.2], color="r", linestyle="dashed", label="Rozo2009")
+    ax.fill_between([10, 40], 0.1, 0.3, alpha=0.2, facecolor="r")
+    ax.legend(fontsize="xx-small")#, loc="upper right")
     return ax
 
 
@@ -238,6 +238,9 @@ def in_richness_at_fixed_hm(combined_catalogs, ax = None):
     ax.errorbar(bin_midpoints, y, yerr=yerr)
 
     return ax
+
+def _bins_mid(bins):
+    return bins[:-1] + (bins[1:] - bins[:-1]) / 2
 
 
 #### Would consider the following "non-prod"

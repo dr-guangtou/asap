@@ -15,5 +15,6 @@ def sm_scatter(n_sats):
 
 number_density = r"$\Phi (\frac{dn}{dlogM_{\ast}} h^{3} Mpc^{-3} dex^{-1})$"
 number_density_richness = r"$\Phi (\frac{dn}{d\Lambda} h^{3} Mpc^{-3} dex^{-1})$"
-richness = r"$\Lambda$"
+richness = r"Richness"
 cum_count = "Cumulative Count"
+log_cum_count = "log10(Cumulative Count)"

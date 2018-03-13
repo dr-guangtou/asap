@@ -17,29 +17,11 @@ def load(f=None):
 # As I understand it at the moment this probably just means central first.
 # (Later) What did I mean by this???
 cut_config = {
-        # "cen": {"n_sats": 0, "mass_limit": 11.6},
-        # 1: {"n_sats": 1, "mass_limit": 11.7},
-        # 2: {"n_sats": 2, "mass_limit": 11.7},
-        # 5: {"n_sats": 5, "mass_limit": 11.8},
-        # "halo": {"n_sats": 0.999999999, "mass_limit": 11.9},
-        # vs the other cuts which have 36491
-        # cen 4237
-        # 1 5219
-        # 2 7425
-        # 5 6718
-        # halo 5632
-        # insitu 7648
         "cen": {"n_sats": 0, "mass_limit": 11.2},
         1: {"n_sats": 1, "mass_limit": 11.3},
         2: {"n_sats": 2, "mass_limit": 11.4},
         5: {"n_sats": 5, "mass_limit": 11.4},
         "halo": {"n_sats": 0.999999999, "mass_limit": 11.4},
-        # cen 37476 36491
-        # 1 39068 36491
-        # 2 30102 36491
-        # 5 33991 36491
-        # halo 34877 36491
-        # insitu 33178 36490
 }
 
 min_mass_for_richness = 10**10.8
@@ -51,9 +33,13 @@ def sm_cuts_with_sats(centrals, satellites, f):
         centrals_with_n_sats = centrals_with_n_sats[
                 (centrals_with_n_sats["sm"] + centrals_with_n_sats["icl"]) > 10**cfg["mass_limit"]
         ]
+        richness = get_richness(centrals_with_n_sats, satellites, min_mass_for_richness)
+        out = np.zeros(len(richness), dtype=[("m", "float64"), ("richness", "float64")])
+        out["m"], out["richness"] = centrals_with_n_sats["m"], richness
         res[k] = {
             "data": centrals_with_n_sats,
             "fit": f(centrals_with_n_sats, restrict_to_power_law=False),
+            "richness": out,
         }
     # Add insitu
     insitu_only = np.copy(centrals)
@@ -65,16 +51,6 @@ def sm_cuts_with_sats(centrals, satellites, f):
             "data": insitu_only,
             "fit": f(insitu_only),
     }
-    # Add richness data to centrals
-    cen_data = res["cen"]["data"]
-    richness = get_richness(
-            cen_data,
-            satellites,
-            min_mass_for_richness,
-    )
-    out = np.zeros(len(richness), dtype=[("m", "float64"), ("richness", "float64")])
-    out["m"], out["richness"] = cen_data["m"], richness
-    res["cen"]["richness"] = out
 
     return res
 
@@ -84,9 +60,15 @@ def hm_cuts_with_sats(centrals, satellites, f):
     for (k, cfg) in cut_config.items():
         centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, cfg["n_sats"])
         centrals_with_n_sats = centrals_with_n_sats[centrals_with_n_sats["m"] > 10**13]
+
+        richness = get_richness(centrals_with_n_sats, satellites, min_mass_for_richness)
+        out = np.zeros(len(richness), dtype=[("m", "float64"), ("richness", "float64")])
+        out["m"], out["richness"] = centrals_with_n_sats["m"], richness
+
         res[k] = {
             "data": centrals_with_n_sats,
             "fit": f(centrals_with_n_sats, restrict_to_power_law = k in set(["halo"])),
+            "richness": out,
         }
     # Add insitu
     insitu_only = np.copy(centrals)
@@ -100,16 +82,5 @@ def hm_cuts_with_sats(centrals, satellites, f):
             "data": insitu_only,
             "fit": f(insitu_only),
     }
-
-    # Add richness data to centrals
-    cen_data = res["cen"]["data"]
-    richness = get_richness(
-            cen_data,
-            satellites,
-            min_mass_for_richness,
-    )
-    out = np.zeros(len(richness), dtype=[("m", "float64"), ("richness", "float64")])
-    out["m"], out["richness"] = cen_data["m"], richness
-    res["cen"]["richness"] = out
 
     return res

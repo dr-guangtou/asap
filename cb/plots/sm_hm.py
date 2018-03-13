@@ -8,7 +8,8 @@ import scipy.stats
 from plots import labels as l
 
 # HM (y axis) at fixed SM (x axis)
-def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
+# was dm_vs_sm
+def hm_at_fixed_sm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()
         # fig.set_size_inches(18.5, 10.5)
@@ -40,7 +41,8 @@ def dm_vs_sm(catalog, n_sats, fit=None, ax=None):
     return ax
 
 # SM (y axis) at fixed HM (x axis)
-def sm_vs_dm(catalog, n_sats, fit=None, ax=None):
+# was sm_vs_dm
+def sm_at_fixed_hm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()
 

@@ -1,7 +1,6 @@
 """A.S.A.P stellar mass-halo mass model for massive galaxies."""
 
 from . import ellipse_selection_functions
-from . import forward_model
 from . import full_mass_profile_model
 from . import hsc_weak_lensing
 from . import load_mdpl2_mock
@@ -23,7 +22,6 @@ from . import asap_run_model
 from . import asap_utils
 
 __all__ = ["ellipse_selection_functions",
-           "forward_model",
            "full_mass_profile_model",
            "hsc_weak_lensing",
            "load_mdpl2_mock",

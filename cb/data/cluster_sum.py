@@ -17,7 +17,7 @@ def centrals_with_satellites(centrals, satellites, n):
                 satellites["upid"], central["id"], side="right")]
         sats = sats[::-1][:get_n(n, len(sats))]  # Reversed to get the largest
         # Now add satellite stellar mass/formation to new_centrals
-        for col in ['sm', 'icl', 'sfr']:
+        for col in ["sm", "icl", "sfr"]: # I don't think we need the Acc_rate* - those are HM
             new_centrals[i][col] += np.sum(sats[col])
     return new_centrals
 

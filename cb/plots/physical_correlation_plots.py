@@ -8,10 +8,30 @@ import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from sklearn import linear_model
+from sklearn import preprocessing
 
 import smhm_fit
 from plots import labels as l
 from stats import partial_corr
+
+def _pretty_coef(coef, labels, xlabels):
+    fig, ax = plt.subplots()
+    ax.set_frame_on(False)
+    ax.tick_params(length=0)
+    lim = max(np.nanmax(coef), np.abs(np.nanmin(coef)))
+    img = ax.imshow(coef, cmap="coolwarm", vmin=-lim, vmax=lim)
+    # img = ax.imshow(np.expand_dims(coef, 1), cmap="coolwarm", vmin=-lim, vmax=lim)
+    lim = np.floor(100 * lim) / 100
+    fig.colorbar(img, ticks=[-lim, 0, lim], label="Coefficient value")
+
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, fontsize="xx-small")
+    ax.set_xlabel("log(Alpha)")
+    ax.set_xticks(range(0, len(coef[0]), 10))
+    xtick_labels = np.log10(xlabels[[int(j) for j in ax.get_xticks()]])
+    print(xtick_labels)
+    ax.set_xticklabels(["{:2f}".format(i) for i in xtick_labels], fontsize="xx-small")
 
 def _pretty_corr(corr, labels):
     # print(corr)
@@ -69,7 +89,7 @@ def _get_data_for_correlation_matrix(catalog):
             "Last MM Scale": mm,
             "Halfmass Scale": ages,
     }
-    labels = data.keys()
+    labels = list(data.keys())
     matrix = np.vstack(data.values())
     return data, labels, matrix
 
@@ -92,7 +112,7 @@ def marginalized_heatmap(catalog):
     d_items = list(data.items())
     for i in range(len(d_items)):
         for j in range(i):
-            _, xedges, _, _ = axes[i][j].hist2d(d_items[i][1], d_items[j][1], bins=20, cmap="OrRd", norm=mpl.colors.LogNorm())
+            _, _, _, _ = axes[i][j].hist2d(d_items[i][1], d_items[j][1], bins=20, cmap="OrRd", norm=mpl.colors.LogNorm())
             axes[i][j].annotate(s="{:.2f}".format(corr[i][j]), xy=(0.85,1.02), xycoords="axes fraction")
             if i == len(d_items) - 1:
                 axes[i][j].set_xlabel(d_items[j][0])
@@ -113,6 +133,154 @@ def correlation_matrix(catalog):
     _, labels, matrix = _get_data_for_correlation_matrix(catalog)
     corr = _build_corr(matrix)
     _pretty_corr(corr, labels)
+
+def lasso(catalog):
+    _, labels, matrix = _get_data_for_correlation_matrix(catalog)
+    # Make this a (samples, features) matrix with each feature scaled to 0-1
+    x = preprocessing.MinMaxScaler().fit_transform(matrix[1:].T)
+    # x = preprocessing.StandardScaler().fit_transform(matrix[1:].T)
+    y = matrix[0]
+
+    # Manually pick alpha section (or manually range over it)
+    coefs = []
+    alphas = np.logspace(-1, -5)
+    # use = [i != 2 for i in range(len(x[0]))]
+    for alpha in alphas:
+        clf = linear_model.Lasso(alpha=alpha)
+        shuf_x = np.copy(x)
+        # np.random.shuffle(shuf_x[:,4])
+
+        # clf.fit(x[:,use], y)
+        clf.fit(shuf_x, y)
+        coefs.append(clf.coef_)
+    # _pretty_coef(np.array(coefs).T, np.array(labels[1:])[use], alphas)
+    _pretty_coef(np.array(coefs).T, np.array(labels[1:]), alphas)
+
+
+    # What I think is the best
+    clf = linear_model.Lasso(alpha=10**-2.65)
+    clf.fit(x, y)
+    print(clf.coef_)
+    print(clf.intercept_)
+
+def lassoCV(catalog):
+    _, labels, matrix = _get_data_for_correlation_matrix(catalog)
+    # Make this a (samples, features) matrix with each feature scaled to 0-1
+    x = preprocessing.MinMaxScaler().fit_transform(matrix[1:].T)
+    # x = preprocessing.StandardScaler().fit_transform(matrix[1:].T)
+    y = matrix[0]
+
+
+
+    # CV to find alpha. With one thing randomly shuffled
+    _, ax = plt.subplots()
+    clf = linear_model.LassoCV(cv=12, alphas=np.logspace(-1, -7))
+    clf.fit(x, y)
+    ax.plot(np.log10(clf.alphas_), np.mean(clf.mse_path_, axis=1), label="All")
+    for feature in range(len(x[0])):
+        # shuf_x = np.copy(x)
+        # np.random.shuffle(shuf_x[:,feature])
+
+        clf = linear_model.LassoCV(cv=12, alphas=np.logspace(-1, -7))
+        clf.fit(x[:,[i != feature for i in range(len(x[0]))]] , y)
+        # # each row of clf.mse_path is an alpha, each col is for one of the cvs
+        # ax.plot(np.log10(clf.alphas_), clf.mse_path_, ':')
+        ax.plot(np.log10(clf.alphas_), np.mean(clf.mse_path_, axis=1), ls=":", label=labels[feature+1])
+        # ax.plot(np.log10(clf.alphas_), np.mean(clf.mse_path_, axis=1) + np.std(clf.mse_path_, axis=1), label="Mean + 1sd")
+        # ax.axvline(np.log10(clf.alpha_), label="Suggested Alpha", color="r")
+        # ax.axhline((np.mean(clf.mse_path_, axis=1) + np.std(clf.mse_path_, axis=1))[-1])
+        # ax.set(xlabel="Log alpha", ylabel="MSE")
+    ax.legend()
+
+def margin_model(catalog):
+    data, _, _ = _get_data_for_correlation_matrix(catalog)
+
+    conc = data["Concentration"]
+    ages = data["Halfmass Scale"]
+    sm_bias = data["SM Bias"]
+
+    conc_w, ages_w, intercept_w = 0.1418, -0.3994, 0.1718 # on [0,1]
+    conc = preprocessing.MinMaxScaler().fit_transform(np.expand_dims(conc, 1)).flatten()
+    ages = preprocessing.MinMaxScaler().fit_transform(np.expand_dims(ages, 1)).flatten()
+    model = conc * conc_w + ages * ages_w + intercept_w
+
+    model_error = sm_bias - model
+    print(np.std(sm_bias))
+    print(np.std(model_error))
+    fig, ax = plt.subplots()
+    ax.hist(model_error, bins=50, alpha=0.3)
+    ax.hist(sm_bias, bins=50, alpha=0.3)
+
+def best_model(catalog):
+    data, _, _ = _get_data_for_correlation_matrix(catalog)
+
+    conc = data["Concentration"]
+    ages = data["Halfmass Scale"]
+    sm_bias = data["SM Bias"]
+
+    def imshow(ax, binned_stats, **kwargs):
+        return ax.imshow(
+                binned_stats.statistic.T,
+                origin="lower",
+                extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+                aspect="auto",
+                **kwargs,
+        )
+
+    fig = plt.figure()
+    big_ax = fig.add_subplot(111, frame_on=False)
+    big_ax.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
+    big_ax.grid(False)
+    ax = [ [fig.add_subplot(221), fig.add_subplot(222)], [fig.add_subplot(223), fig.add_subplot(224)]]
+
+    big_ax.set(xlabel="Concentration", ylabel="Halfmass Scale")
+    plt.tight_layout()
+
+    # Plot the counts
+    count_stats = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="count", bins=13)
+    img = imshow(ax[0][0], count_stats, norm=mpl.colors.LogNorm(), cmap="OrRd")
+    ax[0][0].set_title("N in bin")
+    fig.colorbar(img, ax=ax[0][0])
+
+    # Plots the means
+    binned_stats = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="mean", bins=13)
+    binned_stats.statistic.T[count_stats.statistic.T < 8] = np.nan
+    img = imshow(ax[0][1], binned_stats, vmin=-0.4, vmax=0.4, cmap="coolwarm")
+    ax[0][1].set_title("SM bias")
+    fig.colorbar(img, ax=ax[0][1])
+
+    # Plot our model
+    conc_w, ages_w, intercept_w = 0.1418, -0.3994, 0.1718 # on [0,1]
+    # x is conc
+    x_midpoints = binned_stats.x_edge[:-1] + np.diff(binned_stats.x_edge)/2
+    y_midpoints = binned_stats.y_edge[:-1] + np.diff(binned_stats.y_edge)/2
+
+    x_midpoints = preprocessing.MinMaxScaler().fit(
+            np.expand_dims(conc, 1)).transform(
+            np.expand_dims(x_midpoints, 1)).flatten()
+    y_midpoints = preprocessing.MinMaxScaler().fit(
+            np.expand_dims(ages, 1)).transform(
+            np.expand_dims(y_midpoints, 1)).flatten()
+    model = (
+        x_midpoints * conc_w +
+        np.expand_dims(y_midpoints, 1) * ages_w +
+        intercept_w)
+    img = ax[1][0].imshow(model, origin="lower",
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+            aspect="auto", cmap="coolwarm", vmin=-0.4, vmax=0.4)
+    ax[1][0].set_title("Linear Model")
+    fig.colorbar(img, ax=ax[1][0])
+
+    # Plot how wrong we are
+    # binned_stats_std = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="std", bins=13)
+    sigmas = (model - binned_stats.statistic.T)#/binned_stats_std.statistic.T
+    lim = np.nanmax(np.abs(sigmas))
+    img = ax[1][1].imshow(sigmas, origin="lower",
+            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+            aspect="auto", cmap="coolwarm", vmin=-lim, vmax=lim)
+    ax[1][1].set_title("Residual")
+    fig.colorbar(img, ax=ax[1][1])
+
 
 
 #### Non correlation matrix stuff

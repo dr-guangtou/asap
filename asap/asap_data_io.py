@@ -228,7 +228,7 @@ def config_observed_data(cfg, verbose=True):
     return cfg
 
 
-def load_um_data(cfg, verbose=True):
+def load_um_data(cfg):
     """Load the UniverseMachine data."""
     um_mock = Table(np.load(os.path.join(cfg['um_dir'],
                                          cfg['um_model'])))
@@ -268,13 +268,13 @@ def load_um_data(cfg, verbose=True):
             'mask_central': mask_central[mask_mass]}
 
 
-def config_um_data(cfg, verbose=False, **kwargs):
+def config_um_data(cfg, verbose=False):
     """Config the UniverseMachine data."""
     # ---------- UniverseMachine Mock Related ----------- #
     if 'um_dir' not in cfg.keys():
         cfg['um_dir'] = '../data/s16a_massive_wide2/um2'
 
-    # Default model is SMDPL
+    # Default simulation is SMDPL
     if 'um_lbox' not in cfg.keys():
         cfg['um_lbox'] = 400.0  # Mpc/h
 
@@ -316,6 +316,7 @@ def config_um_data(cfg, verbose=False, **kwargs):
     if 'um_wl_nbin' not in cfg.keys():
         cfg['um_wl_nbin'] = 22
 
+    # Default: Do not add the contribution of stellar mass
     if 'um_wl_add_stellar' not in cfg.keys():
         cfg['um_wl_add_stellar'] = False
 

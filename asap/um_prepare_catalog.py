@@ -11,8 +11,8 @@ from astropy.table import Column
 
 import numpy as np
 
-from model_predictions import (precompute_lensing_pairs,
-                               total_stellar_mass_including_satellites)
+from um_model_predictions import (precompute_lensing_pairs,
+                                  total_stellar_mass_including_satellites)
 
 
 def prep_um_catalog(um_mock, um_min_mvir=None, use_mvir=False):

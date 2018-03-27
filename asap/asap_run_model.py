@@ -3,7 +3,6 @@
 
 from __future__ import division, print_function, unicode_literals
 
-import sys
 import time
 import argparse
 
@@ -44,7 +43,7 @@ def initial_model(config, verbose=True):
 
     # Configuration for UniverseMachine data.
     config_obs_um = config_um_data(config_obs, verbose=verbose)
-    um_data_use = load_um_data(config_obs_um, verbose=verbose)
+    um_data_use = load_um_data(config_obs_um)
 
     config_all = setup_model(config_obs_um, verbose=verbose)
 

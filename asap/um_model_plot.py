@@ -192,6 +192,9 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                        **kwargs):
     """Plot the UM predicted M100-M10 plane and their SMFs."""
     fig, axes = plt.subplots(2, figsize=(7, 9))
+    fig.subplots_adjust(left=0.145, right=0.995,
+                        bottom=0.085, top=0.995,
+                        wspace=0.00, hspace=0.21)
     ax1 = axes[0]
     ax2 = axes[1]
 
@@ -217,11 +220,11 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                     s=15, alpha=0.5, marker='+',
                     c='royalblue')
 
-    ax1.legend(fontsize=15, loc='lower right')
+    ax1.legend(fontsize=20, loc='lower right')
     ax1.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
 
-    ax1.set_xlabel(r'$\log M_{\star,\ \mathrm{100,\ UM}}$', fontsize=20)
-    ax1.set_ylabel(r'$\log M_{\star,\ \mathrm{10,\ UM}}$', fontsize=20)
+    ax1.set_xlabel(r'$\log M_{\star,\ \mathrm{Tot,\ UM}}$', fontsize=25)
+    ax1.set_ylabel(r'$\log M_{\star,\ \mathrm{Inn,\ UM}}$', fontsize=25)
 
     ax1.set_xlim(np.nanmin(logms_mod_tot) - 0.09,
                  np.nanmax(logms_mod_tot) + 0.09)
@@ -386,19 +389,19 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                      c='royalblue',
                      label=r'$\mathrm{UM:\ Mtot}$')
 
-    ax2.legend(fontsize=12, loc='upper right')
+    ax2.legend(fontsize=15, loc='upper right')
 
     ax2.set_xlabel(r'$\log (M_{\star}/M_{\odot})$',
-                   fontsize=20)
+                   fontsize=25)
     ax2.set_ylabel((r'$\mathrm{d}N/\mathrm{d}\log M_{\star}\ $'
                     r'$[{\mathrm{Mpc}^{-3}}{\mathrm{dex}^{-1}}]$'),
-                   size=20)
+                   size=25)
 
     mask_inn = np.log10(obs_smf_inn['smf']) > -7.5
     mask_tot = np.log10(obs_smf_tot['smf']) > -7.5
 
     ax2.set_xlim(np.nanmin(obs_smf_inn[mask_inn]['logm_mean']) - 0.15,
-                 np.nanmax(obs_smf_tot[mask_tot]['logm_mean']) + 0.55)
+                 np.nanmax(obs_smf_tot[mask_tot]['logm_mean']) + 0.45)
 
     if obs_smf_full is not None:
         ax2.set_ylim(np.nanmin(np.log10(obs_smf_inn[mask_inn]['smf']))
@@ -409,6 +412,18 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                      - 0.2,
                      np.nanmax(np.log10(obs_smf_tot[mask_tot]['smf']))
                      + 0.8)
+    
+    for tick in ax1.xaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+    for tick in ax1.yaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+
+    for tick in ax2.xaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+    for tick in ax2.yaxis.get_major_ticks():
+        tick.label.set_fontsize(20)
+    
+    fig.savefig('asap_mtot_minn_smf.pdf', dpi=100)
 
     return fig
 
@@ -426,6 +441,10 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         n_col = int(np.ceil(obs_wl_n_bin / each_col))
 
     fig = plt.figure(figsize=(3. * n_col, 3.5 * n_row))
+    fig.subplots_adjust(left=0.08, right=0.995,
+                        bottom=0.08, top=0.995,
+                        wspace=0.00, hspace=0.00)
+
     gs = gridspec.GridSpec(n_row, n_col)
     gs.update(wspace=0.0, hspace=0.00)
 
@@ -447,9 +466,9 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         ax.grid(linestyle='--', linewidth=1, alpha=0.3, zorder=0)
 
         for tick in ax.xaxis.get_major_ticks():
-            tick.label.set_fontsize(15)
+            tick.label.set_fontsize(20)
         for tick in ax.yaxis.get_major_ticks():
-            tick.label.set_fontsize(15)
+            tick.label.set_fontsize(20)
 
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
@@ -467,7 +486,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                 r'${\rm Bin: %d}$' % obs_prof.bin_id,
                 verticalalignment='center',
                 horizontalalignment='left',
-                fontsize=12.0,
+                fontsize=14.0,
                 transform=ax.transAxes,
                 color='k', alpha=0.9)
 
@@ -476,7 +495,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                                                        obs_prof.upp_mtot),
                 verticalalignment='center',
                 horizontalalignment='left',
-                fontsize=12.0,
+                fontsize=14.0,
                 transform=ax.transAxes,
                 color='k', alpha=0.9)
 
@@ -485,7 +504,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                                                        obs_prof.upp_minn),
                 verticalalignment='center',
                 horizontalalignment='left',
-                fontsize=12.0,
+                fontsize=14.0,
                 transform=ax.transAxes,
                 color='k', alpha=0.9)
 
@@ -506,7 +525,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                     r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
                     verticalalignment='center',
                     horizontalalignment='left',
-                    fontsize=13.0,
+                    fontsize=15.0,
                     transform=ax.transAxes,
                     color='royalblue')
 
@@ -520,12 +539,14 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
             ax.yaxis.set_major_formatter(NullFormatter())
         else:
             ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$',
-                          size=20)
+                          fontsize=25)
         if row_id == (n_row - 1):
             ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$',
-                          size=20)
+                          fontsize=25)
         else:
             ax.xaxis.set_major_formatter(NullFormatter())
+
+    fig.savefig('asap_dsigma_profs.pdf', dpi=100)
 
     return fig
 
@@ -603,8 +624,8 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         fig = plt.figure(figsize=(10, 15))
 
     fig.subplots_adjust(hspace=0.0, wspace=0.0,
-                        bottom=0.1, top=0.9,
-                        left=0.1, right=0.88)
+                        bottom=0.027, top=0.97,
+                        left=0.06, right=0.94)
 
     # I want the plot of individual walkers to span 2 columns
     nparam = len(mcmc_labels)
@@ -635,7 +656,7 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
 
             if mcmc_burnin is None:
                 ax1.set_ylabel(param,
-                               fontsize=25,
+                               fontsize=28,
                                labelpad=18,
                                color='k')
 
@@ -645,6 +666,9 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         # For the plot on the bottom, add an x-axis label. Hide all others
         if ii != (nparam - 1):
             ax1.xaxis.set_visible(False)
+        else:
+            for tick in ax1.xaxis.get_major_ticks():
+                tick.label.set_fontsize(20)
 
         # Posterior histograms
         ax2 = plt.subplot(gs[ii, -1])
@@ -667,6 +691,8 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         ax2.xaxis.set_visible(False)
         ax2.yaxis.tick_right()
         ax2.yaxis.set_label_position("right")
+        for tick in ax2.yaxis.get_major_ticks():
+            tick.label.set_fontsize(20)
 
         if mcmc_best is not None:
             ax1.axhline(mcmc_best[ii], linestyle='--', linewidth=2,
@@ -703,14 +729,17 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
             ax1.xaxis.set_visible(False)
             if mcmc_burnin is not None:
                 ax3.xaxis.set_visible(False)
+        else:
+            for tick in ax3.xaxis.get_major_ticks():
+                tick.label.set_fontsize(20)
 
         if ii == 0:
-            t = ax1.set_title("MCMC\ Walkers", fontsize=25, color='k')
+            t = ax1.set_title("MCMC\ Walkers", fontsize=28, color='k')
             t.set_y(1.01)
-            t = ax2.set_title("Posterior", fontsize=25, color='k')
+            t = ax2.set_title("Posterior", fontsize=28, color='k')
             t.set_y(1.01)
             if mcmc_burnin is not None:
-                t = ax3.set_title("Burnin\ Walkers", fontsize=25, color='k')
+                t = ax3.set_title("Burnin\ Walkers", fontsize=28, color='k')
                 t.set_y(1.01)
 
     return fig
@@ -722,7 +751,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
         mcmc_samples,
         bins=25, color=ORG(0.7),
         smooth=1, labels=mcmc_labels,
-        label_kwargs={'fontsize': 25},
+        label_kwargs={'fontsize': 26},
         quantiles=[0.16, 0.5, 0.84],
         plot_contours=True,
         fill_contours=True,
@@ -766,9 +795,9 @@ def plot_mtot_minn_trend(
     if z_max is None:
         z_max = np.nanmax(z_stats)
 
-    fig = plt.figure(figsize=(9.2, 7))
-    fig.subplots_adjust(left=0.19, right=0.89,
-                        bottom=0.13, top=0.995,
+    fig = plt.figure(figsize=(8.0, 7))
+    fig.subplots_adjust(left=0.14, right=0.93,
+                        bottom=0.12, top=0.99,
                         wspace=0.00, hspace=0.00)
     ax1 = fig.add_subplot(111)
     ax1.grid(linestyle='--', linewidth=2, alpha=0.5, zorder=0)

@@ -1,11 +1,12 @@
-"""
-"""
+"""Value added UM catalog."""
+
 import numpy as np
 from halotools.utils import crossmatch
 from astropy.table import Table
 
 
 def value_added_mdpl2_mock(fname):
+    """Value added the UniverseMachine model catalog for MDPL2 simulation."""
     mdpl2_mock = Table(np.load(fname))
 
     mdpl2_mock.rename_column('m', 'mvir')
@@ -38,8 +39,7 @@ def value_added_mdpl2_mock(fname):
 
 
 def value_added_smdpl_mock(smdpl_mock):
-    """
-    Value added the UniverseMachine model catalog for SMDPL simulation.
+    """Value added the UniverseMachine model catalog for SMDPL simulation.
 
     This is designed for the short catalog, and the size of the SMDPL box
     is 400/h Mpc.

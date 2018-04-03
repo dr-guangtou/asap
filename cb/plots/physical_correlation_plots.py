@@ -30,7 +30,6 @@ def _pretty_coef(coef, labels, xlabels):
     ax.set_xlabel("log(Alpha)")
     ax.set_xticks(range(0, len(coef[0]), 10))
     xtick_labels = np.log10(xlabels[[int(j) for j in ax.get_xticks()]])
-    print(xtick_labels)
     ax.set_xticklabels(["{:2f}".format(i) for i in xtick_labels], fontsize="xx-small")
 
 def _pretty_corr(corr, labels):
@@ -137,31 +136,29 @@ def correlation_matrix(catalog):
 def lasso(catalog):
     _, labels, matrix = _get_data_for_correlation_matrix(catalog)
     # Make this a (samples, features) matrix with each feature scaled to 0-1
+    # Could also scale with StandardScalar (but it shouldn't make any/much difference)
     x = preprocessing.MinMaxScaler().fit_transform(matrix[1:].T)
-    # x = preprocessing.StandardScaler().fit_transform(matrix[1:].T)
     y = matrix[0]
 
-    # Manually pick alpha section (or manually range over it)
+    # Range over various alphas to see which components are most important
     coefs = []
     alphas = np.logspace(-1, -5)
-    # use = [i != 2 for i in range(len(x[0]))]
+    ignore = []
     for alpha in alphas:
         clf = linear_model.Lasso(alpha=alpha)
         shuf_x = np.copy(x)
-        # np.random.shuffle(shuf_x[:,4])
+        for i in ignore:
+            np.random.shuffle(shuf_x[:,i])
 
-        # clf.fit(x[:,use], y)
         clf.fit(shuf_x, y)
         coefs.append(clf.coef_)
-    # _pretty_coef(np.array(coefs).T, np.array(labels[1:])[use], alphas)
     _pretty_coef(np.array(coefs).T, np.array(labels[1:]), alphas)
-
 
     # What I think is the best
     clf = linear_model.Lasso(alpha=10**-2.65)
     clf.fit(x, y)
-    print(clf.coef_)
-    print(clf.intercept_)
+    print("Best fit: ", clf.coef_)
+    print("Intercept: ", clf.intercept_)
 
 def lassoCV(catalog):
     _, labels, matrix = _get_data_for_correlation_matrix(catalog)
@@ -169,8 +166,6 @@ def lassoCV(catalog):
     x = preprocessing.MinMaxScaler().fit_transform(matrix[1:].T)
     # x = preprocessing.StandardScaler().fit_transform(matrix[1:].T)
     y = matrix[0]
-
-
 
     # CV to find alpha. With one thing randomly shuffled
     _, ax = plt.subplots()
@@ -207,7 +202,7 @@ def margin_model(catalog):
     model_error = sm_bias - model
     print(np.std(sm_bias))
     print(np.std(model_error))
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.hist(model_error, bins=50, alpha=0.3)
     ax.hist(sm_bias, bins=50, alpha=0.3)
 

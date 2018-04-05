@@ -133,7 +133,7 @@ def correlation_matrix(catalog):
     corr = _build_corr(matrix)
     _pretty_corr(corr, labels)
 
-def lasso(catalog):
+def lasso(catalog, skip_plot=False):
     _, labels, matrix = _get_data_for_correlation_matrix(catalog)
     # Make this a (samples, features) matrix with each feature scaled to 0-1
     # Could also scale with StandardScalar (but it shouldn't make any/much difference)
@@ -152,13 +152,15 @@ def lasso(catalog):
 
         clf.fit(shuf_x, y)
         coefs.append(clf.coef_)
-    _pretty_coef(np.array(coefs).T, np.array(labels[1:]), alphas)
+
+    _ = not skip_plot and _pretty_coef(np.array(coefs).T, np.array(labels[1:]), alphas)
 
     # What I think is the best
-    clf = linear_model.Lasso(alpha=10**-2.65)
+    alpha = 10**-5
+    print("Using alpha of {}".format(alpha))
+    clf = linear_model.Lasso(alpha=alpha)
     clf.fit(x, y)
-    print("Best fit: ", clf.coef_)
-    print("Intercept: ", clf.intercept_)
+    return clf.coef_, clf.intercept_
 
 def lassoCV(catalog):
     _, labels, matrix = _get_data_for_correlation_matrix(catalog)
@@ -188,23 +190,21 @@ def lassoCV(catalog):
     ax.legend()
 
 def margin_model(catalog):
-    data, _, _ = _get_data_for_correlation_matrix(catalog)
+    _, _, matrix = _get_data_for_correlation_matrix(catalog)
 
-    conc = data["Concentration"]
-    ages = data["Halfmass Scale"]
-    sm_bias = data["SM Bias"]
+    x = preprocessing.MinMaxScaler().fit_transform(matrix[1:].T)
+    y = matrix[0]
+    weights, intercept = lasso(catalog, skip_plot=True)
 
-    conc_w, ages_w, intercept_w = 0.1418, -0.3994, 0.1718 # on [0,1]
-    conc = preprocessing.MinMaxScaler().fit_transform(np.expand_dims(conc, 1)).flatten()
-    ages = preprocessing.MinMaxScaler().fit_transform(np.expand_dims(ages, 1)).flatten()
-    model = conc * conc_w + ages * ages_w + intercept_w
+    model = np.dot(x, weights) + intercept
+    model_error = y - model
 
-    model_error = sm_bias - model
-    print(np.std(sm_bias))
-    print(np.std(model_error))
+    print(np.std([y, model_error, model], axis=1))
     _, ax = plt.subplots()
-    ax.hist(model_error, bins=50, alpha=0.3)
-    ax.hist(sm_bias, bins=50, alpha=0.3)
+    _, bins, _ = ax.hist(model_error, bins=50, alpha=0.3, label="model error")
+    ax.hist(y, bins=bins, alpha=0.3, label="SM bias")
+    ax.hist(model, bins=bins, alpha=0.3, label="Model")
+    ax.legend()
 
 def best_model(catalog):
     data, _, _ = _get_data_for_correlation_matrix(catalog)
@@ -226,29 +226,42 @@ def best_model(catalog):
     big_ax = fig.add_subplot(111, frame_on=False)
     big_ax.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
     big_ax.grid(False)
-    ax = [ [fig.add_subplot(221), fig.add_subplot(222)], [fig.add_subplot(223), fig.add_subplot(224)]]
+    ax = [fig.add_subplot(231 + i) for i in range(6)]
 
     big_ax.set(xlabel="Concentration", ylabel="Halfmass Scale")
     plt.tight_layout()
 
     # Plot the counts
     count_stats = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="count", bins=13)
-    img = imshow(ax[0][0], count_stats, norm=mpl.colors.LogNorm(), cmap="OrRd")
-    ax[0][0].set_title("N in bin")
-    fig.colorbar(img, ax=ax[0][0])
+    img = imshow(ax[0], count_stats, norm=mpl.colors.LogNorm(), cmap="OrRd")
+    ax[0].set_title("N in bin")
+    fig.colorbar(img, ax=ax[0])
 
     # Plots the means
-    binned_stats = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="mean", bins=13)
-    binned_stats.statistic.T[count_stats.statistic.T < 8] = np.nan
-    img = imshow(ax[0][1], binned_stats, vmin=-0.4, vmax=0.4, cmap="coolwarm")
-    ax[0][1].set_title("SM bias")
-    fig.colorbar(img, ax=ax[0][1])
+    means = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="mean", bins=13)
+    means.statistic.T[count_stats.statistic.T < 8] = np.nan
+    img = imshow(ax[1], means, vmin=-0.4, vmax=0.4, cmap="coolwarm")
+    ax[1].set_title("SM bias")
+    fig.colorbar(img, ax=ax[1])
+
+    # Plots the SD in each of these bins
+    std= scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="std", bins=13)
+    std.statistic.T[count_stats.statistic.T < 8] = np.nan
+    img = imshow(ax[2], std, vmin=0, vmax=0.5, cmap="OrRd")
+    ax[2].set_title("SD in each bin")
+    fig.colorbar(img, ax=ax[2])
+    print("""
+    This is the issue - even though when binned you see a nice trend,
+    there is a massive amount of variance in each bin still. Increasing the number of
+    features we build out linear model on doesn't appear to significantly improve this.
+    Or maybe I haven't yet tried the right features.
+    """)
 
     # Plot our model
     conc_w, ages_w, intercept_w = 0.1418, -0.3994, 0.1718 # on [0,1]
     # x is conc
-    x_midpoints = binned_stats.x_edge[:-1] + np.diff(binned_stats.x_edge)/2
-    y_midpoints = binned_stats.y_edge[:-1] + np.diff(binned_stats.y_edge)/2
+    x_midpoints = means.x_edge[:-1] + np.diff(means.x_edge)/2
+    y_midpoints = means.y_edge[:-1] + np.diff(means.y_edge)/2
 
     x_midpoints = preprocessing.MinMaxScaler().fit(
             np.expand_dims(conc, 1)).transform(
@@ -260,21 +273,20 @@ def best_model(catalog):
         x_midpoints * conc_w +
         np.expand_dims(y_midpoints, 1) * ages_w +
         intercept_w)
-    img = ax[1][0].imshow(model, origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+    img = ax[3].imshow(model, origin="lower",
+            extent=[means.x_edge[0], means.x_edge[-1], means.y_edge[0], means.y_edge[-1]],
             aspect="auto", cmap="coolwarm", vmin=-0.4, vmax=0.4)
-    ax[1][0].set_title("Linear Model")
-    fig.colorbar(img, ax=ax[1][0])
+    ax[3].set_title("Linear Model")
+    fig.colorbar(img, ax=ax[3])
 
     # Plot how wrong we are
-    # binned_stats_std = scipy.stats.binned_statistic_2d(conc, ages, sm_bias, statistic="std", bins=13)
-    sigmas = (model - binned_stats.statistic.T)#/binned_stats_std.statistic.T
+    sigmas = (model - means.statistic.T)
     lim = np.nanmax(np.abs(sigmas))
-    img = ax[1][1].imshow(sigmas, origin="lower",
-            extent=[binned_stats.x_edge[0], binned_stats.x_edge[-1], binned_stats.y_edge[0], binned_stats.y_edge[-1]],
+    img = ax[4].imshow(sigmas, origin="lower",
+            extent=[means.x_edge[0], means.x_edge[-1], means.y_edge[0], means.y_edge[-1]],
             aspect="auto", cmap="coolwarm", vmin=-lim, vmax=lim)
-    ax[1][1].set_title("Residual")
-    fig.colorbar(img, ax=ax[1][1])
+    ax[4].set_title("Residual")
+    fig.colorbar(img, ax=ax[4])
 
 
 
@@ -334,15 +346,6 @@ def sm_at_fixed_hm_conc_split(catalog):
     ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, concentrations, concentration_bins, ["Low concentration", "High concentration"])
     return ax
 
-def _cleanup_nans(y, yerr, x):
-    good_y, good_yerr, good_x = [], [], []
-    for i in range(len(y)):
-        good_idxs = ((np.isfinite(y[i])) & (yerr[i] != 0))
-        good_y.append(y[i][good_idxs])
-        good_yerr.append(yerr[i][good_idxs])
-        good_x.append(x[good_idxs])
-    return np.array(good_y), np.array(good_yerr), np.array(good_x)
-
 def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bins, legend):
     hm_bin_edges = np.arange(np.min(halo_masses), np.max(halo_masses), 0.1)
     hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
@@ -382,3 +385,12 @@ def conc_sm_heatmap_at_fixed_hm(catalog, ax=None):
 
     _, _, _, img = ax.hist2d(concentrations, delta_stellar_masses, bins=20)
     fig.colorbar(img)
+
+def _cleanup_nans(y, yerr, x):
+    good_y, good_yerr, good_x = [], [], []
+    for i in range(len(y)):
+        good_idxs = ((np.isfinite(y[i])) & (yerr[i] != 0))
+        good_y.append(y[i][good_idxs])
+        good_yerr.append(yerr[i][good_idxs])
+        good_x.append(x[good_idxs])
+    return np.array(good_y), np.array(good_yerr), np.array(good_x)

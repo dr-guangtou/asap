@@ -115,6 +115,9 @@ def _get_sample_with_matching_halo_dist(sm_sample, catalog, n_resamples):
 def f_concentration(sample):
     return sample["rvir"] / sample["rs"]
 
+def f_acc(sample):
+    return sample["Acc_Rate_1*Tdyn"]
+
 def f_age(sample, plot=False):
     ages = sample["Halfmass_Scale"]
     return smooth_discrete_scales(ages, plot)
@@ -140,7 +143,6 @@ def smooth_discrete_scales(ages, plot):
         _, ax = plt.subplots()
         ax.hist(subset_ages, alpha=0.3, bins=3)
 
-    
     return np.reshape(smooth_ages, ages.shape)
 
 # This was pulled from the file names of the hlists. We then removed trailing zeros and reduced the sig figs in a couple of places (mostly at low scales - < 0.01).

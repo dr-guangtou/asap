@@ -78,28 +78,34 @@ def _get_data_for_correlation_matrix(catalog):
     acc_rate_m_peak[acc_rate_m_peak == 0] = np.min(acc_rate_m_peak[np.nonzero(acc_rate_m_peak)])
     acc_rate_m_peak = np.log10(acc_rate_m_peak)
 
+
     data = {
             "SM Bias": delta_stellar_masses,
-            "Halo mass": halo_masses,
+            # "Halo mass": halo_masses, Because I don't like it?
             "In-situ fraction": insitu_fraction,
             "Concentration": concentrations,
-            "Acc Rate at Mpeak": acc_rate_m_peak,
+            # "Acc Rate at Mpeak": acc_rate_m_peak,
             "Richness": richness,
             "Last MM Scale": mm,
             "Halfmass Scale": ages,
     }
+    # indexes = (stellar_masses > 11.6) & (stellar_masses < 11.7)
+    # indexes = (stellar_masses > 12.1) & (stellar_masses < 12.4)
+    # for key in data:
+        # data[key] = data[key][indexes]
+
     labels = list(data.keys())
     matrix = np.vstack(data.values())
     return data, labels, matrix
 
 def cen_vs_halo_correlation_matrix(cen_catalog, halo_catalog):
-    cen = _get_data_for_correlation_matrix(cen_catalog)
-    halo = _get_data_for_correlation_matrix(halo_catalog)
+    _, cen_labels, cen_matrix = _get_data_for_correlation_matrix(cen_catalog)
+    _, _, halo_matrix = _get_data_for_correlation_matrix(halo_catalog)
 
-    cen_corr = _build_corr(cen[2])
-    halo_corr = _build_corr(halo[2])
+    cen_corr = _build_corr(cen_matrix)
+    halo_corr = _build_corr(halo_matrix)
 
-    _pretty_corr(halo_corr - cen_corr, cen[1])
+    _pretty_corr(cen_corr - halo_corr, cen_labels)
 
 def marginalized_heatmap(catalog):
     data, _, matrix = _get_data_for_correlation_matrix(catalog)
@@ -153,11 +159,12 @@ def lasso(catalog, skip_plot=False):
         clf.fit(shuf_x, y)
         coefs.append(clf.coef_)
 
-    _ = not skip_plot and _pretty_coef(np.array(coefs).T, np.array(labels[1:]), alphas)
+    if not skip_plot:
+        _pretty_coef(np.array(coefs).T, np.array(labels[1:]), alphas)
 
     # What I think is the best
-    alpha = 10**-5
-    print("Using alpha of {}".format(alpha))
+    alpha = 10**-3.5
+    print("Using log10(alpha) of {}".format(np.log10(alpha)))
     clf = linear_model.Lasso(alpha=alpha)
     clf.fit(x, y)
     return clf.coef_, clf.intercept_

@@ -79,7 +79,7 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
 
         std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
         our_lines.append(
-            ax.errorbar(bin_midpoints, std, yerr=stdstd, label=r"$M_{\ast}^{" + str(cat) + "}$", capsize=1.5, linewidth=1)
+            ax.errorbar(bin_midpoints, std, yerr=stdstd, label=l.m_star_legend(cat), capsize=1.5, linewidth=1)
         )
     ax.set(
         xlabel=l.m_vir_x_axis,
@@ -90,8 +90,7 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
 
     # And now for the lit values
     ax = plot_lit(ax)
-    # to make room for the legend
-    ax.set_ylim(top = 0.62)
+    ax.set_ylim(top = 0.68) # to make room for the legend
     return ax
 
 def in_sm_at_fixed_hm(central_catalogs, ax = None):
@@ -113,7 +112,7 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
 
         y, yerr = resample_scatter(halo_masses, delta_stellar_masses, bins)
-        ax.errorbar(bin_midpoints, y, yerr=yerr, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
+        ax.errorbar(bin_midpoints, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
     ax.set(
         xlabel=l.m_vir_x_axis,
@@ -128,11 +127,14 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    number_densities = np.logspace(0.9, 4.3, num=10)
-    number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
+    cum_counts = np.logspace(0.9, 4.3, num=10)
+    cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
+    sim_volume = 400**3 # (400 Mpc/h)
+    number_densities_mid = cum_counts_mid / sim_volume
+
     for k in data.cut_config.keys():
         # Convert number densities to SM so that we can use that
-        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in number_densities])
+        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
 
         v = combined_catalogs[k]
         stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
@@ -142,13 +144,12 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 
         y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
 
-        ax.errorbar(number_densities_mid, y, yerr=yerr, label=r"$M_{\ast}^{" + str(k) + "}$", capsize=1.5, linewidth=1)
-
+        ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
     ax.set(
             xscale="log",
             ylim=0,
-            # xlabel=l.number_density,
-            xlabel=l.cum_count,
+            xlabel=l.cum_number_density,
+            # xlabel=l.cum_count,
             ylabel=l.hm_scatter,
     )
     ax.invert_xaxis()
@@ -160,7 +161,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     # halo_masses = [13, 13.5, 14, 14.5, 15]
     # ticks = fits.density_at_hmass(combined_catalogs, "cen", m)
     cen_masses = [11.5, 11.8, 12.1, 12.4]
-    ticks = fits.density_at_mass(combined_catalogs, "cen", cen_masses)
+    ticks = np.array(fits.density_at_mass(combined_catalogs, "cen", cen_masses)) / sim_volume
     ax2.set(
             xlim=np.log10(ax.get_xlim()),
             xticks=np.log10(ticks),

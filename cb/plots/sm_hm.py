@@ -7,8 +7,7 @@ import smhm_fit
 import scipy.stats
 from plots import labels as l
 
-# HM (y axis) at fixed SM (x axis)
-# was dm_vs_sm
+# HM (y axis) at fixed SM (x axis). Was dm_vs_sm
 def hm_at_fixed_sm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()
@@ -40,8 +39,7 @@ def hm_at_fixed_sm(catalog, n_sats, fit=None, ax=None):
 
     return ax
 
-# SM (y axis) at fixed HM (x axis)
-# was sm_vs_dm
+# SM (y axis) at fixed HM (x axis). Was sm_vs_dm
 def sm_at_fixed_hm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()

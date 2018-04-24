@@ -1,5 +1,5 @@
 # Model parameters
-model_type: 'frac1'
+model_type: 'frac4'
 param_ini: [0.599, 3.669, -0.048, 0.020, 0.80, 0.11]
 param_low: [0.2, 0.0, -0.2, 0.0, 0.3, 0.0]
 param_upp: [1.0, 8.0, 0.0, 0.2, 1.0, 0.3]

@@ -440,9 +440,9 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         n_row = each_col
         n_col = int(np.ceil(obs_wl_n_bin / each_col))
 
-    fig = plt.figure(figsize=(3. * n_col, 3.5 * n_row))
-    fig.subplots_adjust(left=0.08, right=0.995,
-                        bottom=0.08, top=0.995,
+    fig = plt.figure(figsize=(4 * n_col, 3.5 * n_row))
+    fig.subplots_adjust(left=0.075, right=0.995,
+                        bottom=0.09, top=0.995,
                         wspace=0.00, hspace=0.00)
 
     gs = gridspec.GridSpec(n_row, n_col)
@@ -466,9 +466,9 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         ax.grid(linestyle='--', linewidth=1, alpha=0.3, zorder=0)
 
         for tick in ax.xaxis.get_major_ticks():
-            tick.label.set_fontsize(20)
+            tick.label.set_fontsize(25)
         for tick in ax.yaxis.get_major_ticks():
-            tick.label.set_fontsize(20)
+            tick.label.set_fontsize(25)
 
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
@@ -476,17 +476,18 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                     obs_prof.err_w, fmt='o',
                     color='salmon',
                     ecolor='lightsalmon',
-                    alpha=0.9)
+                    markersize=9,
+                    alpha=0.8)
         ax.plot(obs_prof.r, obs_prof.sig,
-                linewidth=0.5, color='salmon',
+                linewidth=1.0, color='salmon',
                 alpha=0.5)
 
         # Label the mass range
-        ax.text(0.04, 0.28,
+        ax.text(0.04, 0.29,
                 r'${\rm Bin: %d}$' % obs_prof.bin_id,
                 verticalalignment='center',
                 horizontalalignment='left',
-                fontsize=14.0,
+                fontsize=23.0,
                 transform=ax.transAxes,
                 color='k', alpha=0.9)
 
@@ -495,7 +496,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                                                        obs_prof.upp_mtot),
                 verticalalignment='center',
                 horizontalalignment='left',
-                fontsize=14.0,
+                fontsize=17.0,
                 transform=ax.transAxes,
                 color='k', alpha=0.9)
 
@@ -504,7 +505,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                                                        obs_prof.upp_minn),
                 verticalalignment='center',
                 horizontalalignment='left',
-                fontsize=14.0,
+                fontsize=17.0,
                 transform=ax.transAxes,
                 color='k', alpha=0.9)
 
@@ -512,20 +513,20 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         if isinstance(um_wl_profs[0], (list,)):
             for dsig in um_wl_profs:
                 ax.plot(obs_prof.r, dsig[ii],
-                        linewidth=1.2, color='royalblue',
+                        linewidth=2.5, color='royalblue',
                         alpha=0.7)
         else:
             ax.scatter(obs_prof.r, um_wl_profs[ii],
-                       marker='h', s=5, c='b', alpha=0.7)
+                       marker='h', s=7, c='b', alpha=1.0)
             ax.plot(obs_prof.r, um_wl_profs[ii],
-                    linewidth=2.0, color='royalblue', alpha=0.7)
+                    linewidth=4.0, color='royalblue', alpha=0.7)
 
         if um_mhalo is not None:
-            ax.text(0.50, 0.92,
+            ax.text(0.55, 0.92,
                     r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
                     verticalalignment='center',
                     horizontalalignment='left',
-                    fontsize=15.0,
+                    fontsize=18.0,
                     transform=ax.transAxes,
                     color='royalblue')
 
@@ -539,14 +540,14 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
             ax.yaxis.set_major_formatter(NullFormatter())
         else:
             ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$',
-                          fontsize=25)
+                          fontsize=30)
         if row_id == (n_row - 1):
             ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$',
-                          fontsize=25)
+                          fontsize=30)
         else:
             ax.xaxis.set_major_formatter(NullFormatter())
 
-    fig.savefig('asap_dsigma_profs.pdf', dpi=100)
+    fig.savefig('asap_dsigma_profs.pdf', dpi=120)
 
     return fig
 
@@ -756,7 +757,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
         plot_contours=True,
         fill_contours=True,
         show_titles=True,
-        title_kwargs={"fontsize": 18},
+        title_kwargs={"fontsize": 20},
         hist_kwargs={"histtype": 'stepfilled',
                      "alpha": 0.4,
                      "edgecolor": "none"},

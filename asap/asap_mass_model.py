@@ -50,11 +50,17 @@ def sigma_logms_from_logmh(logm_halo, sigms_a, sigms_b,
 
 
 def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_vir', logms_col='logms_tot',
-                     min_scatter=0.01):
+                     logmh_col='logmh_vir', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
-    Without using the conditional abundance matching method.
+    This is the default model with 7 free parameters:
+        shmr_a, shmr_b:   determines a log-log linear SHMR between the 
+                          halo mass and total stellar mass within the halo.
+        sigms_a, sigms_b: determines the relation between scatter of
+                          total stellar mass and the halo mass.
+        frac_ins:         fraction of the in-situ stars in the inner aperture.
+        frac_exs_a, frac_exs_b:  determine the fraction of the ex-situ stars in
+                                 the inner aperture.
     """
     # Model parameters
     (shmr_a, shmr_b, sigms_a, sigms_b,
@@ -102,3 +108,152 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
         return logms_inn_mod, logms_tot_mod, mask_use
 
     return logms_inn_mod, logms_tot_mod, sig_logms, mask_use
+
+
+def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
+                     logmh_col='logmh_vir', min_scatter=0.01):
+    """Mtot and Minn prediction using simple model.
+
+    This is the model with 8 free parameters:
+        shmr_a, shmr_b:   determines a log-log linear SHMR between the 
+                          halo mass and total stellar mass within the halo.
+        sigms_a, sigms_b: determines the relation between scatter of
+                          total stellar mass and the halo mass.
+        frac_ins_a, frac_ins_b:  determine the fraction of the in-situ stars 
+                                 in the inner 10 kpc.
+        frac_exs_a, frac_exs_b:  determine the fraction of the ex-situ stars 
+                                 in the inner 10 kpc.
+    """
+    # Model parameters
+    (shmr_a, shmr_b, sigms_a, sigms_b,
+     frac_ins_a, frac_ins_b, 
+     frac_exs_a, frac_exs_b) = parameters
+
+    # Scatter of logMs_tot based on halo mass
+    sig_logms_tot = sigma_logms_from_logmh(um_mock[logmh_col],
+                                           sigms_a, sigms_b,
+                                           min_scatter=min_scatter)
+
+    # Given the prameters for stellar mass halo mass relation, and the
+    # random scatter of stellar mass, predict the stellar mass of all
+    # galaxies (central + ICL + satellites) in haloes.
+    if random:
+        logms_halo_mod_all = np.random.normal(
+            loc=(shmr_a * um_mock[logmh_col] + shmr_b),
+            scale=sig_logms_tot)
+    else:
+        logms_halo_mod_all = shmr_a * um_mock[logmh_col] + shmr_b
+
+    # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_halo_mod_all + np.log10(um_mock['frac_cen_tot'])
+
+    # Mask for massive enough galaxies
+    mask_use = logms_tot_mod_all >= min_logms
+    logms_tot_mod = logms_tot_mod_all[mask_use]
+    sig_logms = sig_logms_tot[mask_use]
+
+    # Fraction of in-situ component that goes into the inner aperture
+    # We assume that the fraction depends on halo mass in a log-log linear manner
+    frac_ins = frac_from_logmh(um_mock[logmh_col][mask_use],
+                               frac_ins_a, frac_ins_b)               
+
+    # Fraction of ex-situ component that goes into the inner aperture
+    # We assume that the fraction depends on halo mass in a log-log linear manner
+    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
+                               frac_exs_a, frac_exs_b)
+
+    # Stellar mass for each component
+    logms_ins_inn = (logms_tot_mod +
+                     np.log10(um_mock['frac_ins_cen'][mask_use]) +
+                     np.log10(frac_ins))
+    logms_exs_inn = (logms_tot_mod +
+                     np.log10(um_mock['frac_exs_cen'][mask_use]) +
+                     np.log10(frac_exs))
+
+    logms_inn_mod = np.log10(10.0 ** logms_ins_inn + 10.0 ** logms_exs_inn)
+
+    if random:
+        return logms_inn_mod, logms_tot_mod, mask_use
+
+    return logms_inn_mod, logms_tot_mod, sig_logms, mask_use
+
+
+def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
+                     logmh_col='logmh_vir', min_scatter=0.01):
+    """Mtot and Minn prediction using simple model.
+
+    This is the model with 10 free parameters:
+        shmr_a, shmr_b:   determines a log-log linear SHMR between the 
+                          halo mass and total stellar mass within the halo.
+        sigms_a, sigms_b: determines the relation between scatter of
+                          total stellar mass and the halo mass.
+        frac_ins_a, frac_ins_b:  determine the fraction of the in-situ stars 
+                                 in the inner aperture.
+        frac_exs_a, frac_exs_b:  determine the fraction of the ex-situ stars 
+                                 in the inner aperture.
+        frac_tot_a, frac_tot_b:  determine the fraction of the total stellar 
+                                 mass in the outer aperture.
+    """
+    # Model parameters
+    (shmr_a, shmr_b, sigms_a, sigms_b,
+     frac_ins_a, frac_ins_b, 
+     frac_exs_a, frac_exs_b,
+     frac_tot_a, frac_tot_b) = parameters
+
+    # Scatter of logMs_tot based on halo mass
+    sig_logms_tot = sigma_logms_from_logmh(um_mock[logmh_col],
+                                           sigms_a, sigms_b,
+                                           min_scatter=min_scatter)
+
+    # Given the prameters for stellar mass halo mass relation, and the
+    # random scatter of stellar mass, predict the stellar mass of all
+    # galaxies (central + ICL + satellites) in haloes.
+    if random:
+        logms_halo_mod_all = np.random.normal(
+            loc=(shmr_a * um_mock[logmh_col] + shmr_b),
+            scale=sig_logms_tot)
+    else:
+        logms_halo_mod_all = shmr_a * um_mock[logmh_col] + shmr_b
+
+    # Given the modelled fraction of Ms,tot/Ms,halo from UM2,
+    # predict the total stellar mass of galaxies (central + ICL).
+    logms_tot_mod_all = logms_halo_mod_all + np.log10(um_mock['frac_cen_tot'])
+
+    # We assume certain fraction of stellar mass of the central galaxy is within 
+    # the outer aperture, and we assume that fraction depends on halo mass 
+    frac_tot = frac_from_logmh(um_mock[logmh_col], frac_tot_a, frac_tot_b)
+
+    # This is the stellar mass within outer aperture to be compared with observation
+    logms_out_mod_all = logms_tot_mod_all + np.log10(frac_tot)
+
+    # Mask for massive enough galaxies
+    mask_use = logms_out_mod_all >= min_logms
+    logms_tot_mod = logms_tot_mod_all[mask_use]
+    logms_out_mod = logms_out_mod_all[mask_use]
+    sig_logms = sig_logms_tot[mask_use]
+
+    # Fraction of in-situ component that goes into the inner aperture
+    # We assume that the fraction depends on halo mass in a log-log linear manner
+    frac_ins = frac_from_logmh(um_mock[logmh_col][mask_use],
+                               frac_ins_a, frac_ins_b)               
+
+    # Fraction of ex-situ component that goes into the inner aperture
+    # We assume that the fraction depends on halo mass in a log-log linear manner
+    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
+                               frac_exs_a, frac_exs_b)
+
+    # Stellar mass for each component
+    logms_ins_inn = (logms_tot_mod +
+                     np.log10(um_mock['frac_ins_cen'][mask_use]) +
+                     np.log10(frac_ins))
+    logms_exs_inn = (logms_tot_mod +
+                     np.log10(um_mock['frac_exs_cen'][mask_use]) +
+                     np.log10(frac_exs))
+
+    logms_inn_mod = np.log10(10.0 ** logms_ins_inn + 10.0 ** logms_exs_inn)
+
+    if random:
+        return logms_inn_mod, logms_out_mod, mask_use
+
+    return logms_inn_mod, logms_out_mod, sig_logms, mask_use

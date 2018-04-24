@@ -101,7 +101,7 @@ def setup_model(cfg, verbose=True):
         # Upper bounds
         if 'param_upp' not in cfg.keys():
             cfg['param_upp'] = [1.10, 8.00, 0.05, 0.20,
-                                1.00, 0.40, 0.50
+                                1.00, 0.40, 0.50]
 
         # Step to randomize the initial guesses
         if 'param_sig' not in cfg.keys():

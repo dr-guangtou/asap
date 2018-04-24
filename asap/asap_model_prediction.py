@@ -13,7 +13,7 @@ from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac3, mass_prof_model_frac4, \
     mass_prof_model_frac5
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
-from asap_mass_model import mass_model_frac4
+from asap_mass_model import mass_model_frac4, mass_model_frac5, mass_model_frac6
 from asap_delta_sigma import delta_sigma_from_precomputed_pairs
 from asap_utils import mtot_minn_weight, mass_gaussian_weight
 
@@ -28,12 +28,31 @@ __all__ = ['asap_predict_mass', 'asap_predict_smf',
 def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
     """Predict stellar masses in different apertures."""
     if cfg['model_type'] == 'frac4':
+        # 7 free parameters
         return mass_model_frac4(
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],
             logmh_col=cfg['um_halo_col'],
-            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'])
+    elif cfg['model_type'] == 'frac5':
+        # 8 free parameters
+        # In-situ fraction in inner aperture depends on halo mass
+        return mass_model_frac5(
+            um_mock, parameters,
+            random=False,
+            min_logms=cfg['obs_min_mtot'],
+            logmh_col=cfg['um_halo_col'],
+            min_scatter=cfg['um_min_scatter'])
+    elif cfg['model_type'] == 'frac6':
+        # 10 free parameters
+        # In-situ fraction in inner aperture depends on halo mass
+        # Fraction of total stellar mass in outer aperture depends on halo mass 
+        return mass_model_frac5(
+            um_mock, parameters,
+            random=False,
+            min_logms=cfg['obs_min_mtot'],
+            logmh_col=cfg['um_halo_col'],
             min_scatter=cfg['um_min_scatter'])
     else:
         raise Exception("!! Wrong model: frac4")

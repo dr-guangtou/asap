@@ -209,7 +209,8 @@ def generalised_heatmap(x_masses, y_quantity, other_masses, x_is_halo, fit, x_bi
     )
     return fig, ax, image, binned_stats
 
-def invalidate_unoccupied_bins(binned_stats):
+def invalidate_unoccupied_bins(binned_stats, c = 5):
+    print("Invalidating < {}".format(c))
     x_ind, y_ind = np.unravel_index(binned_stats.binnumber, (len(binned_stats.x_edge) + 1, len(binned_stats.y_edge) + 1))
     bin_counts, _, _ = np.histogram2d(x_ind, y_ind, bins=[len(binned_stats.x_edge)-1, len(binned_stats.y_edge)-1])
 
@@ -223,5 +224,5 @@ def invalidate_unoccupied_bins(binned_stats):
 
     # Could do this better by doing some resampling and only keeping if it is well defined
     # Though I'm not sure we have the data here to make that easy...
-    binned_stats.statistic[bin_counts < 5] = -np.inf
+    binned_stats.statistic[bin_counts < c] = -np.inf
     return binned_stats

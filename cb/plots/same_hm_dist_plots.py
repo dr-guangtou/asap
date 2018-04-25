@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
+import colossus.cosmology.cosmology
+import colossus.halo.mass_so
 
 
 def ks_test(catalog, key, f, cuts):
@@ -9,10 +11,13 @@ def ks_test(catalog, key, f, cuts):
     sm_sample = _get_sm_sample(catalog, cuts)
     sm_sample_vals = np.sort(f(sm_sample))
 
-    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, catalog, 100))
-    sample2 = np.sort(sample2, axis=1)
-    median = np.percentile(sample2, 50, axis=0)
-    return scipy.stats.ks_2samp(median, sm_sample_vals).pvalue
+    pvalues = []
+    for i in range(5):
+        sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, catalog, 100))
+        sample2 = np.sort(sample2, axis=1)
+        median = np.percentile(sample2, 50, axis=0)
+        pvalues.append(scipy.stats.ks_2samp(median, sm_sample_vals).pvalue)
+    return np.median(pvalues)
 
 def plot_cdf(catalog, key, f, cuts):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
@@ -115,8 +120,30 @@ def _get_sample_with_matching_halo_dist(sm_sample, catalog, n_resamples):
 def f_concentration(sample):
     return sample["rvir"] / sample["rs"]
 
+# Normalised in the same way that benedict did it.
 def f_acc(sample):
-    return sample["Acc_Rate_1*Tdyn"]
+    cosmo = colossus.cosmology.cosmology.setCosmology('planck15')
+
+    a_now = 0.712400
+    z_now = (1 / a_now) - 1
+    t_now = cosmo.age(z_now)
+
+    t_dyn = colossus.halo.mass_so.dynamicalTime(z_now, "vir", "crossing")
+
+    t_then = t_now - t_dyn
+    z_then = cosmo.age(t_then, inverse=True)
+    a_then = 1/(1 + z_then)
+    if np.any(a_then < 0):
+        print("Some are less than 0")
+
+    delta_mass = sample["Acc_Rate_1*Tdyn"] * t_dyn * 1e9 # t_dyn is in Gyr
+    if np.any(sample["m"] - delta_mass < 0):
+        print("Some here are less than 0")
+
+    return (
+            np.log10(sample["m"]) - np.log10(sample["m"] - delta_mass)) / (
+            np.log10(a_now) - np.log10(a_then))
+
 
 def f_age(sample, plot=False):
     ages = sample["Halfmass_Scale"]

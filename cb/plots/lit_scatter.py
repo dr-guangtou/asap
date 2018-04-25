@@ -30,22 +30,6 @@ lit2 = {
             "color": "orange",
             "ls": ":",
         },
-        "kravtsov2018a_halo": {
-            "x": np.linspace(np.log10(5e13), np.log10(1.5e15), num=n),
-            "y": np.array([0.11] * n),
-            "error": 0.03,
-            "label": r"Kravtsov2018 $M_{\ast,halo}$",
-            "color": "green",
-            "ls": ":",
-        },
-        "lin2012": {
-            "x": np.linspace(np.log10(8e13), np.log10(2e15), num=n),
-            "y": np.array([0.12] * n),
-            "error": 0.00, # No error on the scatter quoted
-            "label": r"Lin2012 $M_{\ast,halo}$",
-            "color": "green",
-            "ls": "--",
-        },
         "leauthaud2012": {
             "x": np.linspace(13, 15, num=n), # Check this!
             "y": np.array([0.192] * n),
@@ -61,6 +45,22 @@ lit2 = {
             "label": r"Tinker2013 $M_{\ast,cen}$",
             "color": "orange",
             "ls": "-.",
+        },
+        "kravtsov2018a_halo": {
+            "x": np.linspace(np.log10(5e13), np.log10(1.5e15), num=n),
+            "y": np.array([0.11] * n),
+            "error": 0.03,
+            "label": r"Kravtsov2018 $M_{\ast,halo}$",
+            "color": "green",
+            "ls": ":",
+        },
+        "lin2012": {
+            "x": np.linspace(np.log10(8e13), np.log10(2e15), num=n),
+            "y": np.array([0.12] * n),
+            "error": 0.00, # No error on the scatter quoted
+            "label": r"Lin2012 $M_{\ast,halo}$",
+            "color": "green",
+            "ls": "--",
         },
         # "gu2016": {
         #     "x": np.linspace(12, 15, num=n),

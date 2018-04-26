@@ -217,6 +217,9 @@ def setup_model(cfg, verbose=True):
     if 'mcmc_moves' not in cfg.keys():
         cfg['mcmc_moves'] = 'stretch'
 
+    if 'mcmc_moves_burnin' not in cfg.keys():
+        cfg['mcmc_moves_burnin'] = 'kde'
+
     if 'mcmc_stretch_a' not in cfg.keys():
         cfg['mcmc_stretch_a'] = 4
 

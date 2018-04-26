@@ -96,17 +96,17 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
     return
 
 
-def mcmc_setup_moves(cfg):
+def mcmc_setup_moves(cfg, move_col):
     """Choose the Move object for emcee."""
-    if cfg['mcmc_moves'] == 'snooker':
+    if cfg[move_col] == 'snooker':
         emcee_moves = emcee.moves.DESnookerMove()
-    elif cfg['mcmc_moves'] == 'stretch':
+    elif cfg[move_col] == 'stretch':
         emcee_moves = emcee.moves.StretchMove(a=cfg['mcmc_stretch_a'])
-    elif cfg['mcmc_moves'] == 'walk':
+    elif cfg[move_col] == 'walk':
         emcee_moves = emcee.moves.WalkMove(s=cfg['mcmc_walk_s'])
-    elif cfg['mcmc_moves'] == 'kde':
+    elif cfg[move_col] == 'kde':
         emcee_moves = emcee.moves.KDEMove()
-    elif cfg['mcmc_moves'] == 'de':
+    elif cfg[move_col] == 'de':
         emcee_moves = emcee.moves.DEMove(cfg['mcmc_de_sigma'])
     else:
         raise Exception("Wrong option: stretch, walk, kde, de, snooker")

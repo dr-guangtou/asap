@@ -280,14 +280,11 @@ def asap_emcee_fit(args, verbose=True):
     assert use_emcee, "# Can not import emcee!"
 
     global cfg, obs_data, um_data
-    # Parse the configuration file  .
+    # Parse the configuration file.
     config_initial = parse_config(args.config)
 
     # Load the data
     cfg, obs_data, um_data = initial_model(config_initial, verbose=verbose)
-
-    # Decide the Ensemble moves for walkers
-    emcee_move = mcmc_setup_moves(cfg)
 
     # Initialize the model
     mcmc_ini_position = mcmc_initial_guess(
@@ -299,6 +296,11 @@ def asap_emcee_fit(args, verbose=True):
         from contextlib import closing
 
         with closing(Pool(processes=cfg['mcmc_nthreads'])) as pool:
+
+            # Decide the Ensemble moves for walkers during burnin
+            # TODO: Burn-in step and the actual run can have different move
+            emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
+
             mcmc_sampler = emcee.EnsembleSampler(
                 cfg['mcmc_nwalkers'],
                 cfg['mcmc_ndims'],
@@ -310,7 +312,19 @@ def asap_emcee_fit(args, verbose=True):
             mcmc_burnin_result = asap_emcee_burnin(
                 mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
 
+            # TODO: Convergence test
             mcmc_sampler.reset()
+
+            # TODO: Change the moves
+            # Decide the Ensemble moves for walkers during the official run
+            emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves')
+
+            mcmc_sampler = emcee.EnsembleSampler(
+                cfg['mcmc_nwalkers'],
+                cfg['mcmc_ndims'],
+                asap_ln_prob_global,
+                moves=emcee_move,
+                pool=pool)
 
             # MCMC run
             mcmc_run_result = asap_emcee_run(

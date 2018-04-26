@@ -1,6 +1,6 @@
 import numpy as np
 
-def centrals_with_satellites(centrals, satellites, n):
+def centrals_with_satellites(centrals, satellites, n, rich_cut, min_mass):
     """
     Given an array of centrals and satellites where the satellites are sorted by
     "upid" and then "mp" (or relevant mass key), adds the masses of the n
@@ -15,7 +15,13 @@ def centrals_with_satellites(centrals, satellites, n):
         sats = satellites[np.searchsorted(
             satellites["upid"], central["id"], side="left"):np.searchsorted(
                 satellites["upid"], central["id"], side="right")]
-        sats = sats[::-1][:get_n(n, len(sats))]  # Reversed to get the largest
+        sats = sats[::-1][:get_n(n, len(sats))] # Reversed to get the largest
+
+        if rich_cut:
+            # Make sure that we are being fair - if we d
+            sats = sats[
+                    sats["sm"] + sats["icl"] > min_mass
+            ]
         # Now add satellite stellar mass/formation to new_centrals
         for col in ["sm", "icl", "sfr"]: # I don't think we need the Acc_rate* - those are HM
             new_centrals[i][col] += np.sum(sats[col])

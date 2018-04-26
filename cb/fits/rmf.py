@@ -15,3 +15,15 @@ def richness_at_density(catalog, key, density):
 
 def density_at_richness(catalog, key, richness):
     return c.density_at_x(catalog, key, "rmf", richness)
+
+
+def build_photoz_rmf(catalog):
+    r = catalog["photoz_richness"]
+    bin_centers, cumulative_count = c.build_density_function(r)
+    return bin_centers, cumulative_count
+
+def photoz_richness_at_density(catalog, key, density):
+    return c.x_at_density(catalog, key, "photoz_rmf", density)
+
+def density_at_photoz_richness(catalog, key, richness):
+    return c.density_at_x(catalog, key, "photoz_rmf", richness)

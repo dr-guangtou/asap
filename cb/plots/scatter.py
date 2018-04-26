@@ -122,7 +122,7 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
     return ax
 
 
-def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, ax = None):
+def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, is_photoz = False, ax = None):
     if ax is None:
         _, ax = plt.subplots()
     cum_counts = np.logspace(0.9, 4.3, num=10)
@@ -130,13 +130,15 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, ax = None):
     sim_volume = 400**3 # (400 Mpc/h)
     number_densities_mid = cum_counts_mid / sim_volume
 
+    data_key = "data"
+
     for k in ["cen", 2, "halo"]:
         # Convert number densities to SM so that we can use that
         sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
 
         v = combined_catalogs[k]
-        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
-        halo_masses = np.log10(v["data"]["m"])
+        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+        halo_masses = np.log10(v[data_key]["m"])
         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
         delta_halo_masses = halo_masses - predicted_halo_masses
 
@@ -144,14 +146,20 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, ax = None):
 
         ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
-    richnesses = combined_catalogs["cen"]["richness"]["richness"]
-    r_bins = np.array([1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 33, 38, 45])
-    r_bins_mid = _bins_mid(r_bins).astype(int)
-    number_densities_mid = np.array(fits.density_at_richness(combined_catalogs, "cen", r_bins_mid)) / sim_volume
-    halo_masses = np.log10(combined_catalogs["cen"]["data"]["m"])
+    if is_photoz:
+        richnesses = combined_catalogs["cen"]["richness"]["photoz_richness"]
+        r_bins = np.linspace(75, 170, num=15)
+        print(r_bins)
+        r_bins_mid = _bins_mid(r_bins).astype(int)
+        number_densities_mid = np.array(fits.density_at_photoz_richness(combined_catalogs, "cen", r_bins_mid)) / sim_volume
+    else:
+        richnesses = combined_catalogs["cen"]["richness"]["richness"]
+        r_bins = np.array([1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28])
+        r_bins_mid = _bins_mid(r_bins).astype(int)
+        number_densities_mid = np.array(fits.density_at_richness(combined_catalogs, "cen", r_bins_mid)) / sim_volume
 
+    halo_masses = np.log10(combined_catalogs["cen"]["richness"]["m"])
     y, yerr = resample_scatter(richnesses, halo_masses, r_bins)
-
     ax.errorbar(number_densities_mid, y, yerr=yerr, label="Richness", capsize=1.5, linewidth=1)
 
     ax.set(

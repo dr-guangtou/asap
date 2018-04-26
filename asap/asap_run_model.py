@@ -299,37 +299,40 @@ def asap_emcee_fit(args, verbose=True):
 
             # Decide the Ensemble moves for walkers during burnin
             # TODO: Burn-in step and the actual run can have different move
-            emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
+            burnin_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
 
-            mcmc_sampler = emcee.EnsembleSampler(
+            burnin_sampler = emcee.EnsembleSampler(
                 cfg['mcmc_nwalkers'],
                 cfg['mcmc_ndims'],
                 asap_ln_prob_global,
-                moves=emcee_move,
+                moves=burnin_move,
                 pool=pool)
 
             # Burn-in
             mcmc_burnin_result = asap_emcee_burnin(
-                mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
+                burnin_sampler, mcmc_ini_position, cfg, verbose=True)
 
             # TODO: Convergence test
-            mcmc_sampler.reset()
+            # burnin_sampler.reset()
 
             # TODO: Change the moves
             # Decide the Ensemble moves for walkers during the official run
-            emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves')
+            mcmc_move = mcmc_setup_moves(cfg, 'mcmc_moves')
 
             mcmc_sampler = emcee.EnsembleSampler(
                 cfg['mcmc_nwalkers'],
                 cfg['mcmc_ndims'],
                 asap_ln_prob_global,
-                moves=emcee_move,
+                moves=mcmc_move,
                 pool=pool)
 
             # MCMC run
             mcmc_run_result = asap_emcee_run(
                 mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
     else:
+        # TODO: has not adjusted the emcee moves yet
+        emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves')
+
         mcmc_sampler = emcee.EnsembleSampler(
             cfg['mcmc_nwalkers'],
             cfg['mcmc_ndims'],

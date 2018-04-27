@@ -72,6 +72,8 @@ def add_sm_insitu(res, centrals):
     res["insitu"] = {
             "data": insitu_only,
             "fit": smhm_fit.get_hm_at_fixed_sm_fit(insitu_only),
+            "data_cut": insitu_only,
+            "fit_cut": smhm_fit.get_hm_at_fixed_sm_fit(insitu_only),
     }
 
 def add_hm_insitu(res, centrals):
@@ -85,6 +87,8 @@ def add_hm_insitu(res, centrals):
     res["insitu"] = {
             "data": insitu_only,
             "fit": smhm_fit.get_sm_at_fixed_hm_fit(insitu_only),
+            "data_cut": insitu_only,
+            "fit_cut": smhm_fit.get_sm_at_fixed_hm_fit(insitu_only),
     }
 
 def create_richness_data(centrals, satellites):

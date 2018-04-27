@@ -13,6 +13,12 @@ import data
 from plots.lit_scatter import plot_lit
 from plots import labels as l
 
+sim_volume = 400**3 # (400 Mpc/h)
+data_key = "data"#_cut"
+fit_key = "fit"#_cut"
+
+
+
 # See https://arxiv.org/pdf/0810.1885.pdf
 def resample_scatter(x, y, bins):
     bin_indexes = np.digitize(x, bins)
@@ -65,10 +71,10 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
     for cat in ["insitu", "cen", "halo"]:
         v = central_catalogs[cat]
         if cat == "insitu": cat = "in" #hack hack hack
-        halo_masses = np.log10(v["data"]["m"])
-        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
+        halo_masses = np.log10(v[data_key]["m"])
+        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
 
-        predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v["fit"])
+        predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v[fit_key])
         delta_stellar_masses = stellar_masses - predicted_stellar_masses
 
         bins = np.arange(
@@ -100,9 +106,9 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
     for k, v in central_catalogs.items():
         if k == "insitu":
             continue
-        halo_masses = np.log10(v["data"]["m"])
-        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
-        predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v["fit"])
+        halo_masses = np.log10(v[data_key]["m"])
+        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+        predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v[fit_key])
         delta_stellar_masses = stellar_masses - predicted_stellar_masses
 
         bins = np.arange(
@@ -122,15 +128,13 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
     return ax
 
 
-def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, is_photoz = False, ax = None):
+def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, is_photoz = False, ax = None):
     if ax is None:
         _, ax = plt.subplots()
     cum_counts = np.logspace(0.9, 4.3, num=10)
     cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
-    sim_volume = 400**3 # (400 Mpc/h)
     number_densities_mid = cum_counts_mid / sim_volume
 
-    data_key = "data"
 
     for k in ["cen", 2, "halo"]:
         # Convert number densities to SM so that we can use that
@@ -139,7 +143,7 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, is_photoz = F
         v = combined_catalogs[k]
         stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
         halo_masses = np.log10(v[data_key]["m"])
-        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
+        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v[fit_key])
         delta_halo_masses = halo_masses - predicted_halo_masses
 
         y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
@@ -147,19 +151,21 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, is_photoz = F
         ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
     if is_photoz:
-        richnesses = combined_catalogs["cen"]["richness"]["photoz_richness"]
-        r_bins = np.linspace(75, 170, num=15)
-        print(r_bins)
-        r_bins_mid = _bins_mid(r_bins).astype(int)
-        number_densities_mid = np.array(fits.density_at_photoz_richness(combined_catalogs, "cen", r_bins_mid)) / sim_volume
+        richnesses = richness["richness"]["photoz_richness"]
+        r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28])
+        r_bins_mid = _bins_mid(r_bins) # We used to cast this to an int. I think that was wong
+        number_densities_mid = np.array(fits.density_at_photoz_richness(richness, "", r_bins_mid)) / sim_volume
     else:
-        richnesses = combined_catalogs["cen"]["richness"]["richness"]
-        r_bins = np.array([1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28])
-        r_bins_mid = _bins_mid(r_bins).astype(int)
-        number_densities_mid = np.array(fits.density_at_richness(combined_catalogs, "cen", r_bins_mid)) / sim_volume
+        richnesses = richness["richness"]["richness"]
+        r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28])
+        r_bins_mid = _bins_mid(r_bins)
+        number_densities_mid = np.array(fits.density_at_richness(richness, "", r_bins_mid)) / sim_volume
 
-    halo_masses = np.log10(combined_catalogs["cen"]["richness"]["m"])
-    y, yerr = resample_scatter(richnesses, halo_masses, r_bins)
+    y, yerr = resample_scatter(
+            richnesses,
+            np.log10(richness["richness"]["m"]),
+            r_bins
+    )
     ax.errorbar(number_densities_mid, y, yerr=yerr, label="Richness", capsize=1.5, linewidth=1)
 
     ax.set(
@@ -189,9 +195,9 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
         sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
 
         v = combined_catalogs[k]
-        stellar_masses = np.log10(v["data"]["icl"] + v["data"]["sm"])
-        halo_masses = np.log10(v["data"]["m"])
-        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v["fit"])
+        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+        halo_masses = np.log10(v[data_key]["m"])
+        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v[fit_key])
         delta_halo_masses = halo_masses - predicted_halo_masses
 
         y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
@@ -225,24 +231,19 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 
     return ax
 
-def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
+def in_hm_at_fixed_richness_number_density(richness, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    v = combined_catalogs["cen"]["richness"]
-
-    r_bins = np.array([0, 1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 33, 38, 45])
-    r_bins_mid = _bins_mid(r_bins).astype(int)
+    r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 39])
+    r_bins_mid = _bins_mid(r_bins)
     print(r_bins_mid)
 
-    # number_densities_mid = number_densities[:-1] + (number_densities[1:] - number_densities[:-1]) / 2
-    # # Convert number density to richness so that we can use that
-    # r_bins = np.array(fits.richness_at_density(combined_catalogs, "cen", number_densities))
-
-    halo_masses = np.log10(v["m"])
-    richnesses = v["richness"]
-
-    y, yerr = resample_scatter(richnesses, halo_masses, r_bins)
+    y, yerr = resample_scatter(
+            richness["richness"]["richness"],
+            np.log10(richness["richness"]["m"]),
+            r_bins,
+    )
 
     ax.errorbar(r_bins_mid, y, yerr=yerr, label="UM")
     ax.set(
@@ -256,15 +257,17 @@ def in_hm_at_fixed_richness_number_density(combined_catalogs, ax = None):
 
     # Add the ND at the top
     ax2 = ax.twiny()
-    number_densities = np.logspace(3.5, 1, num=6)
-    ticks = fits.richness_at_density(combined_catalogs, "cen", number_densities)
+    powers = np.arange(-7, -3.9) # [-7, -6, -5, -4]
+    number_densities = 10**powers
+    cumulative_counts = number_densities * sim_volume
+    ticks = fits.richness_at_density(richness, "", cumulative_counts)
 
     ax2.set(
             # xscale="log",
             xlim=ax.get_xlim(),
             xticks=ticks,
-            xticklabels=["{:.1f}".format(i) for i in np.log10(number_densities)],
-            xlabel=l.log_cum_count,
+            xticklabels=[r"$10^{" + str(int(i)) + "}$" for i in powers],
+            xlabel=l.cum_number_density,
     )
     # ax2.invert_xaxis()
 
@@ -310,14 +313,14 @@ def bins_for_const_num_den(bin_counts, x_data):
 
 
 def sanity_check_scatter(sc_centrals, hc_centrals):
-    log_halo_masses = np.log10(hc_centrals["data"]["m"])
+    log_halo_masses = np.log10(hc_centrals[data_key]["m"])
 
     hm_bins = np.arange(np.floor(np.min(log_halo_masses)), np.max(log_halo_masses), 0.1)
 
     # calculate SM scatter at fixed HM
-    halo_masses = np.log10(hc_centrals["data"]["m"])
-    stellar_masses = np.log10(hc_centrals["data"]["icl"] + hc_centrals["data"]["sm"])
-    predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *hc_centrals["fit"])
+    halo_masses = np.log10(hc_centrals[data_key]["m"])
+    stellar_masses = np.log10(hc_centrals[data_key]["icl"] + hc_centrals[data_key]["sm"])
+    predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *hc_centrals[fit_key])
     delta_stellar_masses = stellar_masses - predicted_stellar_masses
     std_sm, _, _ = scipy.stats.binned_statistic(halo_masses, delta_stellar_masses, statistic="std", bins=hm_bins)
     count, _ = np.histogram(halo_masses, hm_bins)
@@ -326,22 +329,22 @@ def sanity_check_scatter(sc_centrals, hc_centrals):
     std_sm, count = std_sm[8:], count[8:]
 
     # We need this many items in our SM bins too
-    log_stellar_masses = np.log10(sc_centrals["data"]["icl"] + sc_centrals["data"]["sm"])
+    log_stellar_masses = np.log10(sc_centrals[data_key]["icl"] + sc_centrals[data_key]["sm"])
     sm_bins = bins_for_const_num_den(count, log_stellar_masses)
 
-    # sm_bins = smhm_fit.f_shmr(hm_bins, *hc_centrals["fit"])
+    # sm_bins = smhm_fit.f_shmr(hm_bins, *hc_centrals[fit_key])
     sm_bin_midpoints = sm_bins[:-1] + np.diff(sm_bins) / 2
 
     # calculate HM scatter at fixed SM
-    halo_masses = np.log10(sc_centrals["data"]["m"])
-    predicted_halo_masses = smhm_fit.f_shmr_inverse(log_stellar_masses, *sc_centrals["fit"])
+    halo_masses = np.log10(sc_centrals[data_key]["m"])
+    predicted_halo_masses = smhm_fit.f_shmr_inverse(log_stellar_masses, *sc_centrals[fit_key])
     delta_halo_masses = halo_masses - predicted_halo_masses
     std_hm, _, _ = scipy.stats.binned_statistic(log_stellar_masses, delta_halo_masses, statistic="std", bins=sm_bins)
 
     std_hm, std_sm, sm_bin_midpoints = std_hm[:-3], std_sm[:-3], sm_bin_midpoints[:-3] # Last bins are pretty empty...
 
     # calculate derivative at the center of the bins
-    d_hm_d_sm = smhm_fit.f_shmr_inverse_der(sm_bin_midpoints, *sc_centrals["fit"][1:])
+    d_hm_d_sm = smhm_fit.f_shmr_inverse_der(sm_bin_midpoints, *sc_centrals[fit_key][1:])
 
 
     _, ax = plt.subplots()

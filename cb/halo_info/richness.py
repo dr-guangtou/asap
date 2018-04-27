@@ -20,7 +20,7 @@ def get_richness(centrals, satellites, min_mass):
 
     return richness
 
-def get_photoz_richness(centrals, richness):
+def get_photoz_richness(centrals, satellites, min_mass):
     z_err = 90 # https://arxiv.org/pdf/1702.01682.pdf
     box_size = 400
     # Slightly weird things "out of the box". We will mod to put them back in
@@ -28,54 +28,62 @@ def get_photoz_richness(centrals, richness):
         assert np.max(centrals[i]) < box_size * 1.1 and np.min(centrals[i]) > box_size * -0.1
     assert np.max(centrals["z"]) < box_size and np.min(centrals["z"]) > 0
 
-    # First, we run this for all rich centrals
-    # Then, we run it for a subset of all non-rich centrals and scale those
-    poor_subsample_size = 20000
-    subsample_factor = len(np.nonzero(richness == 1)[0]) / poor_subsample_size
-    indexes = [
-            np.nonzero(richness > 1)[0], # rich subsample
-            np.random.choice(np.nonzero(richness == 1)[0], poor_subsample_size), # poor subsample
+    big_enough_centrals = np.copy(centrals[centrals["sm"] + centrals["icl"] > min_mass])
+    big_enough_sats = np.copy(satellites[satellites["sm"] + satellites["icl"] > min_mass])
+    big_enough_gals = np.concatenate((big_enough_centrals, big_enough_sats))
+
+    big_enough_gals["x"] %= box_size
+    big_enough_gals["y"] %= box_size
+    for i in "xy":
+        assert np.max(big_enough_gals[i]) < box_size and np.min(big_enough_gals[i]) > 0
+
+    big_enough_gals = np.sort(big_enough_gals, order=["x"])
+
+    photoz_richness = np.zeros(len(centrals), np.int16)
+    for i, central in enumerate(centrals):
+        r_err = central["rvir"]/1000 # r_vir in Mpc
+
+
+        x_cut_gals = x_cut(central, big_enough_gals, box_size, r_err)
+        xy_cut_gals = acceptable(central, x_cut_gals, box_size, r_err, "y")
+        xyz_cut_gals = acceptable(central, xy_cut_gals, box_size, z_err, "z")
+
+        xyzr_cut_gals = xyz_cut_gals[get_r_dists(central, xyz_cut_gals, box_size) < r_err]
+        photoz_richness[i] = len(xyzr_cut_gals)
+    return photoz_richness
+
+def x_cut(central, test_galaxies, box_size, r_err):
+
+    upper_index = np.searchsorted(test_galaxies["x"], central["x"] + r_err % box_size)
+    lower_index = np.searchsorted(test_galaxies["x"], central["x"] - r_err % box_size)
+
+    if upper_index > lower_index:
+        return test_galaxies[lower_index:upper_index]
+    else:
+        return test_galaxies.take(range(
+            upper_index - len(test_galaxies), lower_index
+            ), mode="wrap")
+
+
+def acceptable(central, test_galaxies, box_size, allowed_err, idx):
+    # If it is central enough, we don't need to worry about wrapping
+    if central[idx] > allowed_err and central[idx] < (box_size - allowed_err):
+        return test_galaxies[
+                no_wrap_subtract(central[idx], test_galaxies[idx]) < allowed_err
+        ]
+
+    return test_galaxies[
+            wrap_subtract(central[idx], test_galaxies[idx], box_size) < allowed_err
     ]
-    photoz_richnesses = np.zeros((2, len(centrals)), int)
-    for j, idx in enumerate(indexes):
-        subset_centrals = centrals[idx]
-        subset_richness = richness[idx]
 
-        cached = {}
-        cached["x"] = cache_subtract(subset_centrals["x"] % box_size, box_size, 1, 2)
-        cached["y"] = cache_subtract(subset_centrals["y"] % box_size, box_size, 1, 2)
-        cached["z"] = cache_subtract(subset_centrals["z"], box_size, 10, 1)
-
-        for i, central in enumerate(centrals):
-            r_err = central["rvir"]/1000 # r_vir in Mpc
-            photoz_richnesses[j][i] = np.sum(subset_richness[
-                get_indexes(cached, central, box_size, r_err, z_err)
-            ])
-    return photoz_richnesses[0] + photoz_richnesses[1]*subsample_factor, photoz_richnesses[0], photoz_richnesses[1]
-
-def get_indexes(cached, central, box_size, r_err, z_err):
-    r_dist = get_r_dist(cached, central, box_size)
-    indexes = (
-            (
-                r_dist < r_err
-            ) & (
-                cached["z"][int(np.floor(central["z"] / 10))] < z_err
-            )
-    )
-    return indexes
-
-def get_r_dist(cached, central, box_size):
+# by the time we call this we should have such for things that needing to wrap subtract isn't really an issue
+def get_r_dists(central, comp, box_size):
     return np.sqrt(
-            cached["x"][int(np.floor((central["x"] % box_size) / 1))] +
-            cached["y"][int(np.floor((central["y"] % box_size) / 1))])
+            wrap_subtract(central["x"], comp["x"], box_size)**2 +
+            wrap_subtract(central["y"], comp["y"], box_size)**2)
 
-# cache the squared distance between every item in X and each position
-def cache_subtract(inp, box_size, step, power):
-    res = []
-    for i in range(0, box_size, step):
-        res.append(wrap_subtract(inp, i, box_size)**power)
-    return res
-
+def no_wrap_subtract(x1, x2):
+    return np.abs(x1 - x2)
 
 def wrap_subtract(x1, x2, box_size):
     diff = np.abs(x1 - x2)

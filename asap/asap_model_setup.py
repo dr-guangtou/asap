@@ -140,7 +140,7 @@ def setup_model(cfg, verbose=True):
 
     elif cfg['model_type'] == 'frac6':
         # Number of parameters
-        cfg['mcmc_ndims'] = 8
+        cfg['mcmc_ndims'] = 10
         cfg['mcmc_labels'] = [r'$a$',
                               r'$b$',
                               r'$c$',

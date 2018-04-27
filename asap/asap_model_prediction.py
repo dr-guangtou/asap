@@ -48,7 +48,7 @@ def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
         # 10 free parameters
         # In-situ fraction in inner aperture depends on halo mass
         # Fraction of total stellar mass in outer aperture depends on halo mass 
-        return mass_model_frac5(
+        return mass_model_frac6(
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],

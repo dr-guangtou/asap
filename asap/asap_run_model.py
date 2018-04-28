@@ -299,7 +299,6 @@ def asap_emcee_fit(args, verbose=True):
         with closing(Pool(processes=cfg['mcmc_nthreads'])) as pool:
 
             # Decide the Ensemble moves for walkers during burnin
-            # TODO: Burn-in step and the actual run can have different move
             burnin_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
 
             burnin_sampler = emcee.EnsembleSampler(
@@ -313,6 +312,8 @@ def asap_emcee_fit(args, verbose=True):
             mcmc_burnin_pos, mcmc_burnin_lnp, mcmc_burnin_state = asap_emcee_burnin(
                 burnin_sampler, mcmc_ini_position, cfg, verbose=True)
             
+            # Estimate the Kernel density distributions of final brun-in positions
+            # Resample the distributions to get starting positions of the actual run
             mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos), 
                                bw_method='silverman')
             mcmc_new_pos = np.transpose(mcmc_kde.resample(cfg['mcmc_nwalkers']))
@@ -320,9 +321,9 @@ def asap_emcee_fit(args, verbose=True):
             mcmc_new_ini = (mcmc_new_pos, mcmc_burnin_lnp, mcmc_burnin_state)
 
             # TODO: Convergence test
-            # burnin_sampler.reset()
+            burnin_sampler.reset()
 
-            # TODO: Change the moves
+            # Change the moves
             # Decide the Ensemble moves for walkers during the official run
             mcmc_move = mcmc_setup_moves(cfg, 'mcmc_moves')
 
@@ -337,8 +338,8 @@ def asap_emcee_fit(args, verbose=True):
             mcmc_run_result = asap_emcee_run(
                 mcmc_sampler, mcmc_new_ini, cfg, verbose=True)
     else:
-        # TODO: has not adjusted the emcee moves yet
-        emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves')
+        # Decide the Ensemble moves for walkers during burnin
+        emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
 
         mcmc_sampler = emcee.EnsembleSampler(
             cfg['mcmc_nwalkers'],
@@ -347,14 +348,27 @@ def asap_emcee_fit(args, verbose=True):
             moves=emcee_move)
 
         # Burn-in
-        mcmc_burnin_result = asap_emcee_burnin(
-            mcmc_sampler, mcmc_ini_position, cfg, verbose=True)
+        mcmc_burnin_pos, mcmc_burnin_lnp, mcmc_burnin_state = asap_emcee_burnin(
+            burnin_sampler, mcmc_ini_position, cfg, verbose=True)
+        
+        # Estimate the Kernel density distributions of final brun-in positions
+        # Resample the distributions to get starting positions of the actual run
+        mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos), 
+                            bw_method='silverman')
+        mcmc_new_pos = np.transpose(mcmc_kde.resample(cfg['mcmc_nwalkers']))
 
-        mcmc_sampler.reset()
+        mcmc_new_ini = (mcmc_new_pos, mcmc_burnin_lnp, mcmc_burnin_state)
+
+        # TODO: Convergence test
+        burnin_sampler.reset()
+
+        # Change the moves
+        # Decide the Ensemble moves for walkers during the official run
+        mcmc_move = mcmc_setup_moves(cfg, 'mcmc_moves')
 
         # MCMC run
         mcmc_run_result = asap_emcee_run(
-            mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
+            mcmc_sampler, mcmc_new_ini, cfg, verbose=True)
 
     return mcmc_run_result
 

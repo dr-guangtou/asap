@@ -617,7 +617,8 @@ def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
 
 
 def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
-                    mcmc_burnin=None, trace_alpha=0.2):
+                    mcmc_burnin=None, burnin_alpha=0.2, 
+                    trace_alpha=0.2):
     """Traceplot for MCMC results."""
     if mcmc_burnin is not None:
         fig = plt.figure(figsize=(12, 15))
@@ -647,7 +648,7 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
             ax1 = plt.subplot(gs[ii, :2])
         else:
             ax1 = plt.subplot(gs[ii, 2:4])
-        ax1.grid(linewidth=1.5, linestyle='--', alpha=0.5)
+        ax1.yaxis.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
         for walker in param_chain:
             ax1.plot(np.arange(len(walker)), walker,
@@ -662,11 +663,11 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
                                color='k')
 
             # Don't show ticks on the y-axis
-            ax1.yaxis.set_ticks([])
+            ax1.tick_params(labelleft='off')
 
         # For the plot on the bottom, add an x-axis label. Hide all others
         if ii != (nparam - 1):
-            ax1.xaxis.set_visible(False)
+            ax1.tick_params(labelbottom='off')
         else:
             for tick in ax1.xaxis.get_major_ticks():
                 tick.label.set_fontsize(20)
@@ -705,13 +706,13 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         if mcmc_burnin is not None:
             param_burnin = mcmc_burnin[:, :, ii]
             ax3 = plt.subplot(gs[ii, :2])
-            ax3.grid(linewidth=1.5, linestyle='--', alpha=0.5)
+            ax3.yaxis.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
             for walker in param_burnin:
                 ax3.plot(np.arange(len(walker)), walker,
                          drawstyle="steps",
-                         color=BLU(1.0 - np.var(walker) / max_var),
-                         alpha=trace_alpha)
+                         color=BLU(np.var(walker) / max_var),
+                         alpha=burnin_alpha)
 
                 ax3.set_ylabel(param,
                                fontsize=25,
@@ -719,7 +720,7 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
                                color='k')
 
                 # Don't show ticks on the y-axis
-                ax3.yaxis.set_ticks([])
+                ax3.tick_params(labelleft='off')
                 ax3.set_xlim(1, len(walker))
                 ax3.set_ylim(np.min(param_chain[:, 0]),
                              np.max(param_chain[:, 0]))
@@ -735,18 +736,18 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
                 tick.label.set_fontsize(20)
 
         if ii == 0:
-            t = ax1.set_title("MCMC\ Walkers", fontsize=28, color='k')
+            t = ax1.set_title("Sampling", fontsize=28, color='k')
             t.set_y(1.01)
             t = ax2.set_title("Posterior", fontsize=28, color='k')
             t.set_y(1.01)
             if mcmc_burnin is not None:
-                t = ax3.set_title("Burnin\ Walkers", fontsize=28, color='k')
+                t = ax3.set_title("Burnin", fontsize=28, color='k')
                 t.set_y(1.01)
 
     return fig
 
 
-def plot_mcmc_corner(mcmc_samples, mcmc_labels):
+def plot_mcmc_corner(mcmc_samples, mcmc_labels, **corner_kwargs):
     """Corner plots for MCMC samples."""
     fig = corner.corner(
         mcmc_samples,
@@ -761,7 +762,8 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels):
         hist_kwargs={"histtype": 'stepfilled',
                      "alpha": 0.4,
                      "edgecolor": "none"},
-        use_math_text=True
+        use_math_text=True,
+        **corner_kwargs
         )
 
     return fig

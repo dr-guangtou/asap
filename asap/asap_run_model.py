@@ -310,12 +310,14 @@ def asap_emcee_fit(args, verbose=True):
                 pool=pool)
 
             # Burn-in
-            mcmc_burnin_result = asap_emcee_burnin(
+            mcmc_burnin_pos, mcmc_burnin_lnp, mcmc_burnin_state = asap_emcee_burnin(
                 burnin_sampler, mcmc_ini_position, cfg, verbose=True)
             
-            kde = gaussian_kde(np.transpose(mcmc_burnin_result), 
+            mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos), 
                                bw_method='silverman')
-            mcmc_new_ini = np.transpose(kde.resample(cfg['mcmc_nwalkers']))
+            mcmc_new_pos = np.transpose(mcmc_kde.resample(cfg['mcmc_nwalkers']))
+
+            mcmc_new_ini = (mcmc_new_pos, mcmc_burnin_lnp, mcmc_burnin_state)
 
             # TODO: Convergence test
             # burnin_sampler.reset()

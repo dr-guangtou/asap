@@ -430,7 +430,8 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
 
 def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                          obs_mhalo=None, um_mhalo=None,
-                         each_col=3, **kwargs):
+                         each_col=3, reference=None,
+                         **kwargs):
     """Plot the UM predicted weak lensing profiles."""
     obs_wl_n_bin = len(obs_wl_dsigma)
     if obs_wl_n_bin <= each_col:
@@ -456,6 +457,11 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     y_min = np.nanmin(y_min_arr) * 0.5
     y_max = np.nanmax(y_max_arr) * 1.5
 
+    if reference is not None:
+        ref_prof = obs_wl_dsigma[reference]
+    else:
+        ref_prof = None
+
     for ii in range(obs_wl_n_bin):
         col_id = int(np.floor(ii / n_row))
         row_id = int(n_row - (ii + 1 - col_id * n_row))
@@ -470,6 +476,10 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         for tick in ax.yaxis.get_major_ticks():
             tick.label.set_fontsize(25)
 
+        if ref_prof is not None:
+            ax.plot(ref_prof.r, ref_prof.sig, linewidth=2.5, 
+                    color=ORG(0.7), linestyle='--', alpha=0.5)
+
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
         ax.errorbar(obs_prof.r, obs_prof.sig,
@@ -481,6 +491,14 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         ax.plot(obs_prof.r, obs_prof.sig,
                 linewidth=1.0, color='salmon',
                 alpha=0.5)
+
+        if reference is not None and reference == ii:
+            ax.text(0.04, 0.41, r'$\mathrm{Ref}$',
+                    verticalalignment='center',
+                    horizontalalignment='left',
+                    fontsize=23.0,
+                    transform=ax.transAxes,
+                    color=ORG(0.7), alpha=0.9)
 
         # Label the mass range
         ax.text(0.04, 0.29,

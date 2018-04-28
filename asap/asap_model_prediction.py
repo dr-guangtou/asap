@@ -13,7 +13,8 @@ from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac3, mass_prof_model_frac4, \
     mass_prof_model_frac5
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
-from asap_mass_model import mass_model_frac4, mass_model_frac5, mass_model_frac6
+from asap_mass_model import mass_model_frac4, mass_model_frac5, \
+    mass_model_frac6
 from asap_delta_sigma import delta_sigma_from_precomputed_pairs
 from asap_utils import mtot_minn_weight, mass_gaussian_weight
 

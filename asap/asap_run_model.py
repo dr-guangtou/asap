@@ -19,6 +19,7 @@ except ImportError:
     use_dynesty = False
 
 import numpy as np
+from scipy.stats import gaussian_kde
 
 from asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
@@ -311,6 +312,10 @@ def asap_emcee_fit(args, verbose=True):
             # Burn-in
             mcmc_burnin_result = asap_emcee_burnin(
                 burnin_sampler, mcmc_ini_position, cfg, verbose=True)
+            
+            kde = gaussian_kde(np.transpose(mcmc_burnin_result), 
+                               bw_method='silverman')
+            mcmc_new_ini = np.transpose(kde.resample(cfg['mcmc_nwalkers']))
 
             # TODO: Convergence test
             # burnin_sampler.reset()
@@ -328,7 +333,7 @@ def asap_emcee_fit(args, verbose=True):
 
             # MCMC run
             mcmc_run_result = asap_emcee_run(
-                mcmc_sampler, mcmc_burnin_result, cfg, verbose=True)
+                mcmc_sampler, mcmc_new_ini, cfg, verbose=True)
     else:
         # TODO: has not adjusted the emcee moves yet
         emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves')

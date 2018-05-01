@@ -51,7 +51,7 @@ def sigma_logms_from_logmh(logm_halo, sigms_a, sigms_b,
 
 
 def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_vir', min_scatter=0.01):
+                     logmh_col='logmh_peak', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the default model with 7 free parameters:
@@ -112,7 +112,7 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_vir', min_scatter=0.01):
+                     logmh_col='logmh_peak', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 8 free parameters:
@@ -181,7 +181,7 @@ def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_vir', min_scatter=0.01):
+                     logmh_col='logmh_peak', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 10 free parameters:
@@ -261,7 +261,7 @@ def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac7(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_vir', min_scatter=0.01):
+                     logmh_col='logmh_peak', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 10 free parameters:

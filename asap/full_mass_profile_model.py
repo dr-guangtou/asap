@@ -344,7 +344,7 @@ def mass_prof_model_frac4(um_mock,
                           max_logms=12.2,
                           n_bins=10,
                           constant_bin=False,
-                          logmh_col='logmh_vir',
+                          logmh_col='logmh_host',
                           logms_col='logms_tot',
                           min_scatter=0.01,
                           min_nobj_per_bin=30):
@@ -390,7 +390,7 @@ def mass_prof_model_frac4(um_mock,
         logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     # Fraction of ex-situ component that goes into the inner aperture
-    frac_exs = frac_from_logmh(um_mock[logmh_col],
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'],
                                frac_exs_a, frac_exs_b)
 
     ms_ins = (10.0 ** logms_tot_mod_all) * (um_mock['sm'] /
@@ -418,7 +418,7 @@ def mass_prof_model_frac5(um_mock,
                           max_logms=12.2,
                           n_bins=10,
                           constant_bin=False,
-                          logmh_col='logmh_vir',
+                          logmh_col='logmh_host',
                           logms_col='logms_tot',
                           min_scatter=0.01,
                           min_nobj_per_bin=30):
@@ -466,9 +466,9 @@ def mass_prof_model_frac5(um_mock,
         logms_halo_mod_all, frac_tot_by_halo, log_mass=True)
 
     # Fraction of ex-situ component that goes into the inner aperture
-    frac_ins = frac_from_logmh(um_mock[logmh_col],
+    frac_ins = frac_from_logmh(um_mock['logmh_peak'],
                                frac_ins_a, frac_ins_b)
-    frac_exs = frac_from_logmh(um_mock[logmh_col],
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'],
                                frac_exs_a, frac_exs_b)
 
     ms_ins = (10.0 ** logms_tot_mod_all) * (um_mock['sm'] /
@@ -496,7 +496,7 @@ def mass_prof_model_frac6(um_mock,
                           max_logms=12.2,
                           n_bins=10,
                           constant_bin=False,
-                          logmh_col='logmh_vir',
+                          logmh_col='logmh_host',
                           logms_col='logms_tot',
                           min_scatter=0.01,
                           min_nobj_per_bin=30):
@@ -548,18 +548,18 @@ def mass_prof_model_frac6(um_mock,
 
     # We assume certain fraction of stellar mass of the central galaxy is within 
     # the outer aperture, and we assume that fraction depends on halo mass 
-    frac_tot = frac_from_logmh(um_mock[logmh_col], frac_tot_a, frac_tot_b)
+    frac_tot = frac_from_logmh(um_mock['logmh_peak'], frac_tot_a, frac_tot_b)
 
     # This is the stellar mass within outer aperture to be compared with observation
     logms_out_mod_all = logms_tot_mod_all + np.log10(frac_tot)
 
     # Fraction of in-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_ins = frac_from_logmh(um_mock[logmh_col], frac_ins_a, frac_ins_b)               
+    frac_ins = frac_from_logmh(um_mock['logmh_peak'], frac_ins_a, frac_ins_b)               
 
     # Fraction of ex-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_exs = frac_from_logmh(um_mock[logmh_col], frac_exs_a, frac_exs_b)
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'], frac_exs_a, frac_exs_b)
 
     # Stellar mass for each component
     logms_ins_inn = (logms_tot_mod_all +
@@ -589,7 +589,7 @@ def mass_prof_model_frac7(um_mock,
                           max_logms=12.2,
                           n_bins=10,
                           constant_bin=False,
-                          logmh_col='logmh_vir',
+                          logmh_col='logmh_host',
                           logms_col='logms_tot',
                           min_scatter=0.01,
                           min_nobj_per_bin=30):
@@ -640,14 +640,14 @@ def mass_prof_model_frac7(um_mock,
 
     # We assume certain fraction of stellar mass of the central galaxy is within 
     # the outer aperture, and we assume that fraction depends on halo mass 
-    frac_tot = frac_from_logmh(um_mock[logmh_col], frac_tot_a, frac_tot_b)
+    frac_tot = frac_from_logmh(um_mock['logmh_peak'], frac_tot_a, frac_tot_b)
 
     # This is the stellar mass within outer aperture to be compared with observation
     logms_out_mod_all = logms_tot_mod_all + np.log10(frac_tot)
 
     # Fraction of ex-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_exs = frac_from_logmh(um_mock[logmh_col], frac_exs_a, frac_exs_b)
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'], frac_exs_a, frac_exs_b)
 
     # Stellar mass for each component
     logms_ins_inn = (logms_tot_mod_all +

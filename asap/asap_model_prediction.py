@@ -34,7 +34,7 @@ def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             min_scatter=cfg['um_min_scatter'])
     elif cfg['model_type'] == 'frac5':
         # 8 free parameters
@@ -43,7 +43,7 @@ def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             min_scatter=cfg['um_min_scatter'])
     elif cfg['model_type'] == 'frac6':
         # 10 free parameters
@@ -53,7 +53,7 @@ def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             min_scatter=cfg['um_min_scatter'])
     elif cfg['model_type'] == 'frac7':
         # 9 free parameters
@@ -63,7 +63,7 @@ def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             min_scatter=cfg['um_min_scatter'])
     else:
         raise Exception("!! Wrong model: frac4")
@@ -102,7 +102,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             max_logms=cfg['obs_smf_tot_max'],
             n_bins=cfg['um_mtot_nbin'],
             constant_bin=constant_bin,
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin']
@@ -117,7 +117,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             max_logms=cfg['obs_smf_tot_max'],
             n_bins=cfg['um_mtot_nbin'],
             constant_bin=constant_bin,
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin']
@@ -147,7 +147,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             max_logms=cfg['obs_smf_tot_max'],
             n_bins=cfg['um_mtot_nbin'],
             constant_bin=constant_bin,
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin']
@@ -177,7 +177,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             max_logms=cfg['obs_smf_tot_max'],
             n_bins=cfg['um_mtot_nbin'],
             constant_bin=constant_bin,
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin']
@@ -192,7 +192,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             max_logms=cfg['obs_smf_tot_max'],
             n_bins=cfg['um_mtot_nbin'],
             constant_bin=constant_bin,
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin']
@@ -207,7 +207,7 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             max_logms=cfg['obs_smf_tot_max'],
             n_bins=cfg['um_mtot_nbin'],
             constant_bin=constant_bin,
-            logmh_col='logmh_peak',
+            logmh_col=cfg['um_halo_col'],
             logms_col=cfg['um_star_col'],
             min_scatter=cfg['um_min_scatter'],
             min_nobj_per_bin=cfg['um_min_nobj_per_bin']

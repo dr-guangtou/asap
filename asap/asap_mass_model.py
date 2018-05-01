@@ -51,7 +51,7 @@ def sigma_logms_from_logmh(logm_halo, sigms_a, sigms_b,
 
 
 def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_peak', min_scatter=0.01):
+                     logmh_col='logmh_host', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the default model with 7 free parameters:
@@ -92,7 +92,7 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
     sig_logms = sig_logms_tot[mask_use]
 
     # Fraction of ex-situ component that goes into the inner aperture
-    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'][mask_use],
                                frac_exs_a, frac_exs_b)
 
     # Stellar mass for each component
@@ -112,7 +112,7 @@ def mass_model_frac4(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_peak', min_scatter=0.01):
+                     logmh_col='logmh_host', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 8 free parameters:
@@ -156,12 +156,12 @@ def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
 
     # Fraction of in-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_ins = frac_from_logmh(um_mock[logmh_col][mask_use],
+    frac_ins = frac_from_logmh(um_mock['logmh_peak'][mask_use],
                                frac_ins_a, frac_ins_b)               
 
     # Fraction of ex-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'][mask_use],
                                frac_exs_a, frac_exs_b)
 
     # Stellar mass for each component
@@ -181,7 +181,7 @@ def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_peak', min_scatter=0.01):
+                     logmh_col='logmh_host', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 10 free parameters:
@@ -236,12 +236,12 @@ def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
 
     # Fraction of in-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_ins = frac_from_logmh(um_mock[logmh_col][mask_use],
+    frac_ins = frac_from_logmh(um_mock['logmh_peak'][mask_use],
                                frac_ins_a, frac_ins_b)               
 
     # Fraction of ex-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'][mask_use],
                                frac_exs_a, frac_exs_b)
 
     # Stellar mass for each component
@@ -261,7 +261,7 @@ def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac7(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_peak', min_scatter=0.01):
+                     logmh_col='logmh_host', min_scatter=0.01):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 10 free parameters:
@@ -302,7 +302,7 @@ def mass_model_frac7(um_mock, parameters, random=False, min_logms=11.0,
 
     # We assume certain fraction of stellar mass of the central galaxy is within 
     # the outer aperture, and we assume that fraction depends on halo mass 
-    frac_tot = frac_from_logmh(um_mock[logmh_col], frac_tot_a, frac_tot_b)
+    frac_tot = frac_from_logmh(um_mock['logmh_peak'], frac_tot_a, frac_tot_b)
 
     # This is the stellar mass within outer aperture to be compared with observation
     logms_out_mod_all = logms_tot_mod_all + np.log10(frac_tot)
@@ -315,7 +315,7 @@ def mass_model_frac7(um_mock, parameters, random=False, min_logms=11.0,
 
     # Fraction of ex-situ component that goes into the inner aperture
     # We assume that the fraction depends on halo mass in a log-log linear manner
-    frac_exs = frac_from_logmh(um_mock[logmh_col][mask_use],
+    frac_exs = frac_from_logmh(um_mock['logmh_peak'][mask_use],
                                frac_exs_a, frac_exs_b)
 
     # Stellar mass for each component

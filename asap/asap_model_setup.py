@@ -234,6 +234,9 @@ def setup_model(cfg, verbose=True):
     if 'mcmc_nwalkers' not in cfg.keys():
         cfg['mcmc_nwalkers'] = 128
 
+    if 'mcmc_nwalkers_burnin' not in cfg.keys():
+        cfg['mcmc_nwalkers_burnin'] = cfg['mcmc_nwalkers']
+
     if 'mcmc_smf_only' not in cfg.keys():
         cfg['mcmc_smf_only'] = False
 

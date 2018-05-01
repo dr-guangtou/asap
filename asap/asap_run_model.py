@@ -289,7 +289,7 @@ def asap_emcee_fit(args, verbose=True):
 
     # Initialize the model
     mcmc_ini_position = mcmc_initial_guess(
-        cfg['param_ini'], cfg['param_sig'], cfg['mcmc_nwalkers'],
+        cfg['param_ini'], cfg['param_sig'], cfg['mcmc_nwalkers_burnin'],
         cfg['mcmc_ndims'])
 
     if cfg['mcmc_nthreads'] > 1:
@@ -302,7 +302,7 @@ def asap_emcee_fit(args, verbose=True):
             burnin_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
 
             burnin_sampler = emcee.EnsembleSampler(
-                cfg['mcmc_nwalkers'],
+                cfg['mcmc_nwalkers_burnin'],
                 cfg['mcmc_ndims'],
                 asap_ln_prob_global,
                 moves=burnin_move,
@@ -342,7 +342,7 @@ def asap_emcee_fit(args, verbose=True):
         emcee_move = mcmc_setup_moves(cfg, 'mcmc_moves_burnin')
 
         mcmc_sampler = emcee.EnsembleSampler(
-            cfg['mcmc_nwalkers'],
+            cfg['mcmc_nwalkers_burnin'],
             cfg['mcmc_ndims'],
             asap_ln_prob_global,
             moves=emcee_move)

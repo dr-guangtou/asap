@@ -173,6 +173,41 @@ def setup_model(cfg, verbose=True):
             cfg['param_sig'] = [0.30, 0.50, 0.03, 0.10,
                                 0.20, 0.30, 0.20, 0.20,
                                 0.20, 0.30]
+
+    elif cfg['model_type'] == 'frac7':
+        # Number of parameters
+        cfg['mcmc_ndims'] = 9
+        cfg['mcmc_labels'] = [r'$a$',
+                              r'$b$',
+                              r'$c$',
+                              r'$d$',
+                              r'$f_{\mathrm{ins}}$',
+                              r'$A_{\mathrm{exs}}$',
+                              r'$B_{\mathrm{exs}}$',
+                              r'$A_{\mathrm{tot}}$',
+                              r'$B_{\mathrm{tot}}$']
+
+        # Initial values
+        if 'param_ini' not in cfg.keys():
+            cfg['param_ini'] = [0.60, 3.71, -0.01, 0.03,
+                                0.57, -0.20, 0.05,
+                                0.00, 1.00]
+        # Lower bounds
+        if 'param_low' not in cfg.keys():
+            cfg['param_low'] = [0.20, 0.00, -0.25, 0.00,
+                                0.20, -0.40, 0.00,
+                                -0.20, 0.50]
+        # Upper bounds
+        if 'param_upp' not in cfg.keys():
+            cfg['param_upp'] = [1.10, 8.00, 0.05, 0.20,
+                                1.00, 0.40, 0.50,
+                                0.10, 1.00]
+
+        # Step to randomize the initial guesses
+        if 'param_sig' not in cfg.keys():
+            cfg['param_sig'] = [0.30, 0.50, 0.03, 0.10,
+                                0.20, 0.20, 0.20,
+                                0.20, 0.30]
     else:
         raise Exception("# Wrong model! Has to be 'frac4/5/6")
 

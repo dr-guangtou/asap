@@ -11,10 +11,10 @@ from stellar_mass_function import get_smf_bootstrap, \
 from full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1, mass_prof_model_frac2, \
     mass_prof_model_frac3, mass_prof_model_frac4, \
-    mass_prof_model_frac5
+    mass_prof_model_frac5, mass_prof_model_frac6, mass_prof_model_frac7
 from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
 from asap_mass_model import mass_model_frac4, mass_model_frac5, \
-    mass_model_frac6
+    mass_model_frac6, mass_model_frac7
 from asap_delta_sigma import delta_sigma_from_precomputed_pairs
 from asap_utils import mtot_minn_weight, mass_gaussian_weight
 
@@ -50,6 +50,16 @@ def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):
         # In-situ fraction in inner aperture depends on halo mass
         # Fraction of total stellar mass in outer aperture depends on halo mass 
         return mass_model_frac6(
+            um_mock, parameters,
+            random=False,
+            min_logms=cfg['obs_min_mtot'],
+            logmh_col=cfg['um_halo_col'],
+            min_scatter=cfg['um_min_scatter'])
+    elif cfg['model_type'] == 'frac7':
+        # 9 free parameters
+        # In-situ fraction is fixed
+        # Fraction of total stellar mass in outer aperture depends on halo mass 
+        return mass_model_frac7(
             um_mock, parameters,
             random=False,
             min_logms=cfg['obs_min_mtot'],
@@ -159,6 +169,36 @@ def asap_predict_mass(parameters, cfg, obs_data, um_data,
             )
     elif cfg['model_type'] == 'frac5':
         return mass_prof_model_frac5(
+            um_data['um_mock'],
+            obs_data['obs_logms_tot'],
+            obs_data['obs_logms_inn'],
+            parameters,
+            min_logms=cfg['obs_smf_tot_min'],
+            max_logms=cfg['obs_smf_tot_max'],
+            n_bins=cfg['um_mtot_nbin'],
+            constant_bin=constant_bin,
+            logmh_col=cfg['um_halo_col'],
+            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'],
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
+    elif cfg['model_type'] == 'frac6':
+        return mass_prof_model_frac6(
+            um_data['um_mock'],
+            obs_data['obs_logms_tot'],
+            obs_data['obs_logms_inn'],
+            parameters,
+            min_logms=cfg['obs_smf_tot_min'],
+            max_logms=cfg['obs_smf_tot_max'],
+            n_bins=cfg['um_mtot_nbin'],
+            constant_bin=constant_bin,
+            logmh_col=cfg['um_halo_col'],
+            logms_col=cfg['um_star_col'],
+            min_scatter=cfg['um_min_scatter'],
+            min_nobj_per_bin=cfg['um_min_nobj_per_bin']
+            )
+    elif cfg['model_type'] == 'frac7':
+        return mass_prof_model_frac7(
             um_data['um_mock'],
             obs_data['obs_logms_tot'],
             obs_data['obs_logms_inn'],

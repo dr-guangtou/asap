@@ -234,7 +234,7 @@ def load_um_data(cfg):
                                          cfg['um_model'])))
 
     # Only select the useful columns
-    cols_use = ['upid', 'sm', 'icl', 'x', 'y', 'z',
+    cols_use = ['halo_id', 'upid', 'sm', 'icl', 'x', 'y', 'z',
                 'mtot_galaxy', 'mstar_mhalo', 'logms_gal',
                 'logms_icl', 'logms_tot', 'logms_halo',
                 'logmh_vir', 'logmh_peak', 'logmh_host']

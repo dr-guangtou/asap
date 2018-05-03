@@ -23,7 +23,8 @@ __all__ = ['asap_predict_mass', 'asap_predict_smf',
            'asap_single_dsigma', 'asap_um_dsigma',
            'asap_predict_dsigma', 'asap_predict_model',
            'asap_predict_model_prob', 'asap_predict_mass_prob',
-           'asap_predict_smf_prob', 'asap_single_dsigma_weight']
+           'asap_predict_smf_prob', 'asap_single_dsigma_weight',
+           'asap_predict_mhalo']
 
 
 def asap_predict_mass_prob(parameters, cfg, um_mock, return_all=False):

@@ -181,7 +181,8 @@ def mass_model_frac5(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_host', min_scatter=0.01):
+                     logmh_col='logmh_host', min_scatter=0.01,
+                     return_all=False):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 10 free parameters:
@@ -254,6 +255,9 @@ def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
 
     logms_inn_mod = np.log10(10.0 ** logms_ins_inn + 10.0 ** logms_exs_inn)
 
+    if return_all:
+        return logms_inn_mod, logms_out_mod, sig_logms, mask_use, logms_tot_mod_all[mask_use]
+
     if random:
         return logms_inn_mod, logms_out_mod, mask_use
 
@@ -261,7 +265,8 @@ def mass_model_frac6(um_mock, parameters, random=False, min_logms=11.0,
 
 
 def mass_model_frac7(um_mock, parameters, random=False, min_logms=11.0,
-                     logmh_col='logmh_host', min_scatter=0.01):
+                     logmh_col='logmh_host', min_scatter=0.01,
+                     return_all=False):
     """Mtot and Minn prediction using simple model.
 
     This is the model with 10 free parameters:
@@ -327,6 +332,9 @@ def mass_model_frac7(um_mock, parameters, random=False, min_logms=11.0,
                      np.log10(frac_exs))
 
     logms_inn_mod = np.log10(10.0 ** logms_ins_inn + 10.0 ** logms_exs_inn)
+
+    if return_all:
+        return logms_inn_mod, logms_out_mod, sig_logms, mask_use, logms_tot_mod_all[mask_use]
 
     if random:
         return logms_inn_mod, logms_out_mod, mask_use

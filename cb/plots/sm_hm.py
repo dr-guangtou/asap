@@ -43,6 +43,7 @@ def hm_at_fixed_sm(catalog, n_sats, fit=None, ax=None):
 def sm_at_fixed_hm(catalog, n_sats, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()
+    catalog = catalog[catalog["m"] > 1e13]
 
     y = np.log10(catalog["icl"] + catalog["sm"])
     x = np.log10(catalog["m"])
@@ -63,6 +64,36 @@ def sm_at_fixed_hm(catalog, n_sats, fit=None, ax=None):
     ax.set(
         xlabel=l.m_vir_x_axis,
         ylabel=l.m_star_x_axis(n_sats),
+    )
+
+    if fit is not None:
+        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
+    ax.legend(loc="lower right")
+
+    return ax
+
+def sm_cen_at_fixed_sm_halo(z, fit=None, ax=None):
+    if ax is None:
+        _, ax = plt.subplots()
+    y = np.log10(z["sm_cen"] + z["icl_cen"])
+    x = np.log10(z["sm_halo"] + z["icl_halo"])
+
+    # Find various stats on our data
+    hm_bin_edges = np.arange(np.min(x), np.max(x), 0.1)
+    hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
+    mean_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=hm_bin_edges)
+    std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)
+
+    # Plot data and colored error regions
+    ax.plot(hm_bin_midpoints, mean_sm, marker="o", label="Universe Machine", linewidth=1)
+    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.5, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.25, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
+    ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
+    ax.set(
+        xlabel=l.m_star_x_axis("halo"),
+        ylabel=l.m_star_x_axis("cen")
     )
 
     if fit is not None:

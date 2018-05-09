@@ -32,16 +32,29 @@ def get_sm_at_fixed_hm_fit(catalog, restrict_to_power_law = False):
 
     return do_fit(hm_bin_midpoints, mean_sm, f_shmr, restrict_to_power_law)
 
+def get_sm_cen_at_sm_halo_fit(cen_stellar_masses, halo_stellar_masses, restrict_to_power_law=False):
+    x = np.log10(halo_stellar_masses)
+    y = np.log10(cen_stellar_masses)
+
+    sm_halo_bin_edges, sm_halo_bin_midpoints = _get_fit_binning(x)
+    mean_sm_cen, _, _ = scipy.stats.binned_statistic(x, y, statistic="mean", bins=sm_halo_bin_edges)
+
+    # Drop nans (from empty bins)
+    sm_halo_bin_midpoints, mean_sm_cen = _drop_nans(sm_halo_bin_midpoints, mean_sm_cen)
+
+    return do_fit(sm_halo_bin_midpoints, mean_sm_cen, f_shmr, restrict_to_power_law)
+
 def do_fit(x, y, f, restrict_to_power_law):
     # Start with the default values from the paper
     m1, sm0, beta, delta, gamma = 10**12.73, 10**11.04, 0.47, 0.60, 1.96
 
     upper_bound = [m1*1e7, sm0*1e7, 10, 10, 20]
+    lower_bound = [m1/1e7, sm0/1e7, 0, 0, 0]
+
     # If we push delta and gamma to 0, this becomes a power law
     if restrict_to_power_law:
         delta, gamma = 0, 0
         upper_bound = [m1*1e7, sm0*1e7, 10, 1e-9, 1e-9]
-    print(upper_bound)
 
     # Now try fit
     popt, _ = scipy.optimize.curve_fit(
@@ -49,8 +62,9 @@ def do_fit(x, y, f, restrict_to_power_law):
             x,
             y,
             p0=[m1, sm0, beta, delta, gamma],
-            bounds=([m1/1e7, sm0/1e7, 0, 0, 0], upper_bound),
+            bounds=(lower_bound, upper_bound),
     )
+    print(popt)
     return popt
 
 

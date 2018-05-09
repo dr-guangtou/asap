@@ -8,20 +8,20 @@ def get_richness(centrals, satellites, min_mass):
                 satellites["upid"], central["id"], side="right")]
         sats = sats[::-1]
 
-        for j in range(len(sats)):
-            if sats[j]["icl"] + sats[j]["sm"] < min_mass:
-                richness[i] = j
-                break
-        else:
-            richness[i] = len(sats)
 
         if central["sm"] + central["icl"] > min_mass:
             richness[i] += 1
 
+        for j in range(len(sats)):
+            if sats[j]["icl"] + sats[j]["sm"] > min_mass:
+                richness[i] += 1
+            else:
+                break
+
     return richness
 
 def get_photoz_richness(centrals, satellites, min_mass):
-    z_err = 90 # https://arxiv.org/pdf/1702.01682.pdf
+    z_err = 52 # My paper
     box_size = 400
     # Slightly weird things "out of the box". We will mod to put them back in
     for i in "xy":
@@ -42,7 +42,6 @@ def get_photoz_richness(centrals, satellites, min_mass):
     photoz_richness = np.zeros(len(centrals), np.int16)
     for i, central in enumerate(centrals):
         r_err = central["rvir"]/1000 # r_vir in Mpc
-
 
         x_cut_gals = x_cut(central, big_enough_gals, box_size, r_err)
         xy_cut_gals = acceptable(central, x_cut_gals, box_size, r_err, "y")

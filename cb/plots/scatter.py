@@ -18,7 +18,6 @@ data_key = "data"#_cut"
 fit_key = "fit"#_cut"
 
 
-
 # See https://arxiv.org/pdf/0810.1885.pdf
 def resample_scatter(x, y, bins):
     bin_indexes = np.digitize(x, bins)
@@ -70,9 +69,10 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
     our_lines = []
     for cat in ["insitu", "cen", "halo"]:
         v = central_catalogs[cat]
+        indexes = v[data_key]["m"] > 1e13
         if cat == "insitu": cat = "in" #hack hack hack
-        halo_masses = np.log10(v[data_key]["m"])
-        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+        halo_masses = np.log10(v[data_key]["m"][indexes])
+        stellar_masses = np.log10(v[data_key]["icl"][indexes] + v[data_key]["sm"][indexes])
 
         predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v[fit_key])
         delta_stellar_masses = stellar_masses - predicted_stellar_masses
@@ -106,8 +106,9 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
     for k, v in central_catalogs.items():
         if k == "insitu":
             continue
-        halo_masses = np.log10(v[data_key]["m"])
-        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+        indexes = v[data_key]["m"] > 1e13
+        halo_masses = np.log10(v[data_key]["m"][indexes])
+        stellar_masses = np.log10(v[data_key]["icl"][indexes] + v[data_key]["sm"][indexes])
         predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *v[fit_key])
         delta_stellar_masses = stellar_masses - predicted_stellar_masses
 
@@ -128,13 +129,80 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
     return ax
 
 
-def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, is_photoz = False, ax = None):
+
+# this is number density by stellar mass
+def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     if ax is None:
         _, ax = plt.subplots()
+
     cum_counts = np.logspace(0.9, 4.3, num=10)
     cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
     number_densities_mid = cum_counts_mid / sim_volume
 
+    for k in data.cut_config.keys():
+        # Convert number densities to SM so that we can use that
+        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
+        print(sm_bins)
+
+        v = combined_catalogs[k]
+        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+        halo_masses = np.log10(v[data_key]["m"])
+        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v[fit_key])
+        delta_halo_masses = halo_masses - predicted_halo_masses
+
+        y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
+
+        ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
+    ax.set(
+            xscale="log",
+            ylim=0,
+            xlabel=l.cum_number_density,
+            ylabel=l.hm_scatter,
+    )
+    ax.invert_xaxis()
+    ax.legend(fontsize="xx-small", loc="upper right")
+
+
+    # Add the mass at the top
+    ax2 = ax.twiny()
+    # halo_masses = [13, 14, 14.5, 15] # remeber to change the xlabel if you change this
+    # ticks = np.array(fits.density_at_hmass(combined_catalogs, "cen", halo_masses)) / sim_volume
+    cen_masses = [11.5, 11.8, 12.1, 12.4]
+    ticks = np.array(fits.density_at_mass(combined_catalogs, "cen", cen_masses)) / sim_volume
+    ax2.set(
+            xlim=np.log10(ax.get_xlim()),
+            xticks=np.log10(ticks),
+            xticklabels=cen_masses,
+            xlabel=l.m_star_x_axis("cen"),
+    )
+
+    return ax
+
+def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax = None):
+    if ax is None:
+        _, ax = plt.subplots()
+    # Photoz richness
+    richnesses = richness["richness"]["photoz_richness"]
+    r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
+    r_bins_mid = _bins_mid(r_bins)
+    number_densities_mid = np.array(fits.density_at_photoz_richness(richness, "", r_bins_mid)) / sim_volume
+    y, yerr = resample_scatter(richnesses, np.log10(richness["richness"]["m"]), r_bins)
+    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_observed, capsize=1.5, linewidth=1)
+
+
+    # # True richness
+    # richnesses = richness["richness"]["richness"]
+    # r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
+    # r_bins_mid = _bins_mid(r_bins)
+    # number_densities_mid = np.array(fits.density_at_richness(richness, "", r_bins_mid)) / sim_volume
+    # y, yerr = resample_scatter(richnesses, np.log10(richness["richness"]["m"]), r_bins)
+    # ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_intrinsic, capsize=1.5, linewidth=1)
+    next(ax._get_lines.prop_cycler)
+
+
+    cum_counts = np.logspace(0.9, 4.3, num=10)
+    cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
+    number_densities_mid = cum_counts_mid / sim_volume
 
     for k in ["cen", 2, "halo"]:
         # Convert number densities to SM so that we can use that
@@ -150,108 +218,47 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, is_
 
         ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
-    if is_photoz:
-        richnesses = richness["richness"]["photoz_richness"]
-        r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28])
-        r_bins_mid = _bins_mid(r_bins) # We used to cast this to an int. I think that was wong
-        number_densities_mid = np.array(fits.density_at_photoz_richness(richness, "", r_bins_mid)) / sim_volume
-    else:
-        richnesses = richness["richness"]["richness"]
-        r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28])
-        r_bins_mid = _bins_mid(r_bins)
-        number_densities_mid = np.array(fits.density_at_richness(richness, "", r_bins_mid)) / sim_volume
-
-    y, yerr = resample_scatter(
-            richnesses,
-            np.log10(richness["richness"]["m"]),
-            r_bins
-    )
-    ax.errorbar(number_densities_mid, y, yerr=yerr, label="Richness", capsize=1.5, linewidth=1)
+    # Rozo2014
+    minx = fits.density_at_richness(richness, "", 20) / sim_volume
+    maxx = fits.density_at_richness(richness, "", 70) / sim_volume
+    line = ax.plot([minx, maxx], [0.11, 0.11], color=l.r2014, linestyle="dashed", label="Rozo2014")[0]
+    ax.fill_between([minx, maxx], 0.09, 0.13, alpha=0.2, facecolor=line.get_color())
 
     ax.set(
             xscale="log",
             ylim=0,
             xlabel=l.cum_number_density,
             ylabel=l.hm_scatter,
+            xlim=(3.5e-4, 1.2e-7),
     )
 
-    ax.invert_xaxis()
+    # ax.invert_xaxis()
     ax.legend(fontsize="xx-small", loc="upper right")
     return ax
 
-
-# this is number density by stellar mass
-def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
-    if ax is None:
-        _, ax = plt.subplots()
-
-    cum_counts = np.logspace(0.9, 4.3, num=10)
-    cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
-    sim_volume = 400**3 # (400 Mpc/h)
-    number_densities_mid = cum_counts_mid / sim_volume
-
-    for k in data.cut_config.keys():
-        # Convert number densities to SM so that we can use that
-        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
-
-        v = combined_catalogs[k]
-        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
-        halo_masses = np.log10(v[data_key]["m"])
-        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v[fit_key])
-        delta_halo_masses = halo_masses - predicted_halo_masses
-
-        y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
-
-        ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
-    ax.set(
-            xscale="log",
-            ylim=0,
-            xlabel=l.cum_number_density,
-            # xlabel=l.cum_count,
-            ylabel=l.hm_scatter,
-    )
-    ax.invert_xaxis()
-    ax.legend(fontsize="xx-small", loc="upper right")
-
-
-    # Add the mass at the top
-    ax2 = ax.twiny()
-    # halo_masses = [13, 13.5, 14, 14.5, 15]
-    # ticks = fits.density_at_hmass(combined_catalogs, "cen", m)
-    cen_masses = [11.5, 11.8, 12.1, 12.4]
-    ticks = np.array(fits.density_at_mass(combined_catalogs, "cen", cen_masses)) / sim_volume
-    ax2.set(
-            xlim=np.log10(ax.get_xlim()),
-            xticks=np.log10(ticks),
-            xticklabels=cen_masses,
-            xlabel=l.m_star_x_axis("cen"),
-            # xticklabels=halo_masses,
-            # xlabel=l.m_vir_x_axis,
-    )
-
-    return ax
 
 def in_hm_at_fixed_richness_number_density(richness, ax = None):
     if ax is None:
         _, ax = plt.subplots()
 
-    r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 39])
+    # Photoz richness
+    r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
     r_bins_mid = _bins_mid(r_bins)
-    print(r_bins_mid)
+    y, yerr = resample_scatter( richness["richness"]["photoz_richness"], np.log10(richness["richness"]["m"]), r_bins)
+    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_observed)
 
-    y, yerr = resample_scatter(
-            richness["richness"]["richness"],
-            np.log10(richness["richness"]["m"]),
-            r_bins,
-    )
+    # True richness
+    r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
+    r_bins_mid = _bins_mid(r_bins)
+    y, yerr = resample_scatter( richness["richness"]["richness"], np.log10(richness["richness"]["m"]), r_bins)
+    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_intrinsic)
 
-    ax.errorbar(r_bins_mid, y, yerr=yerr, label="UM")
+
     ax.set(
-            # xscale="log",
             ylim=0,
-            # xlabel=l.number_density_richness,
-            xlabel=l.richness,
+            xlabel=l.ngals,
             ylabel=l.hm_scatter,
+            xlim=(0, 50),
     )
 
 
@@ -271,8 +278,12 @@ def in_hm_at_fixed_richness_number_density(richness, ax = None):
     )
     # ax2.invert_xaxis()
 
-    ax.plot([10, 40], [0.2, 0.2], color="r", linestyle="dashed", label="Rozo2009")
-    ax.fill_between([10, 40], 0.1, 0.3, alpha=0.2, facecolor="r")
+    line = ax.plot([10, 70], [0.195, 0.195], color=l.r2009, linestyle="dashed", label="Rozo2009")[0]
+    ax.fill_between([10, 70], 0.12, 0.28, alpha=0.2, facecolor=line.get_color())
+
+    line = ax.plot([20, 70], [0.11, 0.11], color=l.r2014, linestyle="dashed", label="Rozo2014")[0]
+    ax.fill_between([20, 70], 0.09, 0.13, alpha=0.2, facecolor=line.get_color())
+
     ax.legend(fontsize="xx-small")#, loc="upper right")
     return ax
 

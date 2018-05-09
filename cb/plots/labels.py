@@ -17,5 +17,17 @@ number_density = r"$\Phi (\frac{dn}{dlogM_{\ast}} h^{3} Mpc^{-3} dex^{-1})$"
 cum_number_density = r"Cumulative number density [$h^{3} Mpc^{-3}$]"
 number_density_richness = r"$\Phi (\frac{dn}{d\Lambda} h^{3} Mpc^{-3} dex^{-1})$"
 richness = r"Richness"
+ngals = r"$N_{gals}$"
 cum_count = "Cumulative Count"
 log_cum_count = "log10(Cumulative Count)"
+
+scatter_observed = r"$\sigma_{N_{gals}, obs}$"
+scatter_intrinsic = r"$\sigma_{N_{gals}, ideal}$"
+
+### Gamma
+gamma = r"$\Gamma$"
+
+
+### Colors
+r2014 = "#00FF33"
+r2009 = "#990099"

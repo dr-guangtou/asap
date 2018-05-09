@@ -3,33 +3,57 @@ import scipy.stats
 import matplotlib.pyplot as plt
 import colossus.cosmology.cosmology
 import colossus.halo.mass_so
+from plots import labels as l
 
 
-def ks_test(catalog, key, f, cuts):
+def ks_test(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
-    catalog = catalog[key]["data"]
-    sm_sample = _get_sm_sample(catalog, cuts)
+    sm_cut_catalog = sm_cut_catalog[key]["data"]
+    hm_cut_catalog = hm_cut_catalog[key]["data"]
+
+    sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
+    sm_sample_vals = f(sm_sample)
+
+    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 10))
+    sample2 = np.sort(sample2, axis=1)
+    median = np.percentile(sample2, 50, axis=0)
+    pvalue = scipy.stats.ks_2samp(np.sort(median), np.sort(sm_sample_vals)).pvalue
+    # pvalue = scipy.stats.anderson_ksamp((median, sm_sample_vals)).significance_level
+
+    # print(np.min(median), np.min(sm_sample_vals))
+    # print(np.max(median), np.max(sm_sample_vals))
+    # print(len(median), len(sm_sample_vals))
+    # plt.hist(median, alpha=0.2)
+    # plt.hist(sm_sample_vals, alpha=0.2)
+    return pvalue
+
+def calc_median_shift(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
+    assert (len(cuts) == 2) and (cuts[1] > cuts[0])
+
+    sm_cut_catalog = sm_cut_catalog[key]["data"]
+    hm_cut_catalog = hm_cut_catalog[key]["data"]
+    sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
+
     sm_sample_vals = np.sort(f(sm_sample))
+    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100))
 
-    pvalues = []
-    for i in range(5):
-        sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, catalog, 100))
-        sample2 = np.sort(sample2, axis=1)
-        median = np.percentile(sample2, 50, axis=0)
-        pvalues.append(scipy.stats.ks_2samp(median, sm_sample_vals).pvalue)
-    return np.median(pvalues)
+    h_cut = np.percentile(sample2, 50)
+    s_cut = np.percentile(sm_sample_vals, 50)
+    print(s_cut, h_cut, s_cut - h_cut)
 
-def plot_cdf(catalog, key, f, cuts):
+
+def plot_cdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
     _, ax = plt.subplots()
 
-    catalog = catalog[key]["data"]
-    sm_sample = _get_sm_sample(catalog, cuts)
+    sm_cut_catalog = sm_cut_catalog[key]["data"]
+    hm_cut_catalog = hm_cut_catalog[key]["data"]
+    sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
 
     sm_sample_vals = np.sort(f(sm_sample))
     ax.plot(sm_sample_vals)
 
-    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, catalog, 100))
+    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100))
     sample2 = np.sort(sample2, axis=1)
 
     sd = 34 # distance of 1sd from the median
@@ -47,15 +71,17 @@ def plot_cdf(catalog, key, f, cuts):
     ) # this region ends up being tiny (within the line)
 
     print(scipy.stats.ks_2samp(median, sm_sample_vals))
+    print(np.percentile(sm_sample_vals, 50), np.percentile(sample2, 50))
     return ax
 
-def plot_pdf(catalog, key, f, cuts, bins=None, ax=None):
+def plot_pdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts, bins=None, ax=None):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
     if ax is None:
         _, ax = plt.subplots()
 
-    catalog = catalog[key]["data"]
-    sm_sample = _get_sm_sample(catalog, cuts)
+    sm_cut_catalog = sm_cut_catalog[key]["data"]
+    hm_cut_catalog = hm_cut_catalog[key]["data"]
+    sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
 
     # Plot
     _, bin_edges, _ = ax.hist(
@@ -63,12 +89,12 @@ def plot_pdf(catalog, key, f, cuts, bins=None, ax=None):
             bins=bins,
             alpha=0.3,
             density=True,
-            label=r"$M_{\ast}^{" + key + r"}$",
+            label=l.m_star_x_axis(key),
             color='b',
     )
 
     # Now get random dataset with matching HM dist and plot it.
-    sample2 = _get_sample_with_matching_halo_dist(sm_sample, catalog, 100)
+    sample2 = _get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100)
     bin_mid = 0.5*(bin_edges[1:] + bin_edges[:-1])
     s2_hists = np.array([np.histogram(f(i), bins=bin_edges, density=True)[0] for i in sample2])
     ax.errorbar(
@@ -77,7 +103,7 @@ def plot_pdf(catalog, key, f, cuts, bins=None, ax=None):
             yerr = np.std(s2_hists, axis=0),
             label="Random",
     )
-    ax.legend()
+    ax.legend(fontsize="xx-small")
     return ax
 
 def _get_sm_sample(catalog, cuts):
@@ -98,6 +124,7 @@ def _get_sm_sample(catalog, cuts):
 # Given a sample, randomly selects n_resamples with the same halo mass distribution
 def _get_sample_with_matching_halo_dist(sm_sample, catalog, n_resamples):
     # Put our original sample in 50 bins and count the number in each. We will match this
+    assert np.min(sm_sample["m"] > 10**11.5)
     count1, bin_edges = np.histogram(np.log10(sm_sample["m"]), bins=50)
 
     bins = np.digitize(catalog["m"], np.power(10, bin_edges), right=True)
@@ -109,6 +136,8 @@ def _get_sample_with_matching_halo_dist(sm_sample, catalog, n_resamples):
             if count1[i] == 0:
                 continue # If the original data had nothing in this bin, continue
             if len(valid_indexes) == 0:
+                print(count1[i])
+                print(i)
                 raise Exception("You need some options for this bin... Probably need to increase bin size")
             s.append(
                 np.random.choice(catalog[valid_indexes], size=count1[i])
@@ -137,21 +166,26 @@ def f_acc(sample):
         print("Some are less than 0")
 
     delta_mass = sample["Acc_Rate_1*Tdyn"] * t_dyn * 1e9 # t_dyn is in Gyr
-    if np.any(sample["m"] - delta_mass < 0):
-        print("Some here are less than 0")
+    x = np.count_nonzero(sample["m"] - delta_mass < 0)
+    if x > 0:
+        print(x, "here are less than 0")
 
-    return (
+    res = (
             np.log10(sample["m"]) - np.log10(sample["m"] - delta_mass)) / (
             np.log10(a_now) - np.log10(a_then))
+    res[np.isnan(res)] = 0
+    return res
 
 
 def f_age(sample, plot=False):
     ages = sample["Halfmass_Scale"]
-    return smooth_discrete_scales(ages, plot)
+    return ages
+    # return smooth_discrete_scales(ages, plot)
 
 def f_mm(sample, plot=False):
     ages = sample["scale_of_last_MM"]
-    return smooth_discrete_scales(ages, plot)
+    return ages
+    # return smooth_discrete_scales(ages, plot)
 
 def smooth_discrete_scales(ages, plot):
     subtractive = {}

@@ -15,6 +15,8 @@ import smhm_fit
 from plots import labels as l
 from stats import partial_corr
 
+l_delta_sm = r"$\Delta SM"
+
 def _pretty_coef(coef, labels, xlabels):
     fig, ax = plt.subplots()
     ax.set_frame_on(False)
@@ -71,21 +73,21 @@ def _get_data_for_correlation_matrix(catalog):
     insitu_fraction= cdata["sm"] / (cdata["icl"] + cdata["sm"])
 
     # These require some mutation so we copy first
-    richness = np.copy(catalog["richness"]["richness"]) # mutations!
-    richness[richness == 0] = np.exp(-0.5) # to fix log issues
-    richness = np.log10(richness)
+    # richness = np.copy(catalog["richness"]["richness"]) # mutations!
+    # richness[richness == 0] = np.exp(-0.5) # to fix log issues
+    # richness = np.log10(richness)
     acc_rate_m_peak = np.copy(cdata["Acc_Rate_Mpeak"])
     acc_rate_m_peak[acc_rate_m_peak == 0] = np.min(acc_rate_m_peak[np.nonzero(acc_rate_m_peak)])
     acc_rate_m_peak = np.log10(acc_rate_m_peak)
 
 
     data = {
-            "SM Bias": delta_stellar_masses,
+            l_delta_sm: delta_stellar_masses,
             # "Halo mass": halo_masses, Because I don't like it?
             "In-situ fraction": insitu_fraction,
             "Concentration": concentrations,
             # "Acc Rate at Mpeak": acc_rate_m_peak,
-            "Richness": richness,
+            # "Richness": richness,
             "Last MM Scale": mm,
             "Halfmass Scale": ages,
     }
@@ -218,7 +220,7 @@ def best_model(catalog):
 
     conc = data["Concentration"]
     ages = data["Halfmass Scale"]
-    sm_bias = data["SM Bias"]
+    sm_bias = data[l_delta_sm]
 
     def imshow(ax, binned_stats, **kwargs):
         return ax.imshow(

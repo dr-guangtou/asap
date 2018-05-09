@@ -4,6 +4,15 @@ import numpy as np
 
 hm0, hm1, n = 13, 15, 50
 
+gu_vir = [12.875, 13.125, 13.375, 13.625, 13.875, 14.125]#, 14.375, 14.625]
+gu_z0 = [0.2618758278, 0.2495733992, 0.2417748481, 0.2246581009, 0.2081620779, 0.2060492773]#, 0.1914180345, 0.1747871659]
+gu_z1 = [0.2826113807, 0.2778448604, 0.2669389574, 0.2596907156, 0.23765541, 0.2268705727]
+gu_z0_err = [0.005115550329, 0.006947900755, 0.009507300102, 0.0109303983, 0.01258421478, 0.01910521258]#, 0.02469421233, 0.02965986181]
+gu_z1_err = [0.008023125012, 0.0108067776, 0.01538881487, 0.02270312572, 0.03694499255, 0.05172502909]
+
+gu_avg = np.average((gu_z0, gu_z1), axis=0)
+gu_avg_err = np.average((gu_z0_err, gu_z1_err), axis=0)
+
 def plot_lit(ax):
     lit_lines = []
     for _, v in lit2.items():
@@ -36,6 +45,14 @@ lit2 = {
             "error": 0.031,
             "label": r"Leauthaud2012 $M_{\ast,cen}$",
             "color": "orange",
+            "ls": "-",
+        },
+        "gu2016": {
+            "x": gu_vir,
+            "y": gu_avg,
+            "error": gu_avg_err,
+            "label": r"Gu2016 $M_{\ast,cen}$",
+            "color": "orange",
             "ls": "--",
         },
         "tinker2013": { # I didn't understand this - just copied from gu
@@ -62,14 +79,6 @@ lit2 = {
             "color": "green",
             "ls": "--",
         },
-        # "gu2016": {
-        #     "x": np.linspace(12, 15, num=n),
-        #     "y": np.array([0.2] * n),
-        #     "error": 0,
-        #     "label": r"Gu2013 $M_{\ast,cen}$",
-        #     "color": "b",
-        #     "ls": "--",
-        # },
 }
 
 lit = {

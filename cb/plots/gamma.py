@@ -55,7 +55,7 @@ def two(masses, mag_gap, gammas):
     )
     fig.colorbar(img, ax=ax)
 
-def three(j_cen_mass, j_halo_mass, j_gammas):
+def gamma_in_mstarcen_mstarhalo_bins(j_cen_mass, j_halo_mass, j_gammas):
     fig, ax = plt.subplots()
     s = scipy.stats.binned_statistic_2d(np.log10(j_cen_mass), np.log10(j_halo_mass), j_gammas, statistic="mean", bins=(10, 10))
     s = invalidate_unoccupied_bins(s, 5)
@@ -64,5 +64,5 @@ def three(j_cen_mass, j_halo_mass, j_gammas):
         xlabel=l.m_star_x_axis("cen"),
         ylabel=l.m_star_x_axis("halo"),
     )
-    fig.colorbar(img, ax=ax)
+    fig.colorbar(img, ax=ax, label=l.gamma)
     return ax

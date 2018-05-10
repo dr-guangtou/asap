@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Script that takes universe machine hlist (halo list) and merges some info from it with
-the info we have from the catalog. We do this in two steps.
-1) Convert to a numpy array and throw away unneeded cols.
+Script that takes universe machine hlist (halo list) that is the output of
+reduce_um_catalog_data_size, and merges some info from it with the info we
+have from the halo catalog. We do this in two steps.
+1) Convert the halo catalog to a numpy array and throw away unneeded cols.
 2) Join onto the catalog data using the ID.
 
 We do not have data in the hlist for satellites with really long IDs (>=1000008162600955). In
@@ -17,6 +18,7 @@ import helpers
 
 reduced_hlist_dtype = [
     ("id", "int"), # id of halo
+    ("pid", "int"), # least massive parent (direct parent) halo ID
     ("mvir", "float64"), # Msun/h
     ("rvir", "float64"), # kpc/h
     ("rs", "float64"), # scale radius kpc/h
@@ -118,11 +120,11 @@ data_dir = "/home/christopher/Data/data/universe_machine/"
 def main():
     data_file = data_dir + "hlist_0.71240.list"
     # Reduce the number of colunms and save as a numpy array
-    inter_file = data_dir + "hlist_0.71240_reduced_cols.npy"
+    inter_file = data_dir + "hlist_0.71240_reduced_cols_wpid.npy"
     # Current DB
     final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final.npz"
     # final final DB
-    final_extended_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_extended.npz"
+    final_extended_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid.npz"
 
     # If we have already generated the inter_file, don't do it again...
     if not os.path.isfile(inter_file):

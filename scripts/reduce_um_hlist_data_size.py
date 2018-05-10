@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Script that takes universe machine hlist (halo list) that is the output of
+"""Script that takes universe machine hlist (halo list) that is the output of
 reduce_um_catalog_data_size, and merges some info from it with the info we
 have from the halo catalog. We do this in two steps.
 1) Convert the halo catalog to a numpy array and throw away unneeded cols.
@@ -14,105 +13,25 @@ TODO: Work out why we don't have the data for some of the halos.
 import numpy as np
 import pandas as pd
 import os
-import helpers
+import halotools.sim_manager
 
-reduced_hlist_dtype = [
-    ("id", "int"), # id of halo
-    ("pid", "int"), # least massive parent (direct parent) halo ID
-    ("mvir", "float64"), # Msun/h
-    ("rvir", "float64"), # kpc/h
-    ("rs", "float64"), # scale radius kpc/h
-    ("Halfmass_Scale", "float64"), # scale factor at which we could to 0.5 * mpeak
-    ("scale_of_last_MM", "float64"), # scale factor at last MM
-    ("M200b", "float64"),
-    ("M200c", "float64"),
-    ("Acc_Rate_Inst", "float64"),
-    ("Acc_Rate_100Myr", "float64"),
-    ("Acc_Rate_1*Tdyn", "float64"),
-    ("Acc_Rate_2*Tdyn", "float64"),
-    ("Acc_Rate_Mpeak", "float64"),
-    ("Vmax@Mpeak", "float64"), # vmax at the scale where mpeak was reached
-]
-
-full_hlist_dtype = [
-    ("scale", "float64"), # Scale factor at this snapshot
-    ("id", "int"), # id of halo
-    ("desc_scale", "float64"), # Scale factor of descendent halo (which snapshot this halo next appears in)
-    ("desc_id", "int"), # ID of descendant halo (or -1 at z=0)
-    ("num_prog", "int"), # Number of progenitors that went into this halo
-    ("pid", "int"), # least massive parent (direct parent) halo ID (or -1 if this is a central)
-    ("upid", "int"), # most massive parent (ultimate parent) halo ID (or -1 if this is a central)
-    ("desc_pid", "int"), # pid of the descendant (or -1)
-    ("phantom", "int"), # nonzero if halo interpolated across timesteps (cbx what does this mean and is this an int?)
-
-    # Physical properties of the halo
-    ("sam_mvir", "float64"), # Smoothed halo mass used in SAMs (cbx always greater than sum of halo masses of contributing progenitors (Msun/h))
-    ("mvir", "float64"), # Msun/h
-    ("rvir", "float64"), # kpc/h
-    ("rs", "float64"), # scale radius kpc/h
-    ("vrms", "float64"), # v rms km/s (physical)
-    ("mmp?", "bool"), # whether the halo is the most massive progenitor
-    ("scale_of_last_MM", "float64"), # scale factor at last MM
-    ("vmax", "float64"),
-    ("x", "float64"), ("y", "float64"), ("z", "float64"), # halo position (comoving Mpc/h)
-    ("vx", "float64"), ("vy", "float64"), ("vz", "float64"), # halo velocity (physical peculiar km/s)
-    ("Jx", "float64"), ("Jy", "float64"), ("Jz", "float64"), # halo angular momentum
-    ("Spin", "float64"), # cbx check if int
-
-    # Various things for merger trees
-    ("Breadth_first_ID", "int"),
-    ("Depth_first_ID", "int"),
-    ("Tree_root_ID", "int"),
-    ("Orig_halo_ID", "int"),
-    ("Snap_num", "int"),
-    ("Next_coprogenitor_depthfirst_ID", "int"),
-    ("Last_progenitor_depthfirst_ID", "int"),
-    ("Last_mainleaf_depthfirst_ID", "int"),
-
-    # More physical properties but more arcane
-    ("Rs_Klypin", "float64"), # scale radius from vmax and mvir (see Rockstar)
-    ("Mmvir_all", "float64"), # mass enclosed in specified overdensity (cbx what is the specified overdensity) including unbound particles
-    ("M200b", "float64"),
-    ("M200c", "float64"),
-    ("M500c", "float64"),
-    ("M2500c", "float64"),
-    ("Xoff", "float64"), # offset of density peak form average particle position
-    ("Voff", "float64"), # offset of density peak form average velocity position
-    ("Spin_Bullock", "float64"), # Bullock spin parameter
-
-    # Shape stuff
-    ("b_to_a", "float64"), # Ratio of second largest axis to largest (< 1) (Allgood et al. (2006).)
-    ("c_to_a", "float64"), # Ratio of third largest axis to largest (< 1) (Allgood et al. (2006).)
-    ("a[x]", "float64"), ("a[y]", "float64"), ("a[z]", "float64"), # (cbx ???)
-    ("b_to_a(500c)", "float64"),
-    ("c_to_a(500c)", "float64"),
-    ("a[x](500c)", "float64"), ("a[y](500c)", "float64"), ("a[z](500c)", "float64"), # (cbx ???)
-
-    ("T/|U|", "float64"), # ratio of kinetic to potential energy
-    ("M_pe_Behroozi", "float64"), # pseudo evolution corrected masses (experimental)
-    ("M_pe_Diemer", "float64"), # pseudo evolution corrected masses (experimental)
-    ("Macc", "float64"), # Mass at accretion
-    ("Mpeak", "float64"), # peak mass (cbx is this over the whole time? or up to this point)
-    ("Vacc", "float64"), # Velocity at accretion
-    ("Vpeak", "float64"), # peak vmax
-    ("Halfmass_Scale", "float64"), # scale factor at which we could to 0.5 * mpeak
-
-    # Acc rate
-    ("Acc_Rate_Inst", "float64"),
-    ("Acc_Rate_100Myr", "float64"),
-    ("Acc_Rate_1*Tdyn", "float64"),
-    ("Acc_Rate_2*Tdyn", "float64"),
-    ("Acc_Rate_Mpeak", "float64"),
-
-    ("Mpeak_Scale", "float64"), # scale factor at which we reached mpeak
-    ("Acc_Scale", "float64"), # scale factor at which we last accreted a sattelite
-    ("First_Acc_Scale", "float64"), # Scale at which current and former satellites first passed through a larger halo.
-    ("First_Acc_Mvir", "float64"), # mvir at first_acc_scale
-    ("First_Acc_Vmax", "float64"), # vmax at first_acc_scale
-    ("Vmax@Mpeak", "float64"), # vmax at the scale where mpeak was reached
-] # yapf: disable
-
-
+hlist_cols = {
+    "id": (1, "int32"), # id of halo
+    "pid": (5, "int32"), # least massive parent (direct parent) halo ID
+    "mvir": (10, "float64"), # Msun/h
+    "rvir": (11, "float64"), # kpc/h
+    "rs": (12, "float64"), # scale radius kpc/h
+    "Halfmass_Scale": (61, "float64"), # scale factor at which we could to 0.5 * mpeak
+    "scale_of_last_MM": (15, "float64"), # scale factor at last MM
+    "M200b": (37, "float64"),
+    "M200c": (38, "float64"),
+    "Acc_Rate_Inst": (62, "float64"),
+    "Acc_Rate_100Myr": (63, "float64"),
+    "Acc_Rate_1*Tdyn": (64, "float64"),
+    "Acc_Rate_2*Tdyn": (65, "float64"),
+    "Acc_Rate_Mpeak": (66, "float64"),
+    "Vmax@Mpeak": (72, "float64"), # vmax at the scale where mpeak was reached
+}
 
 data_dir = "/home/christopher/Data/data/universe_machine/"
 
@@ -128,7 +47,8 @@ def main():
 
     # If we have already generated the inter_file, don't do it again...
     if not os.path.isfile(inter_file):
-        reduced_catalog = helpers.reduce_cols(data_file, full_hlist_dtype, reduced_hlist_dtype)
+        hlist_reader = halotools.sim_manager.TabularAsciiReader(data_file, hlist_cols)
+        reduced_catalog = hlist_reader.read_ascii()
         np.save(inter_file, reduced_catalog)
         del reduced_catalog
     else:

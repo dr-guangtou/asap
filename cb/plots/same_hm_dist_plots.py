@@ -14,18 +14,18 @@ def ks_test(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
     sm_sample_vals = f(sm_sample)
 
+    # This is actually 10 samples...
     sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 10))
-    sample2 = np.sort(sample2, axis=1)
-    median = np.percentile(sample2, 50, axis=0)
-    pvalue = scipy.stats.ks_2samp(np.sort(median), np.sort(sm_sample_vals)).pvalue
-    # pvalue = scipy.stats.anderson_ksamp((median, sm_sample_vals)).significance_level
-
-    # print(np.min(median), np.min(sm_sample_vals))
-    # print(np.max(median), np.max(sm_sample_vals))
-    # print(len(median), len(sm_sample_vals))
-    # plt.hist(median, alpha=0.2)
-    # plt.hist(sm_sample_vals, alpha=0.2)
+    # pvalues = [scipy.stats.ks_2samp(
+    #     sample,
+    #     sm_sample_vals,
+    #     ).pvalue for sample in sample2
+    # ]
+    # print(pvalues, np.std(pvalues))
+    pvalue = scipy.stats.ks_2samp(np.concatenate(sample2), sm_sample_vals).pvalue
+    print(pvalue)
     return pvalue
+    # return np.percentile(pvalues, 50)
 
 def calc_median_shift(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
@@ -113,34 +113,36 @@ def _get_sm_sample(catalog, cuts):
         (catalog["sm"] + catalog["icl"] < 10**cuts[1])
     ]
     # For cen/halo the median/mean should be close (should maybe be closer?) but std is different.
-    print("SM sample size: {0}\tSM median halo mass: {1:.2e}\tSM std halo mass: {2:.2e}".format(
+    print("SM sample size: {0}\t".format(#SM median halo mass: {1:.2e}\tSM std halo mass: {2:.2e}".format(
         len(sm_sample),
-        np.median(sm_sample["m"]),
-        np.std(sm_sample["m"]),
+        # np.median(sm_sample["m"]),
+        # np.std(sm_sample["m"]),
     ))
     return sm_sample
 
 
 # Given a sample, randomly selects n_resamples with the same halo mass distribution
 def _get_sample_with_matching_halo_dist(sm_sample, catalog, n_resamples):
-    # Put our original sample in 50 bins and count the number in each. We will match this
     assert np.min(sm_sample["m"] > 10**11.5)
-    count1, bin_edges = np.histogram(np.log10(sm_sample["m"]), bins=50)
+    # Put our original sample in 50 bins and count the number in each. We will match this
+    bin_counts, bin_edges = np.histogram(np.log10(sm_sample["m"]), bins=50)
+    # Which bin each of our hm_sample fall into.
+    # 1 is the first bin (not 0)
+    which_bin = np.digitize(catalog["m"], np.power(10, bin_edges), right=True)
 
-    bins = np.digitize(catalog["m"], np.power(10, bin_edges), right=True)
     sample2 = []
     for _ in range(n_resamples):
         s = []
-        for i in range(len(count1)):
-            valid_indexes = np.where( bins == i+1 )[0]
-            if count1[i] == 0:
-                continue # If the original data had nothing in this bin, continue
+        for i in range(len(bin_counts)):
+            # if the original data had nothing in this bin, continue
+            if bin_counts[i] == 0:
+                continue
+            valid_indexes = np.where( which_bin == i+1 )[0]
             if len(valid_indexes) == 0:
-                print(count1[i])
-                print(i)
+                print(bin_counts[i], i)
                 raise Exception("You need some options for this bin... Probably need to increase bin size")
             s.append(
-                np.random.choice(catalog[valid_indexes], size=count1[i])
+                np.random.choice(catalog[valid_indexes], size=bin_counts[i])
             )
         sample2.append(np.concatenate(s))
     return np.array(sample2)

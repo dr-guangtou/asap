@@ -64,7 +64,8 @@ def main():
         del current
         # Load the the extensions we just created and join on id
         extension_df = pd.DataFrame(np.load(inter_file)).set_index("id")
-        result_df = pd.concat([current_df, extension_df], axis=1, join_axes=[current_df.index])
+        result_df = current_df.join(extension_df, how="left")
+        print(len(result_df), len(current_df))
         del current_df, extension_df
         # Save out result converting back to structured numpy array
         result = result_df.to_records()

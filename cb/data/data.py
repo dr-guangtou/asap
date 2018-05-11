@@ -7,7 +7,7 @@ import smhm_fit
 
 def load(f=None):
     datadir = os.getenv("dataDir") + "/universe_machine/"
-    catalog_file = f or "sfr_catalog_insitu_exsitu_0.712400_final_extended.npz"
+    catalog_file = f or "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid.npz"
 
     catalog = np.load(datadir + catalog_file)
     centrals = catalog["centrals"]

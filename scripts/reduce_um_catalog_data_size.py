@@ -87,7 +87,7 @@ def main():
         # All centrals greater than a given mass
         central_catalog = np.sort(
             reduced_catalog[(reduced_catalog["upid"] == -1)
-                            & (reduced_catalog["mp"] > 1e12)],
+                            & (reduced_catalog["mp"] > 10**11.5)],
             order="id")
         central_ids = frozenset(central_catalog["id"])
         # Remove all halos not associated with one of those centrals

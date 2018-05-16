@@ -15,7 +15,7 @@ import smhm_fit
 from plots import labels as l
 from stats import partial_corr
 
-l_delta_sm = r"$\Delta SM"
+l_delta_sm = r"$\Delta SM$"
 
 def _pretty_coef(coef, labels, xlabels):
     fig, ax = plt.subplots()
@@ -61,7 +61,8 @@ def _build_corr(matrix):
     return corr
 
 def _get_data_for_correlation_matrix(catalog):
-    cdata = catalog["data"]
+    cdata = catalog["data"][catalog["data"]["m"] > 1e13]
+
     stellar_masses = np.log10(cdata["icl"] + cdata["sm"])
     halo_masses = np.log10(cdata["m"])
     predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *catalog["fit"])
@@ -297,6 +298,27 @@ def best_model(catalog):
     ax[4].set_title("Residual")
     fig.colorbar(img, ax=ax[4])
 
+
+
+# Given a list of Xes, find the linear model that predicts Y
+def linear_fit(x, y, method):
+    assert len(y) == len(x), "Arrays need to be the same length. You might need to transpose X"
+    assert method in ["lasso", "least_squares"]
+
+
+    # assert type(y) is np.ndarray and type(x) is np.ndarray
+    # x = preprocessing.MinMaxScaler().fit_transform(x)
+    print(x.shape)
+
+    if method == "lasso":
+        clf = linear_model.LassoCV(cv=12, alphas=np.logspace(-1, -7))
+        clf.fit(x, y)
+    elif method == "least_squares":
+        clf = linear_model.LinearRegression(normalize=True)
+        clf.fit(x, y)
+    # _, ax = plt.subplots()
+    # ax.plot(np.log10(clf.alphas_), np.mean(clf.mse_path_, axis=1), label="All")
+    return clf.coef_, clf.intercept_
 
 
 #### Non correlation matrix stuff

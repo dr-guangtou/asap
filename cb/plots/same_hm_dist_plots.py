@@ -152,22 +152,34 @@ def f_concentration(sample):
     return sample["rvir"] / sample["rs"]
 
 # Normalised in the same way that benedict did it.
-def f_acc(sample):
+def f_acc(sample, n_dyn=None):
+
     cosmo = colossus.cosmology.cosmology.setCosmology('planck15')
 
     a_now = 0.712400
     z_now = (1 / a_now) - 1
     t_now = cosmo.age(z_now)
 
-    t_dyn = colossus.halo.mass_so.dynamicalTime(z_now, "vir", "crossing")
+    if n_dyn is None or n_dyn == 1:
+        t_ago = colossus.halo.mass_so.dynamicalTime(z_now, "vir", "crossing")
+        key = "Acc_Rate_1*Tdyn"
+    elif n_dyn == 2:
+        t_ago = 2*colossus.halo.mass_so.dynamicalTime(z_now, "vir", "crossing")
+        key = "Acc_Rate_2*Tdyn"
+    elif n_dyn == "100Myr":
+        t_ago = 0.1
+        key = "Acc_Rate_100Myr"
+    else:
+        raise Exception("bugger")
 
-    t_then = t_now - t_dyn
+
+    t_then = t_now - t_ago
     z_then = cosmo.age(t_then, inverse=True)
     a_then = 1/(1 + z_then)
     if np.any(a_then < 0):
         print("Some are less than 0")
 
-    delta_mass = sample["Acc_Rate_1*Tdyn"] * t_dyn * 1e9 # t_dyn is in Gyr
+    delta_mass = sample[key] * t_ago * 1e9 # t_dyn is in Gyr
     x = np.count_nonzero(sample["m"] - delta_mass < 0)
     if x > 0:
         print(x, "here are less than 0")
@@ -175,7 +187,6 @@ def f_acc(sample):
     res = (
             np.log10(sample["m"]) - np.log10(sample["m"] - delta_mass)) / (
             np.log10(a_now) - np.log10(a_then))
-    res[np.isnan(res)] = 0
     return res
 
 

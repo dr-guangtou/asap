@@ -96,11 +96,13 @@ def create_richness_data(centrals, satellites):
     res = np.zeros(
             len(centrals),
             dtype=[
+                ("id", np.int), # The halo mass
                 ("m", np.float64), # The halo mass
                 ("richness", np.int16), # The true richness of each halo (N_gal with M*cen > sth)
                 ("photoz_richness", np.int16), # Photoz richness!
             ],
     )
+    res["id"] = centrals["id"]
     res["m"] = centrals["m"]
     res["richness"] = get_richness(centrals, satellites, min_mass_for_richness)
     res["photoz_richness"] = get_photoz_richness(centrals, satellites, min_mass_for_richness)

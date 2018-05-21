@@ -84,6 +84,7 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
 
         std, stdstd = resample_scatter(halo_masses, delta_stellar_masses, bins)
+        print(std)
         our_lines.append(
             ax.errorbar(bin_midpoints, std, yerr=stdstd, label=l.m_star_legend(cat), capsize=1.5, linewidth=1)
         )

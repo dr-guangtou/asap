@@ -1,11 +1,13 @@
 import numpy as np
 
 def rollup(sats, central_ids):
-    rolled_sats = []
+    all_rolled_sats, all_num_sats = [], []
     for central_id in central_ids:
-        rolled_sats.append(_rollup_one(sats[sats["upid"] == central_id]))
+        this_sats = sats[sats["upid"] == central_id]
+        all_rolled_sats.append(_rollup_one(this_sats))
+        all_num_sats.append(len(this_sats))
 
-    return np.concatenate(rolled_sats)
+    return np.concatenate(all_rolled_sats), np.array(all_num_sats)
 
 def _rollup_one(sats):
     is_top_level_subhalo = (sats["pid"] == sats["upid"]) | (np.isnan(sats["pid"]))

@@ -15,51 +15,24 @@ We will not re-run steps if the intermediate files already exist
 import numpy as np
 import numpy.lib.recfunctions as np_rfn
 import os
-import helpers
+import halotools.sim_manager
 
-full_catalog_dtype = [
+reduced_catalog_cols = {
         # Halo stuff
-        ("id", "int"), # Unique halo ID
-        ("descid", "int"), # ID of descendant halo (or -1 at z=0)
-        ("upid", "int"), # Parent halo ID (or -1 if this is a central)
-        ("flags", "int"), # Ignore
-        ("updist", "float64"), # Ignore
-        ("x", "float64"), ("y", "float64"), ("z", "float64"), # halo position (comoving Mpc/h)
-        ("vx", "float64"), ("vy", "float64"), ("vz", "float64"), # halo velocity (physical peculiar km/s)
-        ("m", "float64"), # Halo mass (Bryan & Norman 1998 virial mass, Msun)
-        ("v", "float64"), # Halo vmax (physical km/s)
-        ("mp", "float64"), # Halo peak historical mass (BN98 vir, Msun)
-        ("vmp", "float64"), # VMP: Halo vmax at the time when peak mass was reached
-        ("r", "float64"), # Halo radius (BN98 vir, comoving kpc/h)
-        ("rank1", "float64"), # halo rank in Delta_vmax (see UniverseMachine paper)
-        ("rank2", "float64"), # Ignore
-        ("ra", "float64"), # Ignore
-        ("ra_rank", "float64"), # Ignore
+        "id": (0, "int"), # Unique halo ID
+        "upid": (2, "int"), # Parent halo ID (or -1 if this is a central)
+        "x": (5, "float64"),
+        "y": (6, "float64"),
+        "z": (7, "float64"), # halo position (comoving Mpc/h)
+        "m": (11, "float64"), # Halo mass (Bryan & Norman 1998 virial mass, Msun)
+        "mp": (13, "float64"), # Halo peak historical mass (BN98 vir, Msun)
 
         # Stellar stuff
-        ("sm", "float64"), # True stellar mass (Msun) (This is mass in stars)
-        ("icl", "float64"), # True intracluster stellar mass (Msun) (This is mass in gas/dust)
-        ("sfr", "float64"), # True star formation rate (Msun/yr)
-        ("obs_sm", "float64"), # observed stellar mass, including random & systematic errors (Msun)
-        ("obs_sfr", "float64"), # observed SFR, including random & systematic errors (Msun/yr)
-        ("ssfr", "float64"), # observed SSFR
-        ("sm_hm", "float64"), # SMHM ratio
-        ("obs_uv", "float64"), # Observed UV Magnitude (M_1500 AB)
-] # yapf: disable
-
-reduced_catalog_dtype = [
-        # Halo stuff
-        ("id", "int"), # Unique halo ID
-        ("upid", "int"), # Parent halo ID (or -1 if this is a central)
-        ("x", "float64"), ("y", "float64"), ("z", "float64"), # halo position (comoving Mpc/h)
-        ("m", "float64"), # Halo mass (Bryan & Norman 1998 virial mass, Msun)
-        ("mp", "float64"), # Halo peak historical mass (BN98 vir, Msun)
-
-        # Stellar stuff
-        ("sm", "float64"), # True stellar mass (Msun) (This is mass in stars)
-        ("icl", "float64"), # True intracluster stellar mass (Msun) (This is mass in gas/dust)
-        ("sfr", "float64"), # True star formation rate (Msun/yr)
-] # yapf: disable
+        "sm": (20, "float64"), # True stellar mass (Msun) (This is mass in stars)
+        "icl": (21, "float64"), # True intracluster stellar mass (Msun) (This is mass in gas/dust)
+        "sfr": (22, "float64"), # True star formation rate (Msun/yr)
+        "ssfr": (25, "float64"), # True star formation rate (Msun/yr)
+} # yapf: disable
 
 data_dir = "/home/christopher/Data/data/universe_machine/"
 
@@ -70,13 +43,14 @@ def main():
     # The final data contains 385125 centrals (with a cut at 12) and 10809469 satellites (with no cut)
     data_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400.txt"
     # Reduce the number of colunms and save as a numpy array
-    inter_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_reduced_cols.npy"
+    inter_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_reduced_cols_wssfr.npy"
     # Remove small parent halos and satellites associated with these small things
-    final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final.npz"
+    final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_wssfr.npz"
 
     # If we have already generated the inter_file, don't do it again...
     if not os.path.isfile(inter_file):
-        reduced_catalog = helpers.reduce_cols(data_file, full_catalog_dtype, reduced_catalog_dtype)
+        hlist_reader = halotools.sim_manager.TabularAsciiReader(data_file, reduced_catalog_cols)
+        reduced_catalog = hlist_reader.read_ascii()
         np.save(inter_file, reduced_catalog)
         del reduced_catalog
     else:

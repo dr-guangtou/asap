@@ -7,7 +7,7 @@ import smhm_fit
 
 def load(f=None):
     datadir = os.getenv("dataDir") + "/universe_machine/"
-    catalog_file = f or "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid.npz"
+    catalog_file = f or "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid_wssfr.npz"
 
     catalog = np.load(datadir + catalog_file)
     centrals = catalog["centrals"]
@@ -22,10 +22,11 @@ cut_config = {
         1: {"n_sats": 1, "mass_limit": 11.3},
         2: {"n_sats": 2, "mass_limit": 11.4},
         5: {"n_sats": 5, "mass_limit": 11.4},
-        "halo": {"n_sats": 0.999999999, "mass_limit": 11.4},
+        "tot": {"n_sats": 0.999999999, "mass_limit": 11.4},
 }
 
 min_mass_for_richness = 0.2*(10**11.34) # 0.2 * M_star
+max_ssfr = 1e-11
 
 def cuts_with_sats(centrals, satellites):
     sm_res = {}
@@ -55,7 +56,7 @@ def cuts_with_sats(centrals, satellites):
             hm_centrals_with_n_sats = centrals_with_n_sats[centrals_with_n_sats["m"] > 10**11.5]
 
             hm_res[k]["data"+x[1]] = hm_centrals_with_n_sats
-            hm_res[k]["fit"+x[1]] = smhm_fit.get_sm_at_fixed_hm_fit(hm_centrals_with_n_sats, restrict_to_power_law = k in set(["halo"]))
+            hm_res[k]["fit"+x[1]] = smhm_fit.get_sm_at_fixed_hm_fit(hm_centrals_with_n_sats, restrict_to_power_law = k in set(["tot"]))
 
     add_sm_insitu(sm_res, centrals)
     add_hm_insitu(hm_res, centrals)
@@ -70,7 +71,7 @@ def add_sm_insitu(res, centrals):
     insitu_only = np.copy(centrals)
     insitu_only["icl"] = 0
     insitu_only = insitu_only[insitu_only["sm"] > 10**11.1]
-    res["insitu"] = {
+    res["in"] = {
             "data": insitu_only,
             "fit": smhm_fit.get_hm_at_fixed_sm_fit(insitu_only),
             "data_cut": insitu_only,
@@ -85,7 +86,7 @@ def add_hm_insitu(res, centrals):
     # Drop one terrible data point
     insitu_only = insitu_only[np.where(insitu_only["sm"] > 1e7)]
 
-    res["insitu"] = {
+    res["in"] = {
             "data": insitu_only,
             "fit": smhm_fit.get_sm_at_fixed_hm_fit(insitu_only),
             "data_cut": insitu_only,
@@ -104,6 +105,6 @@ def create_richness_data(centrals, satellites):
     )
     res["id"] = centrals["id"]
     res["m"] = centrals["m"]
-    res["richness"] = get_richness(centrals, satellites, min_mass_for_richness)
-    res["photoz_richness"] = get_photoz_richness(centrals, satellites, min_mass_for_richness)
+    res["richness"] = get_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
+    res["photoz_richness"] = get_photoz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
     return res

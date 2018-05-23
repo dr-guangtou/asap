@@ -14,18 +14,14 @@ def ks_test(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
     sm_sample_vals = f(sm_sample)
 
-    # This is actually 10 samples...
-    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 10))
-    # pvalues = [scipy.stats.ks_2samp(
-    #     sample,
-    #     sm_sample_vals,
-    #     ).pvalue for sample in sample2
-    # ]
-    # print(pvalues, np.std(pvalues))
-    pvalue = scipy.stats.ks_2samp(np.concatenate(sample2), sm_sample_vals).pvalue
-    print(pvalue)
-    return pvalue
-    # return np.percentile(pvalues, 50)
+    # We need to flatten this (can't just reuse) because of our sampling method.
+    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 40).flatten())
+    pvalues = np.array([scipy.stats.ks_2samp(np.random.choice(sample2, size=len(sm_sample_vals)), sm_sample_vals).pvalue for i in range(40)])
+
+    # pvalue_ks = scipy.stats.ks_2samp(sample2, sm_sample_vals).pvalue
+    # This explodes some times
+    # _, _, significance_ad = scipy.stats.anderson_ksamp((sample2, sm_sample_vals))
+    return np.mean(pvalues), np.std(pvalues)
 
 def calc_median_shift(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
@@ -35,10 +31,16 @@ def calc_median_shift(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
 
     sm_sample_vals = np.sort(f(sm_sample))
-    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100))
+    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100).flatten())
+
+    # Just throw away nans - there should be a similar number in each sample that it
+    # won't make a huge difference
+    sample2 = sample2[np.isfinite(sample2)]
+    sm_sample_vals = sm_sample_vals[np.isfinite(sm_sample_vals)]
 
     h_cut = np.percentile(sample2, 50)
     s_cut = np.percentile(sm_sample_vals, 50)
+    print("Stellar cut", "Halo cut", "S - H")
     print(s_cut, h_cut, s_cut - h_cut)
 
 
@@ -113,25 +115,22 @@ def _get_sm_sample(catalog, cuts):
         (catalog["sm"] + catalog["icl"] < 10**cuts[1])
     ]
     # For cen/halo the median/mean should be close (should maybe be closer?) but std is different.
-    print("SM sample size: {0}\t".format(#SM median halo mass: {1:.2e}\tSM std halo mass: {2:.2e}".format(
-        len(sm_sample),
-        # np.median(sm_sample["m"]),
-        # np.std(sm_sample["m"]),
-    ))
+    bad = sm_sample["m"] < 10**11.5
+    assert np.count_nonzero(bad) / len(sm_sample) < 0.01
+    sm_sample = sm_sample[np.logical_not(bad)]
+    print("SM sample size: {0} ({1} bad)".format(len(sm_sample), np.count_nonzero(bad)))
     return sm_sample
 
 
 # Given a sample, randomly selects n_resamples with the same halo mass distribution
 def _get_sample_with_matching_halo_dist(sm_sample, catalog, n_resamples):
-    assert np.min(sm_sample["m"] > 10**11.5)
-    # Put our original sample in 50 bins and count the number in each. We will match this
-    bin_counts, bin_edges = np.histogram(np.log10(sm_sample["m"]), bins=50)
-    # Which bin each of our hm_sample fall into.
-    # 1 is the first bin (not 0)
-    which_bin = np.digitize(catalog["m"], np.power(10, bin_edges), right=True)
-
     sample2 = []
     for _ in range(n_resamples):
+        # Put our original sample in x bins and count the number in each. We will match this
+        bin_counts, bin_edges = np.histogram(np.log10(sm_sample["m"]), bins=np.random.randint(40, 60))
+        # Which bin each of our hm_sample fall into.
+        # 1 is the first bin (not 0)
+        which_bin = np.digitize(catalog["m"], np.power(10, bin_edges), right=True)
         s = []
         for i in range(len(bin_counts)):
             # if the original data had nothing in this bin, continue
@@ -153,7 +152,6 @@ def f_concentration(sample):
 
 # Normalised in the same way that benedict did it.
 def f_acc(sample, n_dyn=None):
-
     cosmo = colossus.cosmology.cosmology.setCosmology('planck15')
 
     a_now = 0.712400

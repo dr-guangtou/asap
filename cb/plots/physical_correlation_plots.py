@@ -341,10 +341,12 @@ def sm_at_fixed_hm_mm_split(catalog):
     ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, mm_scale, mm_scale_bins, ["Old halos", "Young halos"])
     return ax
 
-def sm_at_fixed_hm_age_split(catalog):
-    _, ax = plt.subplots()
+def sm_at_fixed_hm_age_split(catalog, key, ax=None):
+    if ax is None:
+        _, ax = plt.subplots()
 
-    cdata = catalog["data"]
+    cdata = catalog[key]["data"]
+    cdata = cdata[cdata["m"] > 1e13]
     stellar_masses = np.log10(cdata["icl"] + cdata["sm"])
     halo_masses = np.log10(cdata["m"])
     hm_scale = cdata["Halfmass_Scale"]
@@ -356,13 +358,15 @@ def sm_at_fixed_hm_age_split(catalog):
             np.max(hm_scale),
     ]
     print(hm_scale_bins)
-    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, hm_scale, hm_scale_bins, ["Old halos", "Young halos"])
+    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, hm_scale, hm_scale_bins, ["Oldest 20%", "Youngest 20%"], key)
     return ax
 
-def sm_at_fixed_hm_conc_split(catalog):
-    _, ax = plt.subplots()
+def sm_at_fixed_hm_conc_split(catalog, key, ax=None):
+    if ax is None:
+        _, ax = plt.subplots()
 
-    cdata = catalog["data"]
+    cdata = catalog[key]["data"]
+    cdata = cdata[cdata["m"] > 1e13]
     stellar_masses = np.log10(cdata["icl"] + cdata["sm"])
     halo_masses = np.log10(cdata["m"])
     concentrations = cdata["rvir"] / cdata["rs"]
@@ -374,10 +378,10 @@ def sm_at_fixed_hm_conc_split(catalog):
             np.ceil(np.max(concentrations)),
     ]
     print(concentration_bins)
-    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, concentrations, concentration_bins, ["Low concentration", "High concentration"])
+    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, concentrations, concentration_bins, ["Low concentration", "High concentration"], key)
     return ax
 
-def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bins, legend):
+def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bins, legend, star_key):
     hm_bin_edges = np.arange(np.min(halo_masses), np.max(halo_masses), 0.1)
     hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
 
@@ -393,7 +397,7 @@ def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bi
     ax.fill_between(hm_bin_midpoints[-1], mean_sm[-1]-std_sm[-1], mean_sm[-1]+std_sm[-1], alpha=0.5, facecolor="tab:orange")
     ax.set(
         xlabel=l.m_vir_x_axis,
-        ylabel=l.m_star_x_axis("cen"),
+        ylabel=l.m_star_x_axis(star_key),
     )
     ax.legend()
     return ax

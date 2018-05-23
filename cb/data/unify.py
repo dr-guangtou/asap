@@ -20,3 +20,13 @@ def unify(data, key1, key2, append=None):
             d1[col] = df_to_append[col]
 
     return d1
+
+# The above relys on the IDs being the same (e.g. data_halo_cut). This doesn't
+def unify_different(data, key1, key2):
+    d1 = pd.DataFrame(data[key1]["data"], index=data[key1]["data"]["id"])
+    d2 = pd.DataFrame(data[key2]["data"], index=data[key2]["data"]["id"])
+    print(len(d1), len(d2))
+
+    d1 = d1.join(d2, how="inner", lsuffix="_"+key1, rsuffix="_"+key2)
+    print(len(d1))
+    return d1

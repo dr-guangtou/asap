@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_richness(centrals, satellites, min_mass):
+def get_richness(centrals, satellites, min_mass, max_ssfr):
     richness = np.zeros(len(centrals), int)
     for i, central in enumerate(centrals):
         sats = satellites[np.searchsorted(
@@ -9,18 +9,17 @@ def get_richness(centrals, satellites, min_mass):
         sats = sats[::-1]
 
 
-        if central["sm"] + central["icl"] > min_mass:
+        if (central["sm"] + central["icl"] > min_mass) & (central["ssfr"] < max_ssfr):
             richness[i] += 1
 
-        for j in range(len(sats)):
-            if sats[j]["icl"] + sats[j]["sm"] > min_mass:
-                richness[i] += 1
-            else:
-                break
+        richness[i] += np.count_nonzero(
+                (sats["ssfr"] < max_ssfr) &
+                (sats["sm"] + sats["icl"] > min_mass)
+        )
 
     return richness
 
-def get_photoz_richness(centrals, satellites, min_mass):
+def get_photoz_richness(centrals, satellites, min_mass, max_ssfr):
     z_err = 52 # My paper
     box_size = 400
     # Slightly weird things "out of the box". We will mod to put them back in
@@ -28,8 +27,14 @@ def get_photoz_richness(centrals, satellites, min_mass):
         assert np.max(centrals[i]) < box_size * 1.1 and np.min(centrals[i]) > box_size * -0.1
     assert np.max(centrals["z"]) < box_size and np.min(centrals["z"]) > 0
 
-    big_enough_centrals = np.copy(centrals[centrals["sm"] + centrals["icl"] > min_mass])
-    big_enough_sats = np.copy(satellites[satellites["sm"] + satellites["icl"] > min_mass])
+    big_enough_centrals = np.copy(centrals[
+        (centrals["sm"] + centrals["icl"] > min_mass) &
+        (centrals["ssfr"] < max_ssfr)
+    ])
+    big_enough_sats = np.copy(satellites[
+        (satellites["sm"] + satellites["icl"] > min_mass) &
+        (satellites["ssfr"] < max_ssfr)
+    ])
     big_enough_gals = np.concatenate((big_enough_centrals, big_enough_sats))
 
     big_enough_gals["x"] %= box_size

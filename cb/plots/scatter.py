@@ -13,6 +13,7 @@ import data
 from plots.lit_scatter import plot_lit
 from plots import labels as l
 
+from importlib import reload
 sim_volume = 400**3 # (400 Mpc/h)
 data_key = "data"#_cut"
 fit_key = "fit"#_cut"
@@ -67,10 +68,9 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
         # fig.set_size_inches(18.5, 10.5)
 
     our_lines = []
-    for cat in ["insitu", "cen", "halo"]:
+    for cat in ["in", "cen", "tot"]:
         v = central_catalogs[cat]
         indexes = v[data_key]["m"] > 1e13
-        if cat == "insitu": cat = "in" #hack hack hack
         halo_masses = np.log10(v[data_key]["m"][indexes])
         stellar_masses = np.log10(v[data_key]["icl"][indexes] + v[data_key]["sm"][indexes])
 
@@ -90,7 +90,7 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
         )
     ax.set(
         xlabel=l.m_vir_x_axis,
-        ylabel=l.sm_scatter_simple,
+        ylabel=l.sm_scatter("x"),
         xlim=ax.get_xlim(), # don't let the lit values move this around
     )
     ax.add_artist(ax.legend(handles=our_lines, loc="upper right", fontsize="xx-small"))
@@ -105,7 +105,7 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
         _, ax = plt.subplots()
 
     for k, v in central_catalogs.items():
-        if k == "insitu":
+        if k == "in":
             continue
         indexes = v[data_key]["m"] > 1e13
         halo_masses = np.log10(v[data_key]["m"][indexes])
@@ -143,7 +143,6 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     for k in data.cut_config.keys():
         # Convert number densities to SM so that we can use that
         sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
-        print(sm_bins)
 
         v = combined_catalogs[k]
         stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
@@ -205,7 +204,7 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax 
     cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
     number_densities_mid = cum_counts_mid / sim_volume
 
-    for k in ["cen", 2, "halo"]:
+    for k in ["cen", 2, "tot"]:
         # Convert number densities to SM so that we can use that
         sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
 

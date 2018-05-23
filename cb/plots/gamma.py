@@ -62,7 +62,7 @@ def gamma_in_mstarcen_mstarhalo_bins(j_cen_mass, j_halo_mass, j_gammas):
     img = _imshow(ax, s, cmap="OrRd")
     ax.set(
         xlabel=l.m_star_x_axis("cen"),
-        ylabel=l.m_star_x_axis("halo"),
+        ylabel=l.m_star_x_axis("tot"),
     )
     fig.colorbar(img, ax=ax, label=l.gamma)
     return ax

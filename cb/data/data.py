@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from data import cluster_sum
-from halo_info import get_richness, get_mag_gap, get_photoz_richness
+from halo_info import get_richness, get_mag_gap, get_photoz_richness, get_specz_richness
 import smhm_fit
 
 def load(f=None):
@@ -107,4 +107,5 @@ def create_richness_data(centrals, satellites):
     res["m"] = centrals["m"]
     res["richness"] = get_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
     res["photoz_richness"] = get_photoz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
+    # res["specz_richness"] = get_specz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
     return res

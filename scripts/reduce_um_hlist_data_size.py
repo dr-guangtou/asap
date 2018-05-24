@@ -41,9 +41,9 @@ def main():
     # Reduce the number of colunms and save as a numpy array
     inter_file = data_dir + "hlist_0.71240_reduced_cols_wpid.npy"
     # Current DB
-    final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_wssfr.npz"
+    final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_wssfr_wv.npz"
     # final final DB
-    final_extended_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid_wssfr.npz"
+    final_extended_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid_wssfr_wv.npz"
 
     # If we have already generated the inter_file, don't do it again...
     if not os.path.isfile(inter_file):

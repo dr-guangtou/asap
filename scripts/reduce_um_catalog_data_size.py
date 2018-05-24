@@ -24,6 +24,9 @@ reduced_catalog_cols = {
         "x": (5, "float64"),
         "y": (6, "float64"),
         "z": (7, "float64"), # halo position (comoving Mpc/h)
+        "vx": (8, "float64"),
+        "vy": (9, "float64"),
+        "vz": (10, "float64"), # halo velocity (km/s)
         "m": (11, "float64"), # Halo mass (Bryan & Norman 1998 virial mass, Msun)
         "mp": (13, "float64"), # Halo peak historical mass (BN98 vir, Msun)
 
@@ -43,9 +46,9 @@ def main():
     # The final data contains 385125 centrals (with a cut at 12) and 10809469 satellites (with no cut)
     data_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400.txt"
     # Reduce the number of colunms and save as a numpy array
-    inter_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_reduced_cols_wssfr.npy"
+    inter_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_reduced_cols_wssfr_wv.npy"
     # Remove small parent halos and satellites associated with these small things
-    final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_wssfr.npz"
+    final_file = data_dir + "sfr_catalog_insitu_exsitu_0.712400_final_wssfr_wv.npz"
 
     # If we have already generated the inter_file, don't do it again...
     if not os.path.isfile(inter_file):

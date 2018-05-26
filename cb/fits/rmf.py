@@ -10,20 +10,34 @@ def build_rmf(catalog):
     bin_centers, cumulative_count = c.build_density_function(r)
     return bin_centers, cumulative_count
 
-def richness_at_density(catalog, key, density):
-    return c.x_at_density(catalog, key, "rmf", density)
-
-def density_at_richness(catalog, key, richness):
-    return c.density_at_x(catalog, key, "rmf", richness)
-
-
 def build_photoz_rmf(catalog):
     r = catalog["photoz_richness"]
     bin_centers, cumulative_count = c.build_density_function(r)
     return bin_centers, cumulative_count
 
-def photoz_richness_at_density(catalog, key, density):
-    return c.x_at_density(catalog, key, "photoz_rmf", density)
+def build_specz_rmf(catalog):
+    r = catalog["specz_richness"]
+    bin_centers, cumulative_count = c.build_density_function(r)
+    return bin_centers, cumulative_count
 
-def density_at_photoz_richness(catalog, key, richness):
-    return c.density_at_x(catalog, key, "photoz_rmf", richness)
+
+# Nice easy to use funcs
+def richness_at_density(catalog, density):
+    return c.x_at_density(catalog["rmf"][1], catalog["rmf"][0], density)
+
+def density_at_richness(catalog, richness):
+    return c.density_at_x(catalog["rmf"][1], catalog["rmf"][0], richness)
+
+
+# catalog here needs to be the raw richness dict.
+def photoz_richness_at_density(catalog, density):
+    return c.x_at_density(catalog["photoz_rmf"][1], catalog["photoz_rmf"][0], density)
+
+def density_at_photoz_richness(catalog, richness):
+    return c.density_at_x(catalog["photoz_rmf"][1], catalog["photoz_rmf"][0], richness)
+
+def specz_richness_at_density(catalog, density):
+    return c.x_at_density(catalog["specz_rmf"][1], catalog["specz_rmf"][0], density)
+
+def density_at_specz_richness(catalog, richness):
+    return c.density_at_x(catalog["specz_rmf"][1], catalog["specz_rmf"][0], richness)

@@ -5,9 +5,8 @@ from data import cluster_sum
 from halo_info import get_richness, get_mag_gap, get_photoz_richness, get_specz_richness
 import smhm_fit
 
-def load(f=None):
+def load(catalog_file):
     datadir = os.getenv("dataDir") + "/universe_machine/"
-    catalog_file = f or "sfr_catalog_insitu_exsitu_0.712400_final_extended_wpid_wssfr.npz"
 
     catalog = np.load(datadir + catalog_file)
     centrals = catalog["centrals"]
@@ -27,6 +26,35 @@ cut_config = {
 
 min_mass_for_richness = 0.2*(10**11.34) # 0.2 * M_star
 max_ssfr = 1e-11
+
+def sm_in_cylinder(centrals, satellites):
+    sm_res, hm_res = {}, {}
+    for (k, cfg) in cut_config.items():
+        # if k in [1]: continue
+        print(k)
+        sm_res[k], hm_res[k] = {}, {}
+
+        centrals_obs = cluster_sum.get_specz_mass(centrals, satellites, min_mass_for_richness, max_ssfr, cfg["n_sats"])
+        # SM cut stuff
+        sm_centrals_obs = centrals_obs[
+                (centrals_obs["sm"] + centrals_obs["icl"]) > 10**cfg["mass_limit"]
+        ]
+        sm_res[k]["data"] = sm_centrals_obs
+        try:
+            sm_res[k]["fit"] = smhm_fit.get_hm_at_fixed_sm_fit(sm_centrals_obs, restrict_to_power_law=False)
+        except RuntimeError:
+            print("Failure for sm,", k)
+
+        # HM cut stuff
+        hm_centrals_obs = centrals_obs[centrals_obs["m"] > 10**11.5]
+
+        hm_res[k]["data"] = hm_centrals_obs
+        try:
+            hm_res[k]["fit"] = smhm_fit.get_sm_at_fixed_hm_fit(hm_centrals_obs, restrict_to_power_law = k in set(["tot"]))
+        except RuntimeError:
+            print("Failure for hm,", k)
+
+    return sm_res, hm_res
 
 def cuts_with_sats(centrals, satellites):
     sm_res = {}
@@ -101,11 +129,12 @@ def create_richness_data(centrals, satellites):
                 ("m", np.float64), # The halo mass
                 ("richness", np.int16), # The true richness of each halo (N_gal with M*cen > sth)
                 ("photoz_richness", np.int16), # Photoz richness!
+                ("specz_richness", np.int16), # Photoz richness!
             ],
     )
     res["id"] = centrals["id"]
     res["m"] = centrals["m"]
     res["richness"] = get_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
     res["photoz_richness"] = get_photoz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
-    # res["specz_richness"] = get_specz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
+    res["specz_richness"] = get_specz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
     return res

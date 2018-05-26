@@ -21,8 +21,9 @@ ngals = r"$N_{\mathrm{gals}}$"
 cum_count = "Cumulative Count"
 log_cum_count = "log10(Cumulative Count)"
 
-scatter_observed = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{obs}}$"
-scatter_intrinsic = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{ideal}}$"
+scatter_photoz = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{photoz}}$"
+scatter_specz = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{specz}}$"
+scatter_ideal = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{ideal}}$"
 
 ### Gamma
 gamma = r"$\Gamma$"

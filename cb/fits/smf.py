@@ -11,8 +11,10 @@ def build_csmf(catalog, key):
     bin_centers, cumulative_count = c.build_density_function(sm)
     return bin_centers, cumulative_count
 
-def mass_at_density(catalog, key, density):
-    return c.x_at_density(catalog, key, "smf", density)
 
-def density_at_mass(catalog, key, mass):
-    return c.density_at_x(catalog, key, "smf", mass)
+# catalog here needs to be data_halo_cut["cen"] (or the like)
+def mass_at_density(catalog, density):
+    return c.x_at_density(catalog["smf"][1], catalog["smf"][0], density)
+
+def density_at_mass(catalog, mass):
+    return c.density_at_x(catalog["smf"][1], catalog["smf"][0], mass)

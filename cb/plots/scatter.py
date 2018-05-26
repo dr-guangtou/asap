@@ -142,7 +142,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 
     for k in data.cut_config.keys():
         # Convert number densities to SM so that we can use that
-        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
+        sm_bins = fits.mass_at_density(combined_catalogs[k], cum_counts)
 
         v = combined_catalogs[k]
         stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
@@ -168,7 +168,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
     # halo_masses = [13, 14, 14.5, 15] # remeber to change the xlabel if you change this
     # ticks = np.array(fits.density_at_hmass(combined_catalogs, "cen", halo_masses)) / sim_volume
     cen_masses = [11.5, 11.8, 12.1, 12.4]
-    ticks = np.array(fits.density_at_mass(combined_catalogs, "cen", cen_masses)) / sim_volume
+    ticks = fits.density_at_mass(combined_catalogs["cen"], cen_masses) / sim_volume
     ax2.set(
             xlim=np.log10(ax.get_xlim()),
             xticks=np.log10(ticks),
@@ -181,13 +181,37 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax = None):
     if ax is None:
         _, ax = plt.subplots()
+
+    cum_counts = np.logspace(0.9, 4.3, num=10)
+    cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
+    number_densities_mid = cum_counts_mid / sim_volume
+
     # Photoz richness
-    richnesses = richness["richness"]["photoz_richness"]
-    r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
-    r_bins_mid = _bins_mid(r_bins)
-    number_densities_mid = np.array(fits.density_at_photoz_richness(richness, "", r_bins_mid)) / sim_volume
-    y, yerr = resample_scatter(richnesses, np.log10(richness["richness"]["m"]), r_bins)
-    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_observed, capsize=1.5, linewidth=1)
+    r_bins = fits.photoz_richness_at_density(richness, cum_counts)
+    y, yerr = resample_scatter(
+            richness["richness"]["photoz_richness"],
+            np.log10(richness["richness"]["m"]),
+            r_bins,
+    )
+    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_photoz, capsize=1.5, linewidth=1)
+
+    # True richness
+    r_bins = fits.richness_at_density(richness, cum_counts)
+    y, yerr = resample_scatter(
+            richness["richness"]["richness"],
+            np.log10(richness["richness"]["m"]),
+            r_bins,
+    )
+    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_ideal, capsize=1.5, linewidth=1)
+
+    # Specz richness
+    r_bins = fits.specz_richness_at_density(richness, cum_counts)
+    y, yerr = resample_scatter(
+            richness["richness"]["specz_richness"],
+            np.log10(richness["richness"]["m"]),
+            r_bins,
+    )
+    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_specz, capsize=1.5, linewidth=1)
 
 
     # # True richness
@@ -204,9 +228,10 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax 
     cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
     number_densities_mid = cum_counts_mid / sim_volume
 
-    for k in ["cen", 2, "tot"]:
+    # 1 -> 2 but I can't get a fit...
+    for k in ["cen", 1, "tot"]:
         # Convert number densities to SM so that we can use that
-        sm_bins = np.array([fits.mass_at_density(combined_catalogs, k, d) for d in cum_counts])
+        sm_bins = fits.mass_at_density(combined_catalogs[k], cum_counts)
 
         v = combined_catalogs[k]
         stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
@@ -219,8 +244,8 @@ def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax 
         ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
     # Rozo2014
-    minx = fits.density_at_richness(richness, "", 20) / sim_volume
-    maxx = fits.density_at_richness(richness, "", 70) / sim_volume
+    minx = fits.density_at_richness(richness, 20) / sim_volume
+    maxx = fits.density_at_richness(richness, 70) / sim_volume
     line = ax.plot([minx, maxx], [0.11, 0.11], color=l.r2014, linestyle="dashed", label="Rozo2014")[0]
     ax.fill_between([minx, maxx], 0.09, 0.13, alpha=0.2, facecolor=line.get_color())
 
@@ -244,14 +269,20 @@ def in_hm_at_fixed_richness_number_density(richness, ax = None):
     # Photoz richness
     r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
     r_bins_mid = _bins_mid(r_bins)
-    y, yerr = resample_scatter( richness["richness"]["photoz_richness"], np.log10(richness["richness"]["m"]), r_bins)
-    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_observed)
+    y, yerr = resample_scatter(richness["richness"]["photoz_richness"], np.log10(richness["richness"]["m"]), r_bins)
+    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_photoz)
 
     # True richness
     r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
     r_bins_mid = _bins_mid(r_bins)
-    y, yerr = resample_scatter( richness["richness"]["richness"], np.log10(richness["richness"]["m"]), r_bins)
-    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_intrinsic)
+    y, yerr = resample_scatter(richness["richness"]["richness"], np.log10(richness["richness"]["m"]), r_bins)
+    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_ideal)
+
+    # Specz richness
+    r_bins = np.array([4, 6, 8, 10, 13, 16, 20, 24, 28, 39])
+    r_bins_mid = _bins_mid(r_bins)
+    y, yerr = resample_scatter(richness["richness"]["specz_richness"], np.log10(richness["richness"]["m"]), r_bins)
+    ax.errorbar(r_bins_mid, y, yerr=yerr, label=l.scatter_specz)
 
 
     ax.set(
@@ -267,7 +298,7 @@ def in_hm_at_fixed_richness_number_density(richness, ax = None):
     powers = np.arange(-7, -3.9) # [-7, -6, -5, -4]
     number_densities = 10**powers
     cumulative_counts = number_densities * sim_volume
-    ticks = fits.richness_at_density(richness, "", cumulative_counts)
+    ticks = fits.richness_at_density(richness, cumulative_counts)
 
     ax2.set(
             # xscale="log",

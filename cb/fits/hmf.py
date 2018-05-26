@@ -10,8 +10,9 @@ def build_chmf(catalog, key):
     bin_centers, cumulative_count = c.build_density_function(hm)
     return bin_centers, cumulative_count
 
-def hmass_at_density(catalog, key, density):
-    return c.x_at_density(catalog, key, "hmf", density)
+# catalog here needs to be data_halo_cut["cen"] (or the like)
+def hmass_at_density(catalog, density):
+    return c.x_at_density(catalog["hmf"][1], catalog["hmf"][0], density)
 
-def density_at_hmass(catalog, key, mass):
-    return c.density_at_x(catalog, key, "hmf", mass)
+def density_at_hmass(catalog, mass):
+    return c.density_at_x(catalog["hmf"][1], catalog["hmf"][0], mass)

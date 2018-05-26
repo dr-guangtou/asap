@@ -64,7 +64,7 @@ def do_fit(x, y, f, restrict_to_power_law):
             p0=[m1, sm0, beta, delta, gamma],
             bounds=(lower_bound, upper_bound),
     )
-    print(popt)
+    print(["{:.2e}".format(i) for i in popt])
     return popt
 
 

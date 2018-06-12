@@ -27,34 +27,39 @@ cut_config = {
 min_mass_for_richness = 0.2*(10**11.34) # 0.2 * M_star
 max_ssfr = 1e-11
 
-def sm_in_cylinder(centrals, satellites):
+def cylinder_sm_and_richness(centrals, satellites, cylinder_depth):
     sm_res, hm_res = {}, {}
+    richnesses, richness = [], None
     for (k, cfg) in cut_config.items():
-        # if k in [1]: continue
-        print(k)
         sm_res[k], hm_res[k] = {}, {}
+        centrals_obs, counts = cluster_sum.get_cylinder_mass_and_richness(
+                centrals, satellites, min_mass_for_richness, max_ssfr, cfg["n_sats"], cylinder_depth,
+        )
+        richnesses.append(counts)
 
-        centrals_obs = cluster_sum.get_specz_mass(centrals, satellites, min_mass_for_richness, max_ssfr, cfg["n_sats"])
+        if k == "tot":
+            richness = _build_richness(centrals_obs, counts)
+
         # SM cut stuff
         sm_centrals_obs = centrals_obs[
                 (centrals_obs["sm"] + centrals_obs["icl"]) > 10**cfg["mass_limit"]
         ]
-        sm_res[k]["data"] = sm_centrals_obs
+        sm_res[k]["data_cut"] = sm_centrals_obs
         try:
-            sm_res[k]["fit"] = smhm_fit.get_hm_at_fixed_sm_fit(sm_centrals_obs, restrict_to_power_law=False)
+            sm_res[k]["fit_cut"] = smhm_fit.get_hm_at_fixed_sm_fit(sm_centrals_obs, restrict_to_power_law=False)
         except RuntimeError:
             print("Failure for sm,", k)
 
         # HM cut stuff
         hm_centrals_obs = centrals_obs[centrals_obs["m"] > 10**11.5]
 
-        hm_res[k]["data"] = hm_centrals_obs
+        hm_res[k]["data_cut"] = hm_centrals_obs
         try:
-            hm_res[k]["fit"] = smhm_fit.get_sm_at_fixed_hm_fit(hm_centrals_obs, restrict_to_power_law = k in set(["tot"]))
+            hm_res[k]["fit_cut"] = smhm_fit.get_sm_at_fixed_hm_fit(hm_centrals_obs, restrict_to_power_law = k in set(["tot"]))
         except RuntimeError:
             print("Failure for hm,", k)
 
-    return sm_res, hm_res
+    return sm_res, hm_res, richnesses, richness
 
 def cuts_with_sats(centrals, satellites):
     sm_res = {}
@@ -71,7 +76,7 @@ def cuts_with_sats(centrals, satellites):
                 [False, ""],
                 [True, "_cut"], # This doesn't really make sense for centrals
         ]:
-            centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, cfg["n_sats"], x[0], min_mass_for_richness)
+            centrals_with_n_sats = cluster_sum.centrals_with_satellites(centrals, satellites, cfg["n_sats"], x[0], min_mass_for_richness, max_ssfr)
 
             # SM cut stuff
             sm_centrals_with_n_sats = centrals_with_n_sats[
@@ -122,19 +127,19 @@ def add_hm_insitu(res, centrals):
     }
 
 def create_richness_data(centrals, satellites):
+    richness = get_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
+    return _build_richness(centrals, richness)
+
+def _build_richness(centrals, richness):
     res = np.zeros(
             len(centrals),
             dtype=[
                 ("id", np.int), # The halo mass
                 ("m", np.float64), # The halo mass
                 ("richness", np.int16), # The true richness of each halo (N_gal with M*cen > sth)
-                ("photoz_richness", np.int16), # Photoz richness!
-                ("specz_richness", np.int16), # Photoz richness!
             ],
     )
     res["id"] = centrals["id"]
     res["m"] = centrals["m"]
-    res["richness"] = get_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
-    res["photoz_richness"] = get_photoz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
-    res["specz_richness"] = get_specz_richness(centrals, satellites, min_mass_for_richness, max_ssfr)
+    res["richness"] = richness
     return res

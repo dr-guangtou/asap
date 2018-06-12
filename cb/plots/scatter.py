@@ -165,15 +165,16 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 
     # Add the mass at the top
     ax2 = ax.twiny()
-    # halo_masses = [13, 14, 14.5, 15] # remeber to change the xlabel if you change this
-    # ticks = np.array(fits.density_at_hmass(combined_catalogs, "cen", halo_masses)) / sim_volume
-    cen_masses = [11.5, 11.8, 12.1, 12.4]
-    ticks = fits.density_at_mass(combined_catalogs["cen"], cen_masses) / sim_volume
+    halo_masses = [13, 14, 14.5, 14.8] # remeber to change the xlabel if you change this
+    ticks = np.array(fits.density_at_hmass(combined_catalogs["cen"], halo_masses)) / sim_volume
+    # cen_masses = [11.5, 11.8, 12.1, 12.4]
+    # ticks = fits.density_at_mass(combined_catalogs["cen"], cen_masses) / sim_volume
     ax2.set(
             xlim=np.log10(ax.get_xlim()),
             xticks=np.log10(ticks),
-            xticklabels=cen_masses,
-            xlabel=l.m_star_x_axis("cen"),
+            xticklabels=halo_masses,
+            # xlabel=l.m_star_x_axis("cen"),
+            xlabel=l.m_vir_x_axis,
     )
 
     return ax

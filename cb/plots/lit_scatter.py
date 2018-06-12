@@ -57,13 +57,13 @@ lit2 = {
         },
         "tinker2013": { # I didn't understand this - just copied from gu
             "x": np.linspace(13, 15, num=n), # Check this!
-            "y": np.array([0.28] * n),
+            "y": np.array([0.21] * n),
             "error": 0.03,
             "label": r"Tinker2013 $M_{\ast,cen}$",
             "color": "orange",
             "ls": "-.",
         },
-        "zu2015": { # I didn't understand this - just copied from gu
+        "zu2015": {
             "x": np.array([12, 14]),
             "y": np.array([0.22, 0.18]),
             "error": 0.01,

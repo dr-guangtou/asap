@@ -24,6 +24,7 @@ log_cum_count = "log10(Cumulative Count)"
 scatter_photoz = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{photoz}}$"
 scatter_specz = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{specz}}$"
 scatter_ideal = r"$\sigma_{N_{\mathrm{gals}}, \mathrm{ideal}}$"
+scatter_ngals = r"$\sigma_{N_{\mathrm{gals}}}$"
 
 ### Gamma
 gamma = r"$\Gamma$"

@@ -25,7 +25,7 @@ def get_specz_richness(centrals, satellites, min_mass, max_ssfr):
     # The largest virial radius is ~2.5 Mpc
     z_err = 15 # For now this is just a comparison between z space distortions on and off
 
-    centrals_ht, big_enough_gals_ht = preprocess_data(
+    centrals_ht, big_enough_gals_ht, _ = preprocess_data(
             centrals, satellites, min_mass, max_ssfr, box_size,
     )
     counts = halotools.mock_observables.counts_in_cylinders(
@@ -42,7 +42,7 @@ def get_photoz_richness(centrals, satellites, min_mass, max_ssfr):
 
     # We should maybe just apply z space distortions here. Only cost is increased comp time (probably not much)
     # And we get simpler code and more accurate output.
-    centrals_ht, big_enough_gals_ht = preprocess_data(
+    centrals_ht, big_enough_gals_ht, _ = preprocess_data(
             centrals, satellites, min_mass, max_ssfr, box_size,
     )
     counts = halotools.mock_observables.counts_in_cylinders(
@@ -55,7 +55,7 @@ def get_photoz_richness(centrals, satellites, min_mass, max_ssfr):
     return counts
 
 
-def preprocess_data(centrals, satellites, min_mass, max_ssfr, box_size, ret_big_enough_gals=False):
+def preprocess_data(centrals, satellites, min_mass, max_ssfr, box_size):
     # Slightly weird things "out of the box". We will mod to put them back in
     for i in "xy":
         assert np.max(centrals[i]) < box_size * 1.1 and np.min(centrals[i]) > box_size * -0.1
@@ -67,6 +67,7 @@ def preprocess_data(centrals, satellites, min_mass, max_ssfr, box_size, ret_big_
     for i in "xy":
         big_enough_gals[i] %= box_size
 
+
     big_enough_gals_ht = halotools.mock_observables.return_xyz_formatted_array(
             big_enough_gals["x"], big_enough_gals["y"], big_enough_gals["z"],
             velocity=big_enough_gals["vz"], velocity_distortion_dimension="z", redshift=0.404
@@ -74,9 +75,8 @@ def preprocess_data(centrals, satellites, min_mass, max_ssfr, box_size, ret_big_
     centrals_ht = halotools.mock_observables.return_xyz_formatted_array(
             centrals["x"], centrals["y"], centrals["z"],
     )
-    if ret_big_enough_gals:
-        return centrals_ht, big_enough_gals_ht, big_enough_gals
-    return centrals_ht, big_enough_gals_ht
+
+    return centrals_ht, big_enough_gals_ht, big_enough_gals
 
 def _get_big_enough_galaxies(centrals, satellites, min_mass, max_ssfr):
     big_enough_centrals = np.copy(centrals[

@@ -101,6 +101,7 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
     return ax
 
 def in_sm_at_fixed_hm(central_catalogs, ax = None):
+    print(data_key)
     if ax is None:
         _, ax = plt.subplots()
 
@@ -120,6 +121,7 @@ def in_sm_at_fixed_hm(central_catalogs, ax = None):
         bin_midpoints = bins[:-1] + np.diff(bins) / 2
 
         y, yerr = resample_scatter(halo_masses, delta_stellar_masses, bins)
+        print(k, y)
         ax.errorbar(bin_midpoints, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
     ax.set(
@@ -151,6 +153,7 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
         delta_halo_masses = halo_masses - predicted_halo_masses
 
         y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
+        print(k, y)
 
         ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
     ax.set(

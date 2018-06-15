@@ -25,7 +25,6 @@ def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, 
     masses = big_enough_gals[indexes["i2"]]["sm"] + big_enough_gals[indexes["i2"]]["icl"]
     indexes = append_fields(indexes, "mass", masses)
     indexes = np.sort(indexes, order=["i1", "mass"])
-    print(indexes)
 
     num_doubled = 0
     # True if the galaxy is not covered by a larger central

@@ -12,54 +12,12 @@ import smhm_fit
 import data
 from plots.lit_scatter import plot_lit
 from plots import labels as l
+from plots.utils import resample_scatter, _bins_mid
 
-from importlib import reload
 sim_volume = 400**3 # (400 Mpc/h)
 data_key = "data"#_cut"
 fit_key = "fit"#_cut"
 
-
-# See https://arxiv.org/pdf/0810.1885.pdf
-def resample_scatter(x, y, bins):
-    bin_indexes = np.digitize(x, bins)
-    # print(np.histogram(bin_indexes))
-    stds, stdstds = np.zeros(len(bins)-1), np.zeros(len(bins)-1)
-
-    cnts = []
-    for i in range(len(bins) - 1):
-        # digitize is 1 indexed
-        indexes_in_bin = np.where(bin_indexes == i + 1)[0]
-        count_in_bin = len(indexes_in_bin)
-        cnts.append(count_in_bin)
-        if count_in_bin < 5:
-            print("Warning - {} items in bin {}".format(count_in_bin, i+1))
-
-        # Calculate stats for that bin
-        iterations = 1000
-        this_bin_std = np.zeros(iterations)
-        for j in range(iterations):
-            ci = np.random.choice(indexes_in_bin, len(indexes_in_bin)) # chosen indexes
-            this_bin_std[j] = np.std(y[ci], ddof=1)
-        stds[i] = np.mean(this_bin_std)
-        stdstds[i] = np.std(this_bin_std, ddof=1)
-    print(cnts)
-    return stds, stdstds
-
-# This is simlar to ^ except it resamples everything which doesn't guarantee that
-# the number of points in each bin is conserved. It *appears* to be the same.
-# Trade off here is simple code, but the chance of having empty bins which I am not
-# 100% sure how to deal with...
-def resample_scatter_simple(x, y, bins):
-    stds = []
-    while len(stds) < 1000:
-        si = np.random.choice(len(x), len(x))
-        std, _, _ = scipy.stats.binned_statistic(x[si], y[si], statistic="std", bins=bins)
-        if np.any(std == 0):
-            print("warning, empty bin. Not an issue unless you see a lot (10?) of these")
-            continue
-        stds.append(std)
-    stds = np.array(stds)
-    return np.mean(stds, axis=0), np.std(stds, axis=0, ddof=1)
 
 # plots m_star_all_halo, m_star_all_cen, m_star_insitu
 def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
@@ -182,88 +140,88 @@ def in_hm_at_fixed_number_density(combined_catalogs, ax = None):
 
     return ax
 
-def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax = None):
-    if ax is None:
-        _, ax = plt.subplots()
+# def in_hm_at_fixed_number_density_incl_richness(combined_catalogs, richness, ax = None):
+#     if ax is None:
+#         _, ax = plt.subplots()
 
-    cum_counts = np.logspace(0.9, 4.3, num=10)
-    cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
-    number_densities_mid = cum_counts_mid / sim_volume
+#     cum_counts = np.logspace(0.9, 4.3, num=10)
+#     cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
+#     number_densities_mid = cum_counts_mid / sim_volume
 
-    # Photoz richness
-    r_bins = fits.photoz_richness_at_density(richness, cum_counts)
-    y, yerr = resample_scatter(
-            richness["richness"]["photoz_richness"],
-            np.log10(richness["richness"]["m"]),
-            r_bins,
-    )
-    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_photoz, capsize=1.5, linewidth=1)
+#     # Photoz richness
+#     r_bins = fits.photoz_richness_at_density(richness, cum_counts)
+#     y, yerr = resample_scatter(
+#             richness["richness"]["photoz_richness"],
+#             np.log10(richness["richness"]["m"]),
+#             r_bins,
+#     )
+#     ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_photoz, capsize=1.5, linewidth=1)
 
-    # True richness
-    r_bins = fits.richness_at_density(richness, cum_counts)
-    y, yerr = resample_scatter(
-            richness["richness"]["richness"],
-            np.log10(richness["richness"]["m"]),
-            r_bins,
-    )
-    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_ideal, capsize=1.5, linewidth=1)
+#     # True richness
+#     r_bins = fits.richness_at_density(richness, cum_counts)
+#     y, yerr = resample_scatter(
+#             richness["richness"]["richness"],
+#             np.log10(richness["richness"]["m"]),
+#             r_bins,
+#     )
+#     ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_ideal, capsize=1.5, linewidth=1)
 
-    # Specz richness
-    r_bins = fits.specz_richness_at_density(richness, cum_counts)
-    y, yerr = resample_scatter(
-            richness["richness"]["specz_richness"],
-            np.log10(richness["richness"]["m"]),
-            r_bins,
-    )
-    ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_specz, capsize=1.5, linewidth=1)
-
-
-    # # True richness
-    # richnesses = richness["richness"]["richness"]
-    # r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
-    # r_bins_mid = _bins_mid(r_bins)
-    # number_densities_mid = np.array(fits.density_at_richness(richness, "", r_bins_mid)) / sim_volume
-    # y, yerr = resample_scatter(richnesses, np.log10(richness["richness"]["m"]), r_bins)
-    # ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_intrinsic, capsize=1.5, linewidth=1)
-    next(ax._get_lines.prop_cycler)
+#     # Specz richness
+#     r_bins = fits.specz_richness_at_density(richness, cum_counts)
+#     y, yerr = resample_scatter(
+#             richness["richness"]["specz_richness"],
+#             np.log10(richness["richness"]["m"]),
+#             r_bins,
+#     )
+#     ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_specz, capsize=1.5, linewidth=1)
 
 
-    cum_counts = np.logspace(0.9, 4.3, num=10)
-    cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
-    number_densities_mid = cum_counts_mid / sim_volume
+#     # # True richness
+#     # richnesses = richness["richness"]["richness"]
+#     # r_bins = np.array([2, 3, 4, 6, 8, 10, 13, 16, 20, 24, 28, 39, 50])
+#     # r_bins_mid = _bins_mid(r_bins)
+#     # number_densities_mid = np.array(fits.density_at_richness(richness, "", r_bins_mid)) / sim_volume
+#     # y, yerr = resample_scatter(richnesses, np.log10(richness["richness"]["m"]), r_bins)
+#     # ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.scatter_intrinsic, capsize=1.5, linewidth=1)
+#     next(ax._get_lines.prop_cycler)
 
-    # 1 -> 2 but I can't get a fit...
-    for k in ["cen", 1, "tot"]:
-        # Convert number densities to SM so that we can use that
-        sm_bins = fits.mass_at_density(combined_catalogs[k], cum_counts)
 
-        v = combined_catalogs[k]
-        stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
-        halo_masses = np.log10(v[data_key]["m"])
-        predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v[fit_key])
-        delta_halo_masses = halo_masses - predicted_halo_masses
+#     cum_counts = np.logspace(0.9, 4.3, num=10)
+#     cum_counts_mid = cum_counts[:-1] + (cum_counts[1:] - cum_counts[:-1]) / 2
+#     number_densities_mid = cum_counts_mid / sim_volume
 
-        y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
+#     # 1 -> 2 but I can't get a fit...
+#     for k in ["cen", 1, "tot"]:
+#         # Convert number densities to SM so that we can use that
+#         sm_bins = fits.mass_at_density(combined_catalogs[k], cum_counts)
 
-        ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
+#         v = combined_catalogs[k]
+#         stellar_masses = np.log10(v[data_key]["icl"] + v[data_key]["sm"])
+#         halo_masses = np.log10(v[data_key]["m"])
+#         predicted_halo_masses = smhm_fit.f_shmr_inverse(stellar_masses, *v[fit_key])
+#         delta_halo_masses = halo_masses - predicted_halo_masses
 
-    # Rozo2014
-    minx = fits.density_at_richness(richness, 20) / sim_volume
-    maxx = fits.density_at_richness(richness, 70) / sim_volume
-    line = ax.plot([minx, maxx], [0.11, 0.11], color=l.r2014, linestyle="dashed", label="Rozo2014")[0]
-    ax.fill_between([minx, maxx], 0.09, 0.13, alpha=0.2, facecolor=line.get_color())
+#         y, yerr = resample_scatter(stellar_masses, delta_halo_masses, sm_bins)
 
-    ax.set(
-            xscale="log",
-            ylim=0,
-            xlabel=l.cum_number_density,
-            ylabel=l.hm_scatter,
-            xlim=(3.5e-4, 1.2e-7),
-    )
+#         ax.errorbar(number_densities_mid, y, yerr=yerr, label=l.m_star_legend(k), capsize=1.5, linewidth=1)
 
-    # ax.invert_xaxis()
-    ax.legend(fontsize="xx-small", loc="upper right")
-    return ax
+#     # Rozo2014
+#     minx = fits.density_at_richness(richness, 20) / sim_volume
+#     maxx = fits.density_at_richness(richness, 70) / sim_volume
+#     line = ax.plot([minx, maxx], [0.11, 0.11], color=l.r2014, linestyle="dashed", label="Rozo2014")[0]
+#     ax.fill_between([minx, maxx], 0.09, 0.13, alpha=0.2, facecolor=line.get_color())
+
+#     ax.set(
+#             xscale="log",
+#             ylim=0,
+#             xlabel=l.cum_number_density,
+#             ylabel=l.hm_scatter,
+#             xlim=(3.5e-4, 1.2e-7),
+#     )
+
+#     # ax.invert_xaxis()
+#     ax.legend(fontsize="xx-small", loc="upper right")
+#     return ax
 
 
 def in_hm_at_fixed_richness_number_density(richness, ax = None):
@@ -340,8 +298,6 @@ def in_richness_at_fixed_hm(combined_catalogs, ax = None):
 
     return ax
 
-def _bins_mid(bins):
-    return bins[:-1] + (bins[1:] - bins[:-1]) / 2
 
 
 #### Would consider the following "non-prod"

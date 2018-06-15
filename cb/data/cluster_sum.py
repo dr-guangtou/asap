@@ -5,19 +5,36 @@ import halotools.mock_observables
 
 box_size = 400
 
-def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, z_err):
+# Cut down to big enough/non star forming gals.
+# Add effects from RSD
+def cut_and_rsd(centrals, satellites, min_mass, max_ssfr):
     new_centrals = np.copy(centrals)  # no mutation!
 
     centrals_ht, big_enough_gals_ht, big_enough_gals = preprocess_data(
             centrals, satellites, min_mass, max_ssfr, box_size,
     )
     map_be_to_cen = _map_big_enough_index_to_central(big_enough_gals, centrals)
+    return centrals_ht, big_enough_gals_ht, big_enough_gals, map_be_to_cen
+
+def add_uncertainty_to_sats(big_enough_gals_ht, big_enough_gals, photoz_error):
+    sat_indexes = big_enough_gals["upid"] != -1
+    sat_indexes = big_enough_gals["upid"] != -99999 # Everything will be true
+    assert np.all(sat_indexes)
+    big_enough_gals_ht[sat_indexes][:,2] += np.random.normal(
+            loc=0, scale=photoz_error, size=np.count_nonzero(sat_indexes))
+    big_enough_gals_ht[sat_indexes][:,2] %= box_size
+    return big_enough_gals_ht
+
+def get_cylinder_mass_and_richness2(
+        centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, cylinder_depth
+):
+    new_centrals = np.copy(centrals)  # no mutation!
 
     indexes = halotools.mock_observables.idx_in_cylinders(
             centrals_ht,
             big_enough_gals_ht,
             centrals["rvir"]/1000,
-            z_err,
+            cylinder_depth,
             period=box_size,
     )
     assert np.all(centrals_ht[:,0] == centrals["x"])
@@ -75,6 +92,15 @@ def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, 
                 to_incl -= 1
 
     return new_centrals[found], counted[found]
+
+def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, z_err):
+    centrals_ht, big_enough_gals_ht, big_enough_gals = preprocess_data(
+            centrals, satellites, min_mass, max_ssfr, box_size,
+    )
+    map_be_to_cen = _map_big_enough_index_to_central(big_enough_gals, centrals)
+
+    return get_cylinder_mass_and_richness2(
+            centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, z_err)
 
 
 # cbx add a ssfr cut here

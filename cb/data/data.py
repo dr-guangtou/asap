@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from data import cluster_sum
-from halo_info import get_richness, get_mag_gap, get_photoz_richness, get_specz_richness
+from halo_info import get_richness, get_mag_gap
 import smhm_fit
 
 def load(catalog_file):
@@ -26,6 +26,33 @@ cut_config = {
 
 min_mass_for_richness = 0.2*(10**11.34) # 0.2 * M_star
 max_ssfr = 1e-11
+
+def explore_cylinder_length(centrals, satellites):
+    photoz_error, n, mass_cut = 50, 5, 10**11.4
+
+    centrals_ht, big_enough_gals_ht, big_enough_gals, map_be_to_cen = cluster_sum.cut_and_rsd(
+            centrals, satellites, min_mass_for_richness, max_ssfr)
+    big_enough_gals_ht = cluster_sum.add_uncertainty_to_sats(
+            big_enough_gals_ht, big_enough_gals, photoz_error)
+
+
+    sm_res = {}
+    for cylinder_depth in [3, 5, 7, 10, 15, 20, 25]:
+        sm_res[cylinder_depth] = {}
+        centrals_obs, _ = cluster_sum.get_cylinder_mass_and_richness2(
+                centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, cylinder_depth)
+
+        # SM cut stuff
+        sm_centrals_obs = centrals_obs[
+                (centrals_obs["sm"] + centrals_obs["icl"]) > mass_cut
+        ]
+        sm_res[cylinder_depth]["data_cut"] = sm_centrals_obs
+        try:
+            sm_res[cylinder_depth]["fit_cut"] = smhm_fit.get_hm_at_fixed_sm_fit(sm_centrals_obs, restrict_to_power_law=False)
+        except RuntimeError:
+            print("Failure for sm,", cylinder_depth)
+    return sm_res
+
 
 def cylinder_sm_and_richness(centrals, satellites, cylinder_depth):
     sm_res, hm_res = {}, {}

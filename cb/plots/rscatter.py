@@ -4,36 +4,11 @@ import matplotlib.pyplot as plt
 import fits
 from plots import labels as l
 import smhm_fit
+from plots.utils import resample_scatter
 
 sim_volume = 400**3 # (400 Mpc/h)
 data_key = "data_cut"
 fit_key = "fit_cut"
-
-# See https://arxiv.org/pdf/0810.1885.pdf
-def resample_scatter(x, y, bins):
-    bin_indexes = np.digitize(x, bins)
-    stds, stdstds = np.zeros(len(bins)-1), np.zeros(len(bins)-1)
-
-    cnts = []
-    for i in range(len(bins) - 1):
-        # digitize is 1 indexed
-        indexes_in_bin = np.where(bin_indexes == i + 1)[0]
-
-        count_in_bin = len(indexes_in_bin)
-        cnts.append(count_in_bin)
-        if count_in_bin < 5:
-            print("Warning - {} items in bin {}".format(count_in_bin, i+1))
-
-        # Calculate stats for that bin
-        iterations = 1000
-        this_bin_std = np.zeros(iterations)
-        for j in range(iterations):
-            ci = np.random.choice(indexes_in_bin, len(indexes_in_bin)) # chosen indexes
-            this_bin_std[j] = np.std(y[ci], ddof=1)
-        stds[i] = np.mean(this_bin_std)
-        stdstds[i] = np.std(this_bin_std, ddof=1)
-    print(cnts)
-    return stds, stdstds
 
 def in_hm_at_fixed_number_density_incl_richness(data_stellar_cut_x, richness, ax=None):
     if ax is None:

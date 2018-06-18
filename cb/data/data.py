@@ -27,8 +27,8 @@ cut_config = {
 min_mass_for_richness = 0.2*(10**11.34) # 0.2 * M_star
 max_ssfr = 1e-11
 
-def explore_cylinder_length(centrals, satellites):
-    photoz_error, n, mass_cut = 50, 5, 10**11.4
+def explore_cylinder_length(centrals, satellites, photoz_error, n):
+    mass_cut = 10**11.4
 
     centrals_ht, big_enough_gals_ht, big_enough_gals, map_be_to_cen = cluster_sum.cut_and_rsd(
             centrals, satellites, min_mass_for_richness, max_ssfr)
@@ -37,7 +37,7 @@ def explore_cylinder_length(centrals, satellites):
 
 
     sm_res = {}
-    for cylinder_depth in [3, 5, 7, 10, 15, 20, 25]:
+    for cylinder_depth in [1, 10, 30, 50, 70, 90]:
         sm_res[cylinder_depth] = {}
         centrals_obs, _ = cluster_sum.get_cylinder_mass_and_richness2(
                 centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, cylinder_depth)

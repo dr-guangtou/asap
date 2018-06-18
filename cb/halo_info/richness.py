@@ -60,8 +60,8 @@ def preprocess_data(centrals, satellites, min_mass, max_ssfr, box_size):
     for i in "xy":
         assert np.max(centrals[i]) < box_size * 1.1 and np.min(centrals[i]) > box_size * -0.1
         assert np.max(satellites[i]) < box_size * 1.1 and np.min(satellites[i]) > box_size * -0.1
-    assert np.max(centrals["z"]) < box_size and np.min(centrals["z"]) > 0
-    assert np.max(satellites["z"]) < box_size and np.min(satellites["z"]) > 0
+    assert np.max(centrals["z"]) < box_size and np.min(centrals["z"]) >= 0
+    assert np.max(satellites["z"]) < box_size and np.min(satellites["z"]) >= 0
 
     big_enough_gals = _get_big_enough_galaxies(centrals, satellites, min_mass, max_ssfr)
     for i in "xy":

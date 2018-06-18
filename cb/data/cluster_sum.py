@@ -3,6 +3,10 @@ from halo_info import preprocess_data
 from numpy.lib.recfunctions import append_fields
 import halotools.mock_observables
 
+
+# pre pyxing: 2'7"
+# post pyxing: 2'7"
+
 box_size = 400
 
 # Cut down to big enough/non star forming gals.
@@ -17,12 +21,11 @@ def cut_and_rsd(centrals, satellites, min_mass, max_ssfr):
     return centrals_ht, big_enough_gals_ht, big_enough_gals, map_be_to_cen
 
 def add_uncertainty_to_sats(big_enough_gals_ht, big_enough_gals, photoz_error):
-    sat_indexes = big_enough_gals["upid"] != -1
-    sat_indexes = big_enough_gals["upid"] != -99999 # Everything will be true
-    assert np.all(sat_indexes)
-    big_enough_gals_ht[sat_indexes][:,2] += np.random.normal(
-            loc=0, scale=photoz_error, size=np.count_nonzero(sat_indexes))
-    big_enough_gals_ht[sat_indexes][:,2] %= box_size
+    is_sat = (big_enough_gals["upid"] != -1).astype(int)
+    big_enough_gals_ht[:,2] += np.random.normal(
+            loc=0, scale=photoz_error, size=len(is_sat)) * is_sat
+
+    big_enough_gals_ht[:,2] %= box_size
     return big_enough_gals_ht
 
 def get_cylinder_mass_and_richness2(
@@ -43,7 +46,6 @@ def get_cylinder_mass_and_richness2(
     indexes = append_fields(indexes, "mass", masses)
     indexes = np.sort(indexes, order=["i1", "mass"])
 
-    num_doubled = 0
     # True if the galaxy is not covered by a larger central
     found = np.ones(len(centrals), dtype=bool)
     counted = np.zeros(len(centrals), dtype=np.int)
@@ -69,7 +71,6 @@ def get_cylinder_mass_and_richness2(
             # This is the central again. Ignore it
             if new_centrals[i]["id"] == big_enough_gals[be_idx]["id"]:
                 counted[i] += 1
-                num_doubled += 1
                 continue
 
             # We are polluted with a central

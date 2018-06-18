@@ -29,21 +29,24 @@ def explore_cylinder_length(catalog):
 def parabola_me(catalog):
     _, ax = plt.subplots()
 
-    for i in range(4, 10):
+    all_scatters = []
+    for i in range(0, 9):
         scatter = []
-        x = []
         for k, v in catalog.items():
-            if int(k) > 40: continue
             sm_bins = fits.mass_at_density(catalog[k], cum_counts, True)
             y, _ = _get_scatter(v, sm_bins)
             scatter.append(y[i])
-            x.append(int(k))
 
-        ax.plot(x, scatter)
+        all_scatters.append(np.array(scatter))
+        ax.plot([int(k) for k in catalog.keys()], scatter)
+
+    ax.plot([int(k) for k in catalog.keys()], np.mean(np.array(all_scatters), axis=0), label="mean")
     ax.set(
             ylabel="Scatter",
             xlabel="Cylinder length",
     )
+    ax.legend()
+    return ax
 
 def _get_scatter(v, sm_bins):
     data_key, fit_key = "data_cut", "fit_cut"

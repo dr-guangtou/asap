@@ -144,6 +144,28 @@ class TestGetN():
             cluster_sum.get_n(-0.1, 100)
         assert "n must be > 0" in str(exc)
 
+class TestAddUncertaintyToSats():
+    def test_add_unc_to_sats(self):
+        centrals = np.zeros(1, dtype=gal_dtype)
+        satellites = np.zeros(100, dtype=gal_dtype)
+
+        centrals[0] = _create_gal(**{"id": 999, "upid": -1, "sm": 1e11, "icl": 2e11})
+        for i in range(len(satellites)):
+            satellites[i] = _create_gal(**{"id": i, "upid": 1, "sm": 2e10, "icl": 1e10})
+
+        centrals_ht, big_enough_gals_ht, big_enough_gals, _ = cluster_sum.cut_and_rsd(
+                centrals, satellites, 0, np.inf)
+
+        assert len(centrals_ht) == 1
+        assert len(big_enough_gals_ht) == 1 + len(satellites)
+
+        big_enough_gals_ht = cluster_sum.add_uncertainty_to_sats(big_enough_gals_ht, big_enough_gals, 20)
+        assert big_enough_gals_ht[0,2] == 0
+        sats_z = big_enough_gals_ht[1:,2]
+        assert np.all(sats_z != 0)
+        assert np.max(sats_z) < 400 and np.min(sats_z) > 0
+
+
 
 ### Helpers
 

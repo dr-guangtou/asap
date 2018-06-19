@@ -323,7 +323,7 @@ def linear_fit(x, y, method):
 
 #### Non correlation matrix stuff
 
-def sm_at_fixed_hm_mm_split(catalog):
+def sm_at_fixed_hm_mm_split(catalog, key):
     _, ax = plt.subplots()
 
     cdata = catalog["data"]
@@ -338,10 +338,10 @@ def sm_at_fixed_hm_mm_split(catalog):
             np.max(mm_scale),
     ]
     print(mm_scale_bins)
-    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, mm_scale, mm_scale_bins, ["Old halos", "Young halos"])
+    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, mm_scale, mm_scale_bins, ["Old halos", "Young halos"], key)
     return ax
 
-def sm_at_fixed_hm_age_split(catalog, key, ax=None):
+def sm_at_fixed_hm_age_split(catalog, key, ax=None, fit=None):
     if ax is None:
         _, ax = plt.subplots()
 
@@ -354,11 +354,13 @@ def sm_at_fixed_hm_age_split(catalog, key, ax=None):
     hm_scale_bins = [
             np.min(hm_scale),
             np.percentile(hm_scale, 20),
+
             np.percentile(hm_scale, 80),
             np.max(hm_scale),
     ]
     print(hm_scale_bins)
-    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, hm_scale, hm_scale_bins, ["Oldest 20%", "Youngest 20%"], key)
+    ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, hm_scale, hm_scale_bins, ["Oldest halos", "Youngest halos"], key, fit)
+
     return ax
 
 def sm_at_fixed_hm_conc_split(catalog, key, ax=None):
@@ -381,7 +383,7 @@ def sm_at_fixed_hm_conc_split(catalog, key, ax=None):
     ax = sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, concentrations, concentration_bins, ["Low concentration", "High concentration"], key)
     return ax
 
-def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bins, legend, star_key):
+def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bins, legend, star_key, fit=None):
     hm_bin_edges = np.arange(np.min(halo_masses), np.max(halo_masses), 0.1)
     hm_bin_midpoints = hm_bin_edges[:-1] + np.diff(hm_bin_edges) / 2
 
@@ -399,7 +401,16 @@ def sm_at_fixed_hm_split(ax, stellar_masses, halo_masses, split_params, split_bi
         xlabel=l.m_vir_x_axis,
         ylabel=l.m_star_x_axis(star_key),
     )
-    ax.legend()
+
+
+    from importlib import reload
+    reload(l)
+    if fit is not None:
+        ax.plot(hm_bin_midpoints[-1], smhm_fit.f_shmr(hm_bin_midpoints[-1], *fit), label=l.mstar_mhalo_fit(star_key), c="black", ls=":")
+        print(hm_bin_midpoints[-1])
+        print(smhm_fit.f_shmr(hm_bin_midpoints[-1], *fit))
+
+    ax.legend(fontsize="xx-small")
     return ax
 
 def conc_sm_heatmap_at_fixed_hm(catalog, ax=None):

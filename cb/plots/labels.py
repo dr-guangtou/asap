@@ -9,8 +9,20 @@ def m_star_x_axis(n_sats):
 def m_star_legend(n_sats):
     return r"$M_{\ast, \rm" + str(n_sats) + "}$"
 def sm_scatter(n_sats):
-    return r"$\sigma_{\mathrm{log}\ M_{\ast, \rm" + str(n_sats) + "}/M_{\odot}}$"
+    return r"$\sigma_{\mathrm{log}\ M_{\ast, \rm" + str(n_sats) + r"}/M_{\odot}}$"
 
+def sm_scatter_x_given_hm(x):
+    return r"$\sigma_{M_{\ast, \rm{" + str(x) + r"}} | M_{halo}}$"
+
+def sm_scatter_x_given_sm_y(x, y):
+    return r"$\sigma_{M_{\ast, \rm{" + str(x) + r"}} | M_{\ast, \rm{" + str(y) + r"}}}$"
+
+def sm_delta_x_given_sm_y(x, y):
+    return r"$\Delta_{M_{\ast, \rm{" + str(x) + r"}} | M_{\ast, \rm{" + str(y) + r"}}}$"
+
+
+def mstar_mhalo_fit(n_sats):
+    return r"$M_{\ast, \rm" + str(n_sats) + "}-M_{halo}$ fit"
 
 
 number_density = r"$\Phi (\frac{dn}{dlogM_{\ast}} h^{3} ^{-3} dex^{-1})$"
@@ -28,6 +40,7 @@ scatter_ngals = r"$\sigma_{N_{\mathrm{gals}}}$"
 
 ### Gamma
 gamma = r"$\Gamma$"
+gamma2 = r"$\Gamma_{2}$"
 
 
 ### Colors

@@ -76,7 +76,7 @@ def sm_cen_at_fixed_sm_halo(z, fit=None, ax=None):
     if ax is None:
         _, ax = plt.subplots()
     y = np.log10(z["sm_cen"] + z["icl_cen"])
-    x = np.log10(z["sm_halo"] + z["icl_halo"])
+    x = np.log10(z["sm_tot"] + z["icl_tot"])
 
     # Find various stats on our data
     hm_bin_edges = np.arange(np.min(x), np.max(x), 0.1)

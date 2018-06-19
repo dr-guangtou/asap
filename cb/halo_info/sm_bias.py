@@ -28,9 +28,9 @@ def build_sm_sm_bias_fit(z):
     assert type(z) is pd.core.frame.DataFrame
 
     cen_stellar_masses = z["sm_cen"] + z["icl_cen"]
-    halo_stellar_masses = z["sm_halo"] + z["icl_halo"]
+    tot_stellar_masses = z["sm_tot"] + z["icl_tot"]
 
-    fit = smhm_fit.get_sm_cen_at_sm_halo_fit(cen_stellar_masses, halo_stellar_masses)
+    fit = smhm_fit.get_sm_cen_at_sm_halo_fit(cen_stellar_masses, tot_stellar_masses)
 
     res = {
             "fit": fit,
@@ -40,9 +40,9 @@ def build_sm_sm_bias_fit(z):
 
 def get_sm_sm_bias(z, fit):
     cen_stellar_masses = np.log10(z["sm_cen"] + z["icl_cen"])
-    halo_stellar_masses = np.log10(z["sm_halo"] + z["icl_halo"])
+    tot_stellar_masses = np.log10(z["sm_tot"] + z["icl_tot"])
 
-    predicted_stellar_masses = smhm_fit.f_shmr(halo_stellar_masses, *fit)
+    predicted_stellar_masses = smhm_fit.f_shmr(tot_stellar_masses, *fit)
     delta_stellar_masses = cen_stellar_masses - predicted_stellar_masses
 
     return delta_stellar_masses

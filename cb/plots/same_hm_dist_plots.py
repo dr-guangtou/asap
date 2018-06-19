@@ -44,16 +44,17 @@ def calc_median_shift(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     print(s_cut, h_cut, s_cut - h_cut)
 
 
-def plot_cdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
+def plot_cdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts, ax=None):
     assert (len(cuts) == 2) and (cuts[1] > cuts[0])
-    _, ax = plt.subplots()
+    if ax is None:
+        _, ax = plt.subplots()
 
     sm_cut_catalog = sm_cut_catalog[key]["data"]
     hm_cut_catalog = hm_cut_catalog[key]["data"]
     sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
 
     sm_sample_vals = np.sort(f(sm_sample))
-    ax.plot(sm_sample_vals)
+    ax.plot(sm_sample_vals, label=l.m_star_legend(key) + " cut")
 
     sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100))
     sample2 = np.sort(sample2, axis=1)
@@ -63,7 +64,7 @@ def plot_cdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     lower = np.percentile(sample2, 50 - sd, axis=0)
     median = np.percentile(sample2, 50, axis=0)
 
-    ax.plot(median)
+    ax.plot(median, label="Random selection")
     ax.fill_between(
             np.arange(len(sm_sample)),
             lower,
@@ -74,6 +75,9 @@ def plot_cdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
 
     print(scipy.stats.ks_2samp(median, sm_sample_vals))
     print(np.percentile(sm_sample_vals, 50), np.percentile(sample2, 50))
+    print(np.mean(median - sm_sample_vals))
+    print(np.mean(upper - median))
+    ax.legend(fontsize="xx-small")
     return ax
 
 def plot_pdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts, bins=None, ax=None):
@@ -188,15 +192,17 @@ def f_acc(sample, n_dyn=None):
     return res
 
 
-def f_age(sample, plot=False):
+def f_age(sample, smoothed=True):
     ages = sample["Halfmass_Scale"]
+    if smoothed:
+        return smooth_discrete_scales(ages, False)
     return ages
-    # return smooth_discrete_scales(ages, plot)
 
-def f_mm(sample, plot=False):
+def f_mm(sample, smoothed=True):
     ages = sample["scale_of_last_MM"]
+    if smoothed:
+        return smooth_discrete_scales(ages, False)
     return ages
-    # return smooth_discrete_scales(ages, plot)
 
 def smooth_discrete_scales(ages, plot):
     subtractive = {}

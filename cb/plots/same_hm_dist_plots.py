@@ -31,17 +31,25 @@ def calc_median_shift(sm_cut_catalog, hm_cut_catalog, key, f, cuts):
     sm_sample = _get_sm_sample(sm_cut_catalog, cuts)
 
     sm_sample_vals = np.sort(f(sm_sample))
-    sample2 = f(_get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100).flatten())
+    sample2 = _get_sample_with_matching_halo_dist(sm_sample, hm_cut_catalog, 100)
+
+    sample2_medians = []
+    for s in sample2:
+        res = f(s)
+        res = res[np.isfinite(res)]
+        sample2_medians.append(np.median(res))
+
 
     # Just throw away nans - there should be a similar number in each sample that it
     # won't make a huge difference
-    sample2 = sample2[np.isfinite(sample2)]
+    # sample2 = sample2[np.isfinite(sample2)]
     sm_sample_vals = sm_sample_vals[np.isfinite(sm_sample_vals)]
 
-    h_cut = np.percentile(sample2, 50)
+    h_cut = np.median(sample2_medians)
+    std = np.std(sample2_medians)
     s_cut = np.percentile(sm_sample_vals, 50)
-    print("Stellar cut", "Halo cut", "S - H")
-    print(s_cut, h_cut, s_cut - h_cut)
+    print("Stellar cut", "Halo cut", "S - H", "std")
+    print(s_cut, h_cut, s_cut - h_cut, std)
 
 
 def plot_cdf(sm_cut_catalog, hm_cut_catalog, key, f, cuts, ax=None):

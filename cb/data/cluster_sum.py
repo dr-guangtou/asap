@@ -12,8 +12,6 @@ box_size = 400
 # Cut down to big enough/non star forming gals.
 # Add effects from RSD
 def cut_and_rsd(centrals, satellites, min_mass, max_ssfr):
-    new_centrals = np.copy(centrals)  # no mutation!
-
     centrals_ht, big_enough_gals_ht, big_enough_gals = preprocess_data(
             centrals, satellites, min_mass, max_ssfr, box_size,
     )
@@ -27,6 +25,7 @@ def add_uncertainty_to_sats(big_enough_gals_ht, big_enough_gals, photoz_error):
 
     big_enough_gals_ht[:,2] %= box_size
     return big_enough_gals_ht
+
 
 def get_cylinder_mass_and_richness2(
         centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, cylinder_depth
@@ -44,11 +43,12 @@ def get_cylinder_mass_and_richness2(
 
     masses = big_enough_gals[indexes["i2"]]["sm"] + big_enough_gals[indexes["i2"]]["icl"]
     indexes = append_fields(indexes, "mass", masses)
+    # Mass will be increasing. But we go through everything (atm) so this isn't a bit deal atm
     indexes = np.sort(indexes, order=["i1", "mass"])
 
     # True if the galaxy is not covered by a larger central
     found = np.ones(len(centrals), dtype=bool)
-    counted = np.zeros(len(centrals), dtype=np.int)
+    richness = np.zeros(len(centrals), dtype=np.int)
 
     # For each central, add in the mass of the N largest sats within in the cylinder
     for i in range(len(new_centrals)):
@@ -70,7 +70,7 @@ def get_cylinder_mass_and_richness2(
 
             # This is the central again. Ignore it
             if new_centrals[i]["id"] == big_enough_gals[be_idx]["id"]:
-                counted[i] += 1
+                richness[i] += 1
                 continue
 
             # We are polluted with a central
@@ -81,30 +81,26 @@ def get_cylinder_mass_and_richness2(
                 # If we are larger we wouldn't find that central
                 else:
                     # Need to map collision["i2"] (which is an index in big_enough_gals) to the index in
-                    # the centrals (if possible)
-                    try:
-                        found[map_be_to_cen[be_idx]] = False
-                    except KeyError:
-                        pass
+                    # the centrals. As we already know that it is a central, this should never keyerror
+                    found[map_be_to_cen[be_idx]] = False
 
             if to_incl > 0:
                 new_centrals[i]["icl"] += indexes[idx]["mass"]
-                counted[i] += 1
+                richness[i] += 1
                 to_incl -= 1
 
-    return new_centrals[found], counted[found]
+    return new_centrals[found], richness[found]
 
-def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, z_err):
+def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, cylinder_depth):
     centrals_ht, big_enough_gals_ht, big_enough_gals = preprocess_data(
             centrals, satellites, min_mass, max_ssfr, box_size,
     )
     map_be_to_cen = _map_big_enough_index_to_central(big_enough_gals, centrals)
 
     return get_cylinder_mass_and_richness2(
-            centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, z_err)
+            centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, cylinder_depth)
 
 
-# cbx add a ssfr cut here
 def centrals_with_satellites(centrals, satellites, n, rich_cut, min_mass, max_ssfr):
     """
     Given an array of centrals and satellites where the satellites are sorted by
@@ -118,8 +114,6 @@ def centrals_with_satellites(centrals, satellites, n, rich_cut, min_mass, max_ss
                 (satellites[1:]["sm"] + satellites[1:]["icl"] >= satellites[:-1]["sm"] + satellites[:-1]["icl"])
             )
     )
-
-
 
     new_centrals = np.copy(centrals)  # no mutation!
     if n == 0:
@@ -162,5 +156,6 @@ def _map_big_enough_index_to_central(big_enough_gals, centrals):
         try:
             big_enough_index_to_central[i] = centrals_id_to_index[gal["id"]]
         except KeyError:
+            # This can KeyError when the big_enough_gal is a sat. Centrals_id_to_index won't contain that gal["id"]
             continue
     return big_enough_index_to_central

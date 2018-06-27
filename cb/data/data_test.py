@@ -5,26 +5,32 @@ import pytest
 
 class TestCylinderSMAndRichness():
     def test_colliding_centrals(self):
-        centrals = np.zeros(2, dtype=gal_dtype)
+        centrals = np.zeros(3, dtype=gal_dtype)
         satellites = np.zeros(3, dtype=gal_dtype)
 
         # remeber rvir is in Kpc and almost everything else is in Mpc
-        centrals[0] = _create_gal(**{"id": 1, "upid": -1, "sm": 1e11, "icl": 2e11, "x": 100, "y": 100, "z": 100, "rvir": 1000})
+        centrals[0] = _create_gal(**{"id": 1, "upid": -1, "sm": 1e11, "icl": 2e11, "x": 100, "y": 100, "z": 100, "rvir": 1000}) # This will be seen as a sat of 1
         centrals[1] = _create_gal(**{"id": 10, "upid": -1, "sm": 5e11, "icl": 2e11, "x": 100, "y": 100, "z": 100, "rvir": 1000})
+        centrals[2] = _create_gal(**{"id": 11, "upid": -1, "sm": 4e11, "icl": 3e11, "x": 150, "y": 100, "z": 100, "rvir": 1000})
 
-        satellites[0] = _create_gal(**{"id": 2, "upid": 1, "sm": 2e10, "icl": 1e10, "x": 100, "y": 100, "z": 100, "rvir": 1000})
+        satellites[0] = _create_gal(**{"id": 2, "upid": 1, "sm": 2e10, "icl": 1e10, "x": 100, "y": 100, "z": 100, "rvir": 1000}) # All of these will be applied to centrals[1]
         satellites[1] = _create_gal(**{"id": 3, "upid": 1, "sm": 1e10, "icl": 3e10, "x": 100, "y": 100, "z": 100, "rvir": 1000})
         satellites[2] = _create_gal(**{"id": 4, "upid": 7, "sm": 2e10, "icl": 3e10, "x": 100, "y": 100, "z": 100, "rvir": 1000})
+
 
         z_err = 10
 
         # With tot
         new_centrals, counts = cluster_sum.get_cylinder_mass_and_richness(centrals, satellites, 0, np.inf, 0.9999, z_err)
-        assert len(new_centrals) == 1 and len(counts) == 1
-        assert new_centrals["id"] == 10
-        assert new_centrals["sm"] == 5e11
-        assert new_centrals["icl"] == 2e11 + 1e11 + 2e11 + np.sum(satellites["sm"] + satellites["icl"]) # all mass is in the cylinder
-        assert counts == 5
+        assert len(new_centrals) == 2 and len(counts) == 2
+        assert new_centrals["id"][0] == 10
+        assert new_centrals["sm"][0] == 5e11
+        assert new_centrals["icl"][0] == 2e11 + 1e11 + 2e11 + np.sum(satellites["sm"] + satellites["icl"]) # all mass is in the cylinder
+
+        assert new_centrals["id"][1] == 11
+        assert new_centrals["sm"][1] == 4e11
+        assert new_centrals["icl"][1] == 3e11
+        assert np.all(counts == np.array([5, 1]))
 
     def test_get_spec_z_mass_and_richness(self):
         centrals = np.zeros(1, dtype=gal_dtype)

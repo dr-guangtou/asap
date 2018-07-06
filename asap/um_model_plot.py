@@ -14,12 +14,13 @@ from matplotlib.ticker import MaxNLocator
 from scipy.ndimage.filters import gaussian_filter
 
 import corner
-from palettable.colorbrewer.sequential import OrRd_3, OrRd_8, Greys_9, PuBu_4, Purples_9
+from palettable.colorbrewer.sequential import OrRd_3, OrRd_8, Greys_9, PuBu_4, Purples_9, Greens_9
 ORG = OrRd_8.mpl_colormap
 ORG_2 = OrRd_3.mpl_colormap
 BLU = PuBu_4.mpl_colormap
 BLK = Greys_9.mpl_colormap
 PUR = Purples_9.mpl_colormap
+GRN = Greens_9.mpl_colormap
 
 plt.rcParams['figure.dpi'] = 100.0
 plt.rcParams['figure.facecolor'] = 'w'
@@ -478,8 +479,8 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
             tick.label.set_fontsize(25)
 
         if ref_prof is not None:
-            ax.plot(ref_prof.r, ref_prof.sig, linewidth=2.5, 
-                    color=PUR(0.7), linestyle='--', alpha=0.5)
+            ax.plot(ref_prof.r, ref_prof.sig, linewidth=3.0, 
+                    color=GRN(0.8), linestyle='--', alpha=0.9)
 
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
@@ -499,7 +500,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
                     horizontalalignment='left',
                     fontsize=23.0,
                     transform=ax.transAxes,
-                    color=ORG(0.7), alpha=0.9)
+                    color=GRN(0.9), alpha=1.0)
 
         # Label the mass range
         ax.text(0.04, 0.29,

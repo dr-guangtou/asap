@@ -14,11 +14,12 @@ from matplotlib.ticker import MaxNLocator
 from scipy.ndimage.filters import gaussian_filter
 
 import corner
-from palettable.colorbrewer.sequential import OrRd_3, OrRd_8, Greys_9, PuBu_4
+from palettable.colorbrewer.sequential import OrRd_3, OrRd_8, Greys_9, PuBu_4, Purples_9
 ORG = OrRd_8.mpl_colormap
 ORG_2 = OrRd_3.mpl_colormap
 BLU = PuBu_4.mpl_colormap
 BLK = Greys_9.mpl_colormap
+PUR = Purples_9.mpl_colormap
 
 plt.rcParams['figure.dpi'] = 100.0
 plt.rcParams['figure.facecolor'] = 'w'
@@ -478,7 +479,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
 
         if ref_prof is not None:
             ax.plot(ref_prof.r, ref_prof.sig, linewidth=2.5, 
-                    color=ORG(0.7), linestyle='--', alpha=0.5)
+                    color=PUR(0.7), linestyle='--', alpha=0.5)
 
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]

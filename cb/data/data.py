@@ -37,7 +37,7 @@ def explore_cylinder_length(centrals, satellites, photoz_error, n):
 
 
     sm_res = {}
-    for cylinder_depth in [1, 3, 5, 8, 11, 15, 20, 25, 30, 43]:
+    for cylinder_depth in [1]:#, 3, 5, 8, 11, 15, 20, 25, 30, 43]:
         sm_res[cylinder_depth] = {}
         centrals_obs, _ = cluster_sum.get_cylinder_mass_and_richness2(
                 centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, n, cylinder_depth)

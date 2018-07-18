@@ -4,9 +4,6 @@ from numpy.lib.recfunctions import append_fields
 import halotools.mock_observables
 
 
-# pre pyxing: 2'7"
-# post pyxing: 2'7"
-
 box_size = 400
 
 # Cut down to big enough/non star forming gals.

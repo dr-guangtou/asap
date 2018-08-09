@@ -23,6 +23,11 @@ cut_config = {
         5: {"n_sats": 5, "mass_limit": 11.4},
         "tot": {"n_sats": 0.999999999, "mass_limit": 11.4},
 }
+subset_cut_config = {
+        "cen": {"n_sats": 0, "mass_limit": 11.2},
+        2: {"n_sats": 2, "mass_limit": 11.4},
+        "tot": {"n_sats": 0.999999999, "mass_limit": 11.4},
+}
 
 min_mass_for_richness = 0.2*(10**11.34) # 0.2 * M_star
 max_ssfr = 1e-11
@@ -57,7 +62,7 @@ def explore_cylinder_length(centrals, satellites, photoz_error, n):
 def cylinder_sm_and_richness(centrals, satellites, cylinder_depth):
     sm_res, hm_res = {}, {}
     richnesses, richness = [], None
-    for (k, cfg) in cut_config.items():
+    for (k, cfg) in subset_cut_config.items():
         sm_res[k], hm_res[k] = {}, {}
         centrals_obs, counts = cluster_sum.get_cylinder_mass_and_richness(
                 centrals, satellites, min_mass_for_richness, max_ssfr, cfg["n_sats"], cylinder_depth,

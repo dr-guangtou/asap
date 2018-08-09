@@ -72,6 +72,7 @@ def get_cylinder_mass_and_richness2(
 
             # We are polluted with a central
             if big_enough_gals[be_idx]["upid"] == -1:
+                continue # just ignore that central
                 # If it is larger we wouldn't find this central
                 if indexes[idx]["mass"] > central_mass:
                     found[i] = False
@@ -86,6 +87,7 @@ def get_cylinder_mass_and_richness2(
                 richness[i] += 1
                 to_incl -= 1
 
+    # return new_centrals, richness # return everything yolo
     return new_centrals[found], richness[found]
 
 def get_cylinder_mass_and_richness(centrals, satellites, min_mass, max_ssfr, n, cylinder_depth):

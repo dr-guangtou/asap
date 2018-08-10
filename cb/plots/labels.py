@@ -1,28 +1,28 @@
-m_vir_x_axis = r"$\mathrm{log}\ M_{\rm vir}/M_{\odot}$"
-hm_scatter = r"$\sigma_{\mathrm{log}\ M_{\rm vir}/M_{\odot}}$"
+m_vir_x_axis = r"$\mathrm{log}\ M_{\rm{vir}}/M_{\odot}$"
+hm_scatter = r"$\sigma_{\mathrm{log}\ M_{\rm{vir}}/M_{\odot}}$"
 
-sm_scatter_simple = r"$\sigma_{\mathrm{log}\ M_{\ast, \rm x}/M_{\odot}}$"
+sm_scatter_simple = r"$\sigma_{\mathrm{log}\ M_{\ast, \rm{x}}/M_{\odot}}$"
 m_star_x_axis_simple = r"$\mathrm{log}\ M_{\ast}$"
 
 def m_star_x_axis(n_sats):
-    return r"$\mathrm{log}\ M_{\ast, \rm" + str(n_sats) + r"}/M_{\odot}$"
+    return r"$\mathrm{log}\ M_{\ast, \rm{" + str(n_sats) + r"}}/M_{\odot}$"
 def m_star_legend(n_sats):
-    return r"$M_{\ast, \rm" + str(n_sats) + "}$"
+    return r"$M_{\ast, \rm{" + str(n_sats) + "}}$"
 def sm_scatter(n_sats):
-    return r"$\sigma_{\mathrm{log}\ M_{\ast, \rm" + str(n_sats) + r"}/M_{\odot}}$"
+    return r"$\sigma_{\mathrm{log}\ M_{\ast, \rm{" + str(n_sats) + r"}}/M_{\odot}}$"
 
 def sm_scatter_x_given_hm(x):
-    return r"$\sigma_{M_{\ast, \rm{" + str(x) + r"}} | M_{halo}}$"
+    return r"$\sigma_{M_{\ast, \rm{{" + str(x) + r"}}} | M_{halo}}$"
 
 def sm_scatter_x_given_sm_y(x, y):
-    return r"$\sigma_{M_{\ast, \rm{" + str(x) + r"}} | M_{\ast, \rm{" + str(y) + r"}}}$"
+    return r"$\sigma_{M_{\ast, \rm{{" + str(x) + r"}}} | M_{\ast, \rm{{" + str(y) + r"}}}}$"
 
 def sm_delta_x_given_sm_y(x, y):
-    return r"$\Delta_{M_{\ast, \rm{" + str(x) + r"}} | M_{\ast, \rm{" + str(y) + r"}}}$"
+    return r"$\Delta_{M_{\ast, \rm{{" + str(x) + r"}}} | M_{\ast, \rm{{" + str(y) + r"}}}}$"
 
 
 def mstar_mhalo_fit(n_sats):
-    return r"$M_{\ast, \rm" + str(n_sats) + "}-M_{halo}$ fit"
+    return r"$M_{\ast, \rm{" + str(n_sats) + "}}-M_{halo}$ fit"
 
 
 number_density = r"$\Phi (\frac{dn}{dlogM_{\ast}} h^{3} ^{-3} dex^{-1})$"

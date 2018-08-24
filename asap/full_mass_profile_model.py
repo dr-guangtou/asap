@@ -2,9 +2,9 @@
 
 import numpy as np
 
-from sm_halo_model import logms_halo_from_logmh_log_linear
-from sm_minn_model import logms_inn_cam
-from sm_mtot_model import logms_tot_from_logms_halo
+from asap.sm_halo_model import logms_halo_from_logmh_log_linear
+from asap.sm_minn_model import logms_inn_cam
+from asap.sm_mtot_model import logms_tot_from_logms_halo
 
 __all__ = ['frac_from_logmh', 'sigma_logms_from_logmh',
            'determine_logms_bins', 'mass_prof_model_simple',

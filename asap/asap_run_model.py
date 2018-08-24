@@ -21,14 +21,14 @@ except ImportError:
 import numpy as np
 from scipy.stats import gaussian_kde
 
-from asap_data_io import parse_config, load_observed_data, \
+from asap.asap_data_io import parse_config, load_observed_data, \
     config_observed_data, config_um_data, load_um_data
-from asap_utils import mcmc_save_results, mcmc_initial_guess, \
+from asap.asap_utils import mcmc_save_results, mcmc_initial_guess, \
     mcmc_save_pickle, mcmc_setup_moves
-from asap_model_setup import setup_model
-from asap_likelihood import asap_flat_prior, asap_ln_like, \
+from asap.asap_model_setup import setup_model
+from asap.asap_likelihood import asap_flat_prior, asap_ln_like, \
     asap_smf_lnlike, asap_dsigma_lnlike, asap_flat_prior_transform
-from asap_model_prediction import asap_predict_model, asap_predict_model_prob
+from asap.asap_model_prediction import asap_predict_model, asap_predict_model_prob
 # from convergence import convergence_check
 
 __all__ = ['initial_model', 'asap_ln_prob_global', 'asap_ln_like_global',

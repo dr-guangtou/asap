@@ -6,17 +6,17 @@ import numpy as np
 
 from scipy import interpolate
 
-from stellar_mass_function import get_smf_bootstrap, \
+from asap.stellar_mass_function import get_smf_bootstrap, \
     smf_sigma_mass_weighted
-from full_mass_profile_model import mass_prof_model_simple, \
+from asap.full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1, mass_prof_model_frac2, \
     mass_prof_model_frac3, mass_prof_model_frac4, \
     mass_prof_model_frac5, mass_prof_model_frac6, mass_prof_model_frac7
-from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
-from asap_mass_model import mass_model_frac4, mass_model_frac5, \
+from asap.um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
+from asap.asap_mass_model import mass_model_frac4, mass_model_frac5, \
     mass_model_frac6, mass_model_frac7
-from asap_delta_sigma import delta_sigma_from_precomputed_pairs
-from asap_utils import mtot_minn_weight, mass_gaussian_weight
+from asap.asap_delta_sigma import delta_sigma_from_precomputed_pairs
+from asap.asap_utils import mtot_minn_weight, mass_gaussian_weight
 
 
 __all__ = ['asap_predict_mass', 'asap_predict_smf',

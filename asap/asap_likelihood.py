@@ -3,7 +3,7 @@
 import numpy as np
 from numpy import linalg
 
-from asap_model_prediction import asap_predict_model, asap_predict_model_prob
+from asap.asap_model_prediction import asap_predict_model, asap_predict_model_prob
 
 
 __all__ = ['asap_ln_prob', 'asap_ln_like', 'asap_flat_prior',

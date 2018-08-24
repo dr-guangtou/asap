@@ -17,12 +17,12 @@ from astropy.cosmology import FlatLambdaCDM
 
 from halotools.mock_observables import delta_sigma_from_precomputed_pairs
 
-from stellar_mass_function import get_smf_bootstrap
-from full_mass_profile_model import mass_prof_model_simple, \
+from asap.stellar_mass_function import get_smf_bootstrap
+from asap.full_mass_profile_model import mass_prof_model_simple, \
     mass_prof_model_frac1, mass_prof_model_frac2
-from um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
-from asap_utils import mcmc_save_results, mcmc_initial_guess
-from asap_likelihood import asap_flat_prior
+from asap.um_model_plot import plot_mtot_minn_smf, plot_dsigma_profiles
+from asap.asap_utils import mcmc_save_results, mcmc_initial_guess
+from asap.asap_likelihood import asap_flat_prior
 # from convergence import convergence_check
 
 

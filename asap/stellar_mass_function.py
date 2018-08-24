@@ -2,14 +2,14 @@
 Python functions related to stellar mass function.
 """
 
-from __future__ import print_function, division, unicode_literals
+from __future__ import print_function, division, unicode_literals, absolute_import
 
 from astropy.table import Table
 from scipy.stats import norm
 
 import numpy as np
 
-from asap_utils import mtot_minn_weight
+from asap.asap_utils import mtot_minn_weight
 
 
 __all__ = ['get_smf_bootstrap', 'bootstrap_smf', 'bootstrap_resample',

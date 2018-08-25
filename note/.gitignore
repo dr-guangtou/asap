@@ -3,3 +3,4 @@ test/*.npz
 test/*.pkl
 *.fits
 *.csv
+*.pkl

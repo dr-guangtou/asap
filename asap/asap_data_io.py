@@ -36,7 +36,11 @@ def load_observed_data(cfg, verbose=True):
     obs_mtot = np.array(obs_mass[cfg['obs_mtot_col']])
 
     with open(cfg['obs_wl_out'], 'rb') as f:
-        obs_wl_bin, obs_wl_dsigma = pickle.load(f)
+        # BUG: Tricky work around for pickling Python 2 array in Python 3
+        # https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
+        u = pickle._Unpickler(f)
+        u.encoding = 'latin1'
+        obs_wl_bin, obs_wl_dsigma = u.load()
 
     cfg['obs_wl_n_bin'] = len(obs_wl_bin)
     if verbose:

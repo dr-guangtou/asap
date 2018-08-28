@@ -52,7 +52,7 @@ def in_hm_at_fixed_number_density_incl_richness(data_stellar_cut_x, richness, ax
 
     ax.set(
             xscale="log",
-            ylim=(0, 0.47),
+            ylim=(0, 0.5),
             xlabel=l.cum_number_density,
             ylabel=l.hm_scatter,
             xlim=(2e-4, 1.2e-7),

@@ -59,14 +59,21 @@ def explore_cylinder_length(centrals, satellites, photoz_error, n):
     return sm_res
 
 
-def cylinder_sm_and_richness(centrals, satellites, cylinder_depth):
+def cylinder_sm_and_richness(centrals, satellites, cylinder_depth, photoz_error):
+    centrals_ht, big_enough_gals_ht, big_enough_gals, map_be_to_cen = cluster_sum.cut_and_rsd(
+            centrals, satellites, min_mass_for_richness, max_ssfr)
+    big_enough_gals_ht = cluster_sum.add_uncertainty_to_sats(
+            big_enough_gals_ht, big_enough_gals, photoz_error)
+
     sm_res, hm_res = {}, {}
     richnesses, richness = [], None
     for (k, cfg) in subset_cut_config.items():
         sm_res[k], hm_res[k] = {}, {}
-        centrals_obs, counts = cluster_sum.get_cylinder_mass_and_richness(
-                centrals, satellites, min_mass_for_richness, max_ssfr, cfg["n_sats"], cylinder_depth,
-        )
+        centrals_obs, counts = cluster_sum.get_cylinder_mass_and_richness2(
+                centrals_ht, big_enough_gals_ht, centrals, big_enough_gals, map_be_to_cen, cfg["n_sats"], cylinder_depth)
+        # centrals_obs, counts = cluster_sum.get_cylinder_mass_and_richness(
+        #         centrals, satellites, min_mass_for_richness, max_ssfr, cfg["n_sats"], cylinder_depth,
+        # )
         richnesses.append(counts)
 
         if k == "tot":

@@ -55,6 +55,43 @@ def two(masses, mag_gap, gammas):
     )
     fig.colorbar(img, ax=ax)
 
+def mhalo_gamma_richness(cutz):
+    cutz2 = cutz[np.isfinite(cutz["gammas1"])]
+
+    def _perc(data):
+        cutoff = 3
+        return np.count_nonzero(data > cutoff) / len(data)
+
+    fig, ax = plt.subplots()
+    # s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2["gammas1"], cutz2["richness"], statistic="median", bins=(20, 20))
+    s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2["gammas1"], cutz2["richness"], statistic=_perc, bins=(30, 30))
+    s = invalidate_unoccupied_bins(s, 50)
+    img = _imshow(ax, s, cmap="OrRd")
+    ax.set(
+        xlabel=l.m_vir_x_axis,
+        ylabel=l.gamma,
+        xlim=(13.5, 15),
+        ylim=(-1, 7.5),
+        # ylim=(np.log10(np.min(j_halo_mass)), 13),
+    )
+    fig.colorbar(img, ax=ax, label="percentage with richness $>$ 7")
+
+    fig, ax = plt.subplots()
+
+    low = cutz2["richness"] < 10
+    ax.scatter(np.log10(cutz2["m"][low]), cutz2["gammas1"][low], color="b", s=0.3)
+    ax.scatter(np.log10(cutz2["m"][np.logical_not(low)]), cutz2["gammas1"][np.logical_not(low)], color="r", s=0.3)
+    ax.set(
+        xlabel=l.m_vir_x_axis,
+        ylabel=l.gamma,
+        xlim=(13.5, 15),
+        ylim=(-1, 7.5),
+    )
+
+
+    return ax
+
+
 def gamma_in_mstarcen_mstarhalo_bins(j_cen_mass, j_halo_mass, j_gammas):
     fig, ax = plt.subplots()
     s = scipy.stats.binned_statistic_2d(np.log10(j_cen_mass), np.log10(j_halo_mass), j_gammas, statistic="median", bins=(10, 10))

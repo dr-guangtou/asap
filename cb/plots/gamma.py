@@ -63,9 +63,11 @@ def mhalo_gamma_richness(cutz):
         return np.count_nonzero(data > cutoff) / len(data)
 
     fig, ax = plt.subplots()
-    # s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2["gammas1"], cutz2["richness"], statistic="median", bins=(20, 20))
-    s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2["gammas1"], cutz2["richness"], statistic=_perc, bins=(30, 30))
-    s = invalidate_unoccupied_bins(s, 50)
+    ax.hist(cutz2["richness"])
+    fig, ax = plt.subplots()
+    s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2["gammas1"], cutz2["richness"], statistic="mean", bins=(30, 30))
+    # s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2["gammas1"], cutz2["richness"], statistic=_perc, bins=(30, 30))
+    s = invalidate_unoccupied_bins(s, 10)
     img = _imshow(ax, s, cmap="OrRd")
     ax.set(
         xlabel=l.m_vir_x_axis,
@@ -74,7 +76,8 @@ def mhalo_gamma_richness(cutz):
         ylim=(-1, 7.5),
         # ylim=(np.log10(np.min(j_halo_mass)), 13),
     )
-    fig.colorbar(img, ax=ax, label="percentage with richness $>$ 7")
+    # fig.colorbar(img, ax=ax, label="percentage with richness $>$ 7")
+    fig.colorbar(img, ax=ax, label="Mean number of satellite galaxys $>$ 0.2M*")
 
     fig, ax = plt.subplots()
 

@@ -47,12 +47,12 @@ def in_hm_at_fixed_number_density_incl_richness(data_stellar_cut_x, richness, ax
     minx = fits.density_at_richness(richness, 20) / sim_volume
     maxx = 1e-9 #fits.density_at_richness(richness, 30) / sim_volume
     line = ax.plot([minx, maxx], [0.11, 0.11], color=l.r2014,
-            linestyle="dashed", label=r"$\lambda$ (est)")[0]
+            linestyle="dashed", label=r"Rozo \& Rykoff 2014")[0]
     ax.fill_between([minx, maxx], 0.09, 0.13, alpha=0.2, facecolor=line.get_color())
 
     ax.set(
             xscale="log",
-            ylim=(0, 0.5),
+            ylim=(0, 0.55),
             xlabel=l.cum_number_density,
             ylabel=l.hm_scatter,
             xlim=(2e-4, 1.2e-7),

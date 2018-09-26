@@ -38,7 +38,7 @@ obs_cat: 's16a_wide2_massive_fsps1_imgsub_use_short.fits'
 obs_wl_sample: 's16a_wide2_massive_boxbin7_default'
 obs_smf_tot: 's16a_wide2_massive_smf_mmax_11.6.npy'
 obs_smf_inn: 's16a_wide2_massive_smf_m10_11.6.npy'
-#obs_smf_cov: 's16a_wide2_massive_smf_mmax_m10_cov.npy' 
+#obs_smf_cov: 's16a_wide2_massive_smf_mmax_m10_cov.npy'
 obs_smf_full_fits: 'primus_smf_z0.3_0.4.fits'
 
 um_model: 'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy'

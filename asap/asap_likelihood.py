@@ -3,11 +3,18 @@
 import numpy as np
 from numpy import linalg
 
+from scipy.stats import t as student_t
+
 from asap.asap_model_prediction import asap_predict_model, asap_predict_model_prob
 
 
 __all__ = ['asap_ln_prob', 'asap_ln_like', 'asap_flat_prior',
            'asap_dsigma_lnlike', 'asap_smf_lnlike']
+
+
+def student_t_prior(param, loc, scale, df=1):
+    """Return the natural log prior probability of parameter at `param`."""
+    return np.log(student_t.pdf(param, df=df, loc=loc, scale=scale))
 
 
 def asap_flat_prior(param_tuple, param_low, param_upp):

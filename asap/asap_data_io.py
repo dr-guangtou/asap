@@ -145,7 +145,7 @@ def config_observed_data(cfg, verbose=True):
         cfg['obs_h0'] = 0.7
 
     if 'obs_omega_m' in cfg.keys():
-        cfg['obs_omega_m'] = 0.307
+        cfg['obs_omega_m'] = 0.30
 
     cfg['obs_cosmo'] = FlatLambdaCDM(H0=cfg['obs_h0'] * 100,
                                      Om0=cfg['obs_omega_m'])

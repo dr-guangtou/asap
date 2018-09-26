@@ -1,0 +1,66 @@
+# Model parameters
+model_type: 'frac7'
+model_prob: True
+
+param_ini: [0.61, 3.71,  0.05, 0.10,  0.57, -0.18, 0.08, -0.20, 0.60]
+param_low: [0.20, 1.00, -0.25, 0.00,  0.00, -0.40, 0.00, -0.50, 0.10]
+param_upp: [1.00, 6.00,  0.15, 0.25,  1.00,  0.20, 0.40,  0.20, 1.20]
+param_sig: [0.15, 0.50,  0.05, 0.10,  0.20,  0.10, 0.10,  0.10, 0.20]
+
+# MCMC Runs
+mcmc_nthreads: 12
+mcmc_nsamples: 500
+mcmc_nburnin: 600
+mcmc_nwalkers: 512
+mcmc_smf_only: False
+mcmc_wl_only: False
+mcmc_wl_weight: 1.0
+mcmc_out_dir: "./"
+mcmc_prefix: "asap_mmax_m10_frac7_test_A"
+mcmc_moves_burnin: "snooker"
+mcmc_moves: "kde"
+mcmc_stretch_a: 6
+
+obs_z_col: 'z_best'
+obs_minn_col: 'logm_10'
+obs_mtot_col: 'logm_max'
+um_halo_col: 'logmh_host'
+um_star_col: 'logms_tot'
+
+#obs_dir: '/home/shuang/work/hsc_um2/data/s16a_massive_wide2'
+#um_dir: '/home/shuang/work/hsc_um2/data/s16a_massive_wide2/um2'
+obs_dir: '/Users/song/Dropbox/work/project/hsc_um2/data/s16a_massive_wide2'
+um_dir: '/Users/song/Dropbox/work/project/hsc_um2/data/s16a_massive_wide2/um2'
+
+# HSC data part
+obs_cat: 's16a_wide2_massive_fsps1_imgsub_use_short.fits'
+obs_wl_sample: 's16a_wide2_massive_boxbin7_default'
+obs_smf_tot: 's16a_wide2_massive_smf_mmax_11.6.npy'
+obs_smf_inn: 's16a_wide2_massive_smf_m10_11.6.npy'
+obs_smf_cov: 's16a_wide2_massive_smf_mmax_m10_cov.npy' 
+obs_smf_full_fits: 'primus_smf_z0.3_0.4.fits'
+
+um_model: 'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy'
+um_wl_cat: 'um_smdpl_0.7124_new_vagc_mpeak_11.5_50m_r_0.08_50_22bins.npy'
+
+# Volume:
+obs_area: 143.7
+
+# Cosmology
+obs_h0: 0.70
+obs_omega_m: 0.30
+
+# UniverseMachine
+um_lbox: 400.0
+um_h0: 0.678
+um_omega_m: 0.307
+um_min_mvir: 12.0
+um_redshift: 0.3637
+um_wl_minr: 0.08
+um_wl_maxr: 50.0
+um_wl_nbin: 22
+um_wl_add_stellar: False
+um_mtot_nbin: 80
+um_mtot_nbin_min: 7
+um_min_nobj_per_bin: 30
+um_min_scatter: 0.01

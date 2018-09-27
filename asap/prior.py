@@ -2,97 +2,245 @@
 
 import numpy as np
 
-from scipy.stats import t as student_t
+from scipy.stats import t
 from scipy.stats import uniform
 
-__all__ = ['student_t_prior', 'student_t_transform',
-           'flat_prior', 'flat_prior_transform']
+__all__ = ['StudentT', 'TopHat']
 
 
-def student_t_prior(param, loc, scale, df=1):
-    """Return the natural log prior probability of parameter at `param`.
+class TopHat(object):
+    """TopHat prior object.
 
-    Parameters
-    ----------
-    param : numpy array.
-        Array of the parameter values.
-    loc : float
-        Mean of the distribution.
-    scale : float
-        Scale of the distribution. Similar to the standard deviation.
-    df : int, optional
-        Degree of freedom. Default: 1
-
-    Return
-    ------
-        The natural log of the prior probability at `param` values.
+    Based on the `prior` from `prospector`:
+        https://github.com/bd-j/prospector/blob/master/prospect/models/priors.py
 
     """
-    return np.log(student_t.pdf(param, df=df, loc=loc, scale=scale))
+    def __init__(self, low=0.0, upp=1.0):
+        """Constructor.
+
+        Parameters
+        ----------
+        low : float
+            Lower limit of the flat distribution.
+        upp : float
+            Upper limit of the flat distribution.
+        """
+        self._low = low
+        self._upp = upp
+
+    def lnp(self, x):
+        """Compute the value of the probability desnity function at x and
+        return the ln of that.
+
+        Parameters
+        ----------
+        x : float or numpy array
+            Parameter values.
+
+        Return
+        ------
+        lnp : float or numpy array
+            The natural log of the prior probability at x
+        """
+        return uniform.logpdf(x, loc=self.loc, scale=self.scale)
+
+    def unit_transform(self, x):
+        """Go from a value of the CDF (between 0 and 1) to the corresponding
+        parameter value.
+
+        Parameters
+        ----------
+        x : float or numpy array.
+           Values of the CDF (between 0 and 1).
+
+        Return
+        ------
+            The parameter value corresponding to the value of the CDF given by `unit_arr`.
+
+        """
+        return uniform.ppf(x, loc=self.loc, scale=self.scale)
+
+    def inverse_unit_transform(self, x):
+        """Go from the parameter value to the unit coordinate using the cdf.
+
+        Parameters
+        ----------
+        x : float or numpy array.
+           Values of the CDF (between 0 and 1).
+
+        Return
+        ------
+            The corresponding value in unit coordinate.
+
+        """
+        return uniform.cdf(x, loc=self.loc, scale=self.scale)
+
+    def sample(self, nsample):
+        """Sample the distribution.
+
+        Parameter
+        ---------
+        nsample : int
+            Number of samples to return.
+
+        Return
+        ------
+        sample : arr
+            `nsample` values that follow the distribution.
+
+        """
+        return uniform.rvs(loc=self.loc, scale=self.scale, size=nsample)
+
+    @property
+    def low(self):
+        """Lower limit of the distribution."""
+        return self._low
+
+    @property
+    def upp(self):
+        """Upper limit of the distribution."""
+        return self._upp
+
+    @property
+    def scale(self):
+        """The `scale` parameter of the distribution."""
+        return self._upp - self._low
+
+    @property
+    def loc(self):
+        """The `loc` parameter of the distribution."""
+        return self._low
+
+    @property
+    def range(self):
+        """The range of the distribution."""
+        return (self._low, self._upp)
 
 
-def student_t_transform(unit_arr, loc, scale, df=1):
+class StudentT(object):
+    """Student-t prior object.
+
+    Based on the `prior` from `prospector`:
+        https://github.com/bd-j/prospector/blob/master/prospect/models/priors.py
+
     """
-    Go from a value of the CDF (between 0 and 1) to the corresponding
-    parameter value.
+    def __init__(self, loc=0.0, scale=1.0, df=1):
+        """Constructor.
 
-    Parameters
-    ----------
-    unit_arr : numpy array.
-        Array of values of the CDF (between 0 and 1).
-    loc : float
-        Mean of the distribution.
-    scale : float
-        Scale of the distribution. Similar to the standard deviation.
-    df : int, optional
-        Degree of freedom. Default: 1
+        Parameters
+        ----------
+        loc : float, optional
+            Mean of the distribution. Default: 0.0
+        scale : float, optional
+            Scale of the flat distribution. Default: 1.0
+        df : int, optional
+            Degree of freedom. Default: 1
+        """
+        self._loc = loc
+        self._scale = scale
+        self._df = df
 
-    Return
-    ------
-        The parameter value corresponding to the value of the CDF given by `unit_arr`.
+    def lnp(self, x):
+        """Compute the value of the probability desnity function at x and
+        return the ln of that.
 
-    """
-    return student_t.ppf(unit_arr, df=df, loc=loc, scale=scale)
+        Parameters
+        ----------
+        x : float or numpy array
+            Parameter values.
 
+        Return
+        ------
+        lnp : float or numpy array
+            The natural log of the prior probability at x
+        """
+        return t.logpdf(x, loc=self.loc, scale=self.scale, df=self.df)
 
-def flat_prior(param, low, upp):
-    """A simple flat or tophat prior for parameters.
+    def unit_transform(self, x):
+        """Go from a value of the CDF (between 0 and 1) to the corresponding
+        parameter value.
 
-    Parameters
-    ----------
-    param : float or array
-        Parameter values.
-    low : float
-        Lower boundary of the distribution.
-    upp : float
-        Upper boundary of the distribution.
+        Parameters
+        ----------
+        x : float or numpy array.
+           Values of the CDF (between 0 and 1).
 
-    Return
-    ------
-        The natural log of the prior probability at `param` values.
+        Return
+        ------
+            The parameter value corresponding to the value of the CDF given by `unit_arr`.
 
-    """
-    with np.errstate(divide='ignore'):
-        return np.log(uniform.pdf(param, loc=low, scale=(upp - low)))
+        """
+        return t.ppf(x, loc=self.loc, scale=self.scale, df=self.df)
 
+    def inverse_unit_transform(self, x):
+        """Go from the parameter value to the unit coordinate using the cdf.
 
-def flat_prior_transform(unit_arr, low, upp):
-    """
-    Go from a value of the CDF (between 0 and 1) to the corresponding
-    parameter value.
+        Parameters
+        ----------
+        x : float or numpy array.
+           Values of the CDF (between 0 and 1).
 
-    Parameters
-    ----------
-    unit_arr : numpy array.
-        Array of values of the CDF (between 0 and 1).
-    low : float
-        Lower boundary of the distribution.
-    upp : float
-        Upper boundary of the distribution.
+        Return
+        ------
+            The corresponding value in unit coordinate.
 
-    Return
-    ------
-        The parameter value corresponding to the value of the CDF given by `unit_arr`.
+        """
+        return t.cdf(x, loc=self.loc, scale=self.scale, df=self.df)
 
-    """
-    return uniform.ppf(unit_arr, loc=low, scale=(upp - low))
+    def sample(self, nsample, limit=False):
+        """Sample the distribution.
+
+        Parameter
+        ---------
+        nsample : int
+            Number of samples to return.
+        limit : bool, optional
+            Whether to limit the random variables within the range.
+
+        Return
+        ------
+        sample : arr
+            `nsample` values that follow the distribution.
+
+        """
+        if not limit:
+            return t.rvs(loc=self.loc, scale=self.scale, df=self.df,
+                         size=nsample)
+        else:
+            sample = []
+            while len(sample) < nsample:
+                rv = t.rvs(df=self.df, loc=self.loc, scale=self.scale)
+                if self.low < rv <= self.upp:
+                    sample.append(rv)
+
+            return np.asarray(sample)
+
+    @property
+    def scale(self):
+        """The `scale` parameter of the distribution."""
+        return self._scale
+
+    @property
+    def loc(self):
+        """The `loc` parameter of the distribution."""
+        return self._loc
+
+    @property
+    def df(self):
+        """The `df` parameter of the distribution."""
+        return self._df
+
+    @property
+    def low(self):
+        """Lower limit of the distribution."""
+        return self.loc - 5.0 * self.scale
+
+    @property
+    def upp(self):
+        """Upper limit of the distribution."""
+        return self.loc + 5.0 * self.scale
+
+    @property
+    def range(self):
+        """The range of the distribution."""
+        return (self.low, self.upp)

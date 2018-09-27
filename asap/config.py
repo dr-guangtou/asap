@@ -5,6 +5,8 @@ import yaml
 
 import numpy as np
 
+from . import prior
+
 __all__ = ["parse_config", "config_obs", "config_um"]
 
 
@@ -24,7 +26,7 @@ def parse_config(config_file):
     return yaml.load(open(config_file))
 
 
-def config_obs(cfg_obs, verbose=True):
+def config_obs(cfg_obs, verbose=False):
     """Config parameters for observed data.
 
     Parameters
@@ -76,6 +78,7 @@ def config_obs(cfg_obs, verbose=True):
     # --------------------------------------------------- #
     # Observed stellar mass functions
     if 'smf_inn' not in cfg_obs:
+        # TODO: we can estimate SMF
         raise Exception("# We need the SMF of inner aperture mass !")
     else:
         if verbose:
@@ -85,6 +88,7 @@ def config_obs(cfg_obs, verbose=True):
             raise Exception("# Can not find SMF_inn: %s" % cfg_obs['smf_inn'])
 
     if 'smf_tot' not in cfg_obs:
+        # TODO: we can estimate SMF
         raise Exception("# We need the SMF of outer aperture mass !")
     else:
         if verbose:
@@ -209,3 +213,28 @@ def config_um(cfg_um, verbose=False):
         print("# Stellar mass : %s" % cfg_um['star_col'])
 
     return cfg_um
+
+
+def config_params(cfg_param):
+    """Configure model parameters.
+
+    Parameters
+    ----------
+    cfg_param : dict
+        Configurations for the model parameters.
+
+    Return
+    ------
+        Dictionary that contains necessary information of model parameters.
+
+    """
+    for label in cfg_param:
+        param = cfg_param[label]
+        if param['type'] == 'flat':
+            param['distr'] = prior.TopHat(low=param['min'], upp=param['max'])
+        elif param['type'] == 'student':
+            param['distr'] = prior.StudentT(loc=param['ini'], scale=param['sig'], df=1)
+        else:
+            raise Exception("# Wrong type of prior distribution: [flat|student]")
+
+

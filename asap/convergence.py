@@ -1,6 +1,4 @@
-"""
-Convergence check, from Prospector
-"""
+"""Check convergence."""
 
 import numpy as np
 
@@ -44,11 +42,11 @@ def make_kl_bins(chain, nbins=10):
     empty bins, the KL divergence is undefined this adaptive binning scheme
     avoids that problem
     """
-    sorted = np.sort(chain)
+    sorted_chain = np.sort(chain)
     nskip = np.floor(chain.shape[0] / float(nbins)).astype(int) - 1
 
-    bins = sorted[::nskip]
-    bins[-1] = sorted[-1]  # ensure the maximum bin is the maximum of the chain
+    bins = sorted_chain[::nskip]
+    bins[-1] = sorted_chain[-1]  # ensure the maximum bin is the maximum of the chain
     assert bins.shape[0] == nbins + 1
     pdf, bins = np.histogram(chain, bins=bins)
 
@@ -98,7 +96,7 @@ def convergence_check(chain,
         checks, number of parameters) and the iteration where this was
         calculated.
     """
-    nwalkers, niter, npars = chain.shape
+    _, niter, npars = chain.shape
 
     # Define some useful quantities
     # must run for at least 2 intervals before checking !
@@ -114,8 +112,8 @@ def convergence_check(chain,
     xiter = (np.arange(ncheck) * convergence_check_interval
              + niter_check_start)
 
-    for n in xrange(ncheck):
-        for i in xrange(npars):
+    for n in range(ncheck):
+        for i in range(npars):
             # Define chains and calculate pdf
             lo = (xiter[n] - 2 * convergence_chunks)
             hi = (xiter[n] - convergence_chunks)

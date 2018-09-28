@@ -1,0 +1,7 @@
+numpy
+scipy
+emcee
+ltsfit
+astropy
+halotools
+matplotlib

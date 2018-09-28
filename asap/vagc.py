@@ -1,8 +1,12 @@
 """Value added UM catalog."""
 
 import numpy as np
-from halotools.utils import crossmatch
+
 from astropy.table import Table
+
+from halotools.utils import crossmatch
+
+__all__ = ['value_added_mdpl2_mock', 'value_added_smdpl_mock']
 
 
 def value_added_mdpl2_mock(fname):

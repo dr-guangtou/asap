@@ -3,6 +3,7 @@ parameters:
     # Slope of the TSHMR
     param_1:
         name: 'a'
+        label: r'$a$'
         ini: 0.60
         type: 'student'
         min: 0.0
@@ -12,6 +13,7 @@ parameters:
     # TODO: The value here will change if we decide to normalize the relation
     param_2:
         name: 'b'
+        label: r'$b$'
         ini: 3.70
         type: 'flat'
         min: 1.00
@@ -20,6 +22,7 @@ parameters:
     # Slope of the Mhalo-sigma relation
     param_3:
         name: 'c'
+        label: r'$c$'
         ini: 0.00
         type: 'student'
         min: -0.20
@@ -28,6 +31,7 @@ parameters:
     # Intercept of the Mhalo-sigma relation
     param_4:
         name: 'd'
+        label: r'$d$'
         ini: 0.03
         type: 'flat'
         min: 0.00
@@ -36,6 +40,7 @@ parameters:
     # Fraction of in-situ mass in the inner 10 kpc
     param_5:
         name: 'fins'
+        label: r'$f_{\mathrm{ins}}$'
         ini: 0.57
         type: 'flat'
         min: 0.30
@@ -44,6 +49,7 @@ parameters:
     # Slope of the Mhalo-f_ex-situ relation
     param_6:
         name: 'a_exs'
+        label: r'$A_{\mathrm{exs}}$'
         ini: -0.20
         type: 'student'
         min: -0.40
@@ -52,6 +58,7 @@ parameters:
     # Intercept of the Mhalo-f_ex-situ relation
     param_7:
         name: 'b_exs'
+        label: r'$B_{\mathrm{exs}}$'
         ini: 0.05
         type: 'flat'
         min: 0.00

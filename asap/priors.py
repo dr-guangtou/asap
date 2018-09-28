@@ -25,8 +25,13 @@ class TopHat(object):
         upp : float
             Upper limit of the flat distribution.
         """
+        self.distr = uniform
         self._low = low
         self._upp = upp
+
+    def get_mean(self):
+        """Get the mean value of the distribution. Can be used as initial values."""
+        return self.distr.mean(loc=self.loc, scale=self.scale)
 
     def lnp(self, x):
         """Compute the value of the probability desnity function at x and
@@ -42,7 +47,7 @@ class TopHat(object):
         lnp : float or numpy array
             The natural log of the prior probability at x
         """
-        return uniform.logpdf(x, loc=self.loc, scale=self.scale)
+        return self.distr.logpdf(x, loc=self.loc, scale=self.scale)
 
     def unit_transform(self, x):
         """Go from a value of the CDF (between 0 and 1) to the corresponding
@@ -58,7 +63,7 @@ class TopHat(object):
             The parameter value corresponding to the value of the CDF given by `unit_arr`.
 
         """
-        return uniform.ppf(x, loc=self.loc, scale=self.scale)
+        return self.distr.ppf(x, loc=self.loc, scale=self.scale)
 
     def inverse_unit_transform(self, x):
         """Go from the parameter value to the unit coordinate using the cdf.
@@ -73,7 +78,7 @@ class TopHat(object):
             The corresponding value in unit coordinate.
 
         """
-        return uniform.cdf(x, loc=self.loc, scale=self.scale)
+        return self.distr.cdf(x, loc=self.loc, scale=self.scale)
 
     def sample(self, nsample):
         """Sample the distribution.
@@ -89,7 +94,7 @@ class TopHat(object):
             `nsample` values that follow the distribution.
 
         """
-        return uniform.rvs(loc=self.loc, scale=self.scale, size=nsample)
+        return self.distr.rvs(loc=self.loc, scale=self.scale, size=nsample)
 
     @property
     def low(self):
@@ -136,9 +141,14 @@ class StudentT(object):
         df : int, optional
             Degree of freedom. Default: 1
         """
+        self.distr = t
         self._loc = loc
         self._scale = scale
         self._df = df
+
+    def get_mean(self):
+        """Get the mean value of the distribution. Can be used as initial values."""
+        return self.distr.mean(loc=self.loc, scale=self.scale, df=self.df)
 
     def lnp(self, x):
         """Compute the value of the probability desnity function at x and
@@ -154,7 +164,7 @@ class StudentT(object):
         lnp : float or numpy array
             The natural log of the prior probability at x
         """
-        return t.logpdf(x, loc=self.loc, scale=self.scale, df=self.df)
+        return self.distr.logpdf(x, loc=self.loc, scale=self.scale, df=self.df)
 
     def unit_transform(self, x):
         """Go from a value of the CDF (between 0 and 1) to the corresponding
@@ -170,7 +180,7 @@ class StudentT(object):
             The parameter value corresponding to the value of the CDF given by `unit_arr`.
 
         """
-        return t.ppf(x, loc=self.loc, scale=self.scale, df=self.df)
+        return self.distr.ppf(x, loc=self.loc, scale=self.scale, df=self.df)
 
     def inverse_unit_transform(self, x):
         """Go from the parameter value to the unit coordinate using the cdf.
@@ -185,7 +195,7 @@ class StudentT(object):
             The corresponding value in unit coordinate.
 
         """
-        return t.cdf(x, loc=self.loc, scale=self.scale, df=self.df)
+        return self.distr.cdf(x, loc=self.loc, scale=self.scale, df=self.df)
 
     def sample(self, nsample, limit=False):
         """Sample the distribution.
@@ -204,12 +214,12 @@ class StudentT(object):
 
         """
         if not limit:
-            return t.rvs(loc=self.loc, scale=self.scale, df=self.df,
-                         size=nsample)
+            return self.distr.rvs(
+                loc=self.loc, scale=self.scale, df=self.df, size=nsample)
         else:
             sample = []
             while len(sample) < nsample:
-                rv = t.rvs(df=self.df, loc=self.loc, scale=self.scale)
+                rv = self.distr.rvs(df=self.df, loc=self.loc, scale=self.scale)
                 if self.low < rv <= self.upp:
                     sample.append(rv)
 
@@ -233,12 +243,12 @@ class StudentT(object):
     @property
     def low(self):
         """Lower limit of the distribution."""
-        return self.loc - 5.0 * self.scale
+        return self.loc - 4.0 * self.scale
 
     @property
     def upp(self):
         """Upper limit of the distribution."""
-        return self.loc + 5.0 * self.scale
+        return self.loc + 4.0 * self.scale
 
     @property
     def range(self):

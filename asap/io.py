@@ -4,8 +4,6 @@ from __future__ import print_function, division, unicode_literals
 import os
 import pickle
 
-import yaml
-
 import numpy as np
 
 from astropy.table import Table, Column
@@ -15,121 +13,146 @@ __all__ = ["load_obs", "load_um"]
 
 
 def load_obs(cfg, verbose=True):
-    """Load the observed data."""
+    """Load the observed data.
+
+    Parameters
+    ----------
+    cfg : dict
+        Configuration parameters for the observations.
+    verbose : boolen
+        Blah, blah, blah
+
+    Return
+    ------
+        Dictionary that contains all the observations.
+
+    """
     # Galaxy catalog.
-    obs_mass = Table.read(os.path.join(cfg['obs_dir'],
-                                       cfg['obs_cat']))
+    mass = Table.read(cfg['galaxy'])
+    minn = np.array(mass[cfg['minn_col']])
+    mtot = np.array(mass[cfg['mtot_col']])
 
-    obs_minn = np.array(obs_mass[cfg['obs_minn_col']])
-    obs_mtot = np.array(obs_mass[cfg['obs_mtot_col']])
-
-    with open(cfg['obs_wl_out'], 'rb') as f:
+    # Observed DeltaSigma profiles
+    # TODO: Need to be updated
+    with open(cfg['dsigma'], 'rb') as f:
         # BUG: Tricky work around for pickling Python 2 array in Python 3
         # https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
         u = pickle._Unpickler(f)
         u.encoding = 'latin1'
-        obs_wl_bin, obs_wl_dsigma = u.load()
+        wl_bin, wl_dsigma = u.load()
 
-    cfg['obs_wl_n_bin'] = len(obs_wl_bin)
+    cfg['wl_n_bin'] = len(wl_bin)
     if verbose:
-        if cfg['obs_wl_n_bin'] > 1:
-            print("# There are %d weak lensing profiles in this sample" %
-                  cfg['obs_wl_n_bin'])
+        if cfg['wl_n_bin'] > 1:
+            print("# There are %d DSigma profiles in this sample" %
+                  cfg['wl_n_bin'])
         else:
-            print("# There is 1 weak lensing profile in this sample")
+            print("# There is 1 DSigma profile in this sample")
 
-    cfg['obs_dsigma_n_data'] = len(obs_wl_dsigma[0].r) * cfg['obs_wl_n_bin']
+    cfg['dsigma_n_data'] = len(wl_dsigma[0].r) * cfg['wl_n_bin']
 
-    if os.path.splitext(cfg['smf_inn_file'])[-1] == '.npy':
-        obs_smf_inn = np.load(cfg['smf_inn_file'])
+    # Stellar mass functions
+    if os.path.splitext(cfg['smf_inn'])[-1] == '.npy':
+        smf_inn = np.load(cfg['smf_inn'])
     else:
-        obs_smf_inn = Table.read(cfg['smf_inn_file'])
+        smf_inn = Table.read(cfg['smf_inn'])
 
-    if os.path.splitext(cfg['smf_tot_file'])[-1] == '.npy':
-        obs_smf_tot = np.load(cfg['smf_tot_file'])
+    if os.path.splitext(cfg['smf_tot'])[-1] == '.npy':
+        smf_tot = np.load(cfg['smf_tot'])
     else:
-        obs_smf_tot = Table.read(cfg['smf_tot_file'])
+        smf_tot = Table.read(cfg['smf_tot'])
 
-    cfg['obs_smf_inn_min'] = np.min(obs_smf_inn['logm_0'])
-    cfg['obs_smf_inn_max'] = np.max(obs_smf_inn['logm_1'])
-    cfg['obs_smf_inn_nbin'] = len(obs_smf_inn)
+    # This is for a specific format of SMF
+    cfg['smf_inn_min'] = np.min(smf_inn['logm_0'])
+    cfg['smf_inn_max'] = np.max(smf_inn['logm_1'])
+    cfg['smf_inn_nbin'] = len(smf_inn)
 
-    cfg['obs_smf_tot_min'] = np.min(obs_smf_tot['logm_0'])
-    cfg['obs_smf_tot_max'] = np.max(obs_smf_tot['logm_1'])
-    cfg['obs_smf_tot_nbin'] = len(obs_smf_tot)
+    cfg['smf_tot_min'] = np.min(smf_tot['logm_0'])
+    cfg['smf_tot_max'] = np.max(smf_tot['logm_1'])
+    cfg['smf_tot_nbin'] = len(smf_tot)
 
-    cfg['obs_ngal_use'] = ((obs_mtot >= cfg['obs_smf_tot_min']) &
-                           (obs_minn >= cfg['obs_smf_inn_min'])).sum()
+    cfg['ngal_use'] = ((mtot >= cfg['smf_tot_min']) &
+                       (minn >= cfg['smf_inn_min'])).sum()
 
-    # TODO : test this margin
-    cfg['obs_min_mtot'] = cfg['obs_smf_tot_min'] - 0.1
+    cfg['min_mtot'] = cfg['smf_tot_min'] - 0.1
 
-    cfg['obs_smf_n_data'] = cfg['obs_smf_tot_nbin'] + cfg['obs_smf_inn_nbin']
+    cfg['smf_n_data'] = cfg['smf_tot_nbin'] + cfg['smf_inn_nbin']
 
-    if cfg['smf_cov_file'] is not None:
-        obs_smf_cov = np.load(cfg['smf_cov_file'])
-        assert cfg['obs_smf_n_data'] == len(obs_smf_cov)
+    # Covariance of the SMF
+    if cfg['smf_cov'] is not None:
+        smf_cov = np.load(cfg['smf_cov'])
+        assert cfg['smf_n_data'] == len(smf_cov)
     else:
-        obs_smf_cov = None
+        smf_cov = None
 
     if verbose:
         print("# SMF for total stellar mass: ")
-        print("  %7.4f -- %7.4f in %d bins" % (cfg['obs_smf_tot_min'],
-                                               cfg['obs_smf_tot_max'],
-                                               cfg['obs_smf_tot_nbin']))
+        print("  %7.4f -- %7.4f in %d bins" % (cfg['smf_tot_min'],
+                                               cfg['smf_tot_max'],
+                                               cfg['smf_tot_nbin']))
         print("# SMF for inner stellar mass: ")
-        print("  %7.4f -- %7.4f in %d bins" % (cfg['obs_smf_inn_min'],
-                                               cfg['obs_smf_inn_max'],
-                                               cfg['obs_smf_inn_nbin']))
+        print("  %7.4f -- %7.4f in %d bins" % (cfg['smf_inn_min'],
+                                               cfg['smf_inn_max'],
+                                               cfg['smf_inn_nbin']))
 
-    obs_logms_inn = obs_minn[obs_mtot >= cfg['obs_smf_tot_min']]
-    obs_logms_tot = obs_mtot[obs_mtot >= cfg['obs_smf_tot_min']]
+    logms_inn = minn[mtot >= cfg['smf_tot_min']]
+    logms_tot = mtot[mtot >= cfg['smf_tot_min']]
 
-    if os.path.isfile(cfg['obs_smf_full_file']):
-        smf_full = Table.read(cfg['obs_smf_full_file'])
+    if os.path.isfile(cfg['smf_full']):
+        smf_full = Table.read(cfg['smf_full'])
         smf_full[smf_full['smf'] <= 0]['smf'] = 1E-8
         smf_full[smf_full['smf_low'] <= 0]['smf_low'] = 1E-9
         smf_full[smf_full['smf_upp'] <= 0]['smf_upp'] = 1E-7
-        obs_smf_full = smf_full
-        if verbose:
-            print("# Pre-computed full SMF: %s" % cfg['obs_smf_full_fits'])
+        smf_full = smf_full
     else:
-        obs_smf_full = None
+        smf_full = None
 
     if verbose:
         print("# For inner stellar mass: ")
         print("    %d bins at %5.2f < logMinn < %5.2f" %
-              (cfg['obs_smf_inn_nbin'], cfg['obs_smf_inn_min'],
-               cfg['obs_smf_inn_max']))
+              (cfg['smf_inn_nbin'], cfg['smf_inn_min'],
+               cfg['smf_inn_max']))
         print("# For total stellar mass: ")
         print("    %d bins at %5.2f < logMtot < %5.2f" %
-              (cfg['obs_smf_tot_nbin'], cfg['obs_smf_tot_min'],
-               cfg['obs_smf_tot_max']))
+              (cfg['smf_tot_nbin'], cfg['smf_tot_min'],
+               cfg['smf_tot_max']))
 
-    obs_zmin = np.nanmin(obs_mass[cfg['obs_z_col']])
-    obs_zmax = np.nanmax(obs_mass[cfg['obs_z_col']])
+    # Redshift range and observed volume
+    zmin = np.nanmin(mass[cfg['z_col']])
+    zmax = np.nanmax(mass[cfg['z_col']])
 
-    obs_volume = ((cfg['obs_cosmo'].comoving_volume(obs_zmax) -
-                   cfg['obs_cosmo'].comoving_volume(obs_zmin)) *
-                  (cfg['obs_area'] / 41254.0)).value
-    cfg['obs_volume'] = obs_volume
+    cosmo = FlatLambdaCDM(H0=cfg['h0'] * 100, Om0=cfg['omega_m'])
+    cfg['volume'] = (
+        (cosmo.comoving_volume(zmax) - cosmo.comoving_volume(zmin)) *
+        (cfg['area'] / 41254.0)).value
 
     if verbose:
-        print("# The volume of the HSC data is %15.2f Mpc^3" % obs_volume)
+        print("# The volume of the HSC data is %15.2f Mpc^3" % cfg['volume'])
 
-    return {'obs_mass': obs_mass,
-            'obs_minn': obs_minn, 'obs_mtot': obs_mtot,
-            'obs_logms_inn': obs_logms_inn, 'obs_logms_tot': obs_logms_tot,
-            'obs_wl_bin': obs_wl_bin, 'obs_wl_dsigma': obs_wl_dsigma,
-            'obs_smf_inn': obs_smf_inn, 'obs_smf_tot': obs_smf_tot,
-            'obs_smf_full': obs_smf_full, 'obs_smf_cov': obs_smf_cov,
-            'obs_volume': obs_volume}, cfg
+    return {'mass': mass, 'minn': minn, 'mtot': mtot,
+            'logms_inn': logms_inn, 'logms_tot': logms_tot,
+            'wl_bin': wl_bin, 'wl_dsigma': wl_dsigma,
+            'smf_inn': smf_inn, 'smf_tot': smf_tot,
+            'smf_full': smf_full, 'smf_cov': smf_cov}, cfg
 
 
-def load_um(cfg):
-    """Load the UniverseMachine data."""
-    um_mock = Table(np.load(os.path.join(cfg['um_dir'],
-                                         cfg['um_model'])))
+def load_um(cfg, verbose=True):
+    """Load the UniverseMachine data.
+
+    Parameters
+    ----------
+    cfg : dict
+        Configuration parameters for the UniverseMachine model.
+    verbose : boolen
+        Blah, blah, blah
+
+    Return
+    ------
+        Dictionary that contains all the UniverseMachine data.
+
+    """
+    # Mock galaxy catalog
+    um_mock = Table(np.load(cfg['galaxy']))
 
     # Only select the useful columns
     cols_use = ['halo_id', 'upid', 'sm', 'icl', 'x', 'y', 'z',
@@ -151,15 +174,17 @@ def load_um(cfg):
     um_mock_use = um_mock_use.as_array()
 
     # Load the pre-compute lensing pairs
-    um_mass_encl = np.load(os.path.join(cfg['um_dir'],
-                                        cfg['um_wl_cat']))
+    um_mass_encl = np.load(cfg['dsigma'])
     assert len(um_mock_use) == len(um_mass_encl)
 
     # Mask for central galaxies
     mask_central = (um_mock_use['upid'] == -1)
+    if verbose:
+        print("# %d out of %d galaxies are central" % (
+            mask_central.sum(), len(um_mock_use)))
 
     # Mask for massive enough halo
-    mask_mass = (um_mock_use[cfg['um_halo_col']] >= cfg['um_min_mvir'])
+    mask_mass = (um_mock_use[cfg['halo_col']] >= cfg['min_mvir'])
 
     return {'um_mock': um_mock_use[mask_mass],
             'um_mass_encl': um_mass_encl[mask_mass, :],

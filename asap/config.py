@@ -5,9 +5,7 @@ import yaml
 
 import numpy as np
 
-from . import prior
-
-__all__ = ["parse_config", "config_obs", "config_um"]
+__all__ = ["parse_config", "config_obs", "config_um", "config_emcee"]
 
 
 def parse_config(config_file):
@@ -215,26 +213,12 @@ def config_um(cfg_um, verbose=False):
     return cfg_um
 
 
-def config_params(cfg_param):
-    """Configure model parameters.
+def config_emcee(cfg_emcee, verbose=True):
+    """Configuration parameters for using emcee sampler.
 
     Parameters
     ----------
-    cfg_param : dict
-        Configurations for the model parameters.
-
-    Return
-    ------
-        Dictionary that contains necessary information of model parameters.
-
+    cfg_emcee : dict
+        Configuration parameters for emcee sampler.
     """
-    for label in cfg_param:
-        param = cfg_param[label]
-        if param['type'] == 'flat':
-            param['distr'] = prior.TopHat(low=param['min'], upp=param['max'])
-        elif param['type'] == 'student':
-            param['distr'] = prior.StudentT(loc=param['ini'], scale=param['sig'], df=1)
-        else:
-            raise Exception("# Wrong type of prior distribution: [flat|student]")
-
-
+    pass

@@ -9,7 +9,7 @@ import numpy as np
 from astropy.table import Table, Column
 from astropy.cosmology import FlatLambdaCDM
 
-__all__ = ["load_obs", "load_um"]
+__all__ = ["load_obs", "load_um", "save_pickle", "load_pickle"]
 
 
 def load_obs(cfg, verbose=True):
@@ -189,3 +189,33 @@ def load_um(cfg, verbose=True):
     return {'um_mock': um_mock_use[mask_mass],
             'um_mass_encl': um_mass_encl[mask_mass, :],
             'mask_central': mask_central[mask_mass]}
+
+
+def save_pickle(pickle_file, data):
+    """Save some data in pickle format.
+
+    Parameters
+    ----------
+    pickle_file : string
+        Name of the output Pickle file.
+    data : array or dict
+        Some data
+    """
+    pickle.dump(data, open(pickle_file, 'wb'))
+    pickle_file.close()
+
+    return
+
+
+def load_pickle(pickle_file):
+    """Load the pickled pickle.
+
+    Parameters
+    ----------
+    pickle_file : string
+        Name of the output Pickle file.
+    """
+    data = pickle.load(open(pickle_file, 'rb'))
+    pickle_file.close()
+
+    return data

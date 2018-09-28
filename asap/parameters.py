@@ -68,10 +68,10 @@ class AsapParams(object):
                 raise Exception("# You need both min and max for TopHat prior !")
 
             # Sanity checks
-            if param['sig'] <= 0:
+            if 'sig' in param and param['sig'] <= 0:
                 raise Exception("# Dispersion parameter sig can not be zero or negative !")
 
-            if param['min'] >= param['max']:
+            if 'min' in param and 'max' in param and param['min'] >= param['max']:
                 raise Exception("# Min needs to be samller than Max !")
 
     def assign_prior_distribution(self):
@@ -96,8 +96,39 @@ class AsapParams(object):
                 raise Exception("# Wrong type of prior distribution: [flat|student]")
 
     def sample(self, nsamples=1):
-        """Sampling the prior distributions"""
+        """Sampling the prior distributions
+
+        Parameters
+        ----------
+        nsamples : int, optional
+            Number of samples to return. Default: 1
+
+        Return
+        ------
+        samples : array with the shape (nsamples, n_param)
+            Random samples following the prior distributions.
+
+        """
         return np.asarray([distr.sample(nsample=nsamples) for distr in self._distr]).T
+
+    def perturb(self, nsample=1, level=0.05):
+        """Generate samples of parameters using small perturbation around the mean.
+
+        Parameters
+        ----------
+        nsamples : int, optional
+            Number of samples to return. Default: 1
+        level : float, optional
+            Percents of perturbation
+
+        Return
+        ------
+        samples : array with the shape (nsamples, n_param)
+            Random samples following the prior distributions.
+
+        """
+        return np.asarray(
+            [self.transform(np.random.randn(self.n_param) * level + 0.5) for i in range(nsample)])
 
     def lnprior(self, theta, nested=False):
         """Public version of _ln_prior.

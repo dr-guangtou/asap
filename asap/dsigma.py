@@ -1,21 +1,22 @@
-"""Delta Sigma for UM model."""
+"""Calculate DeltaSigma profiles using pre-compute pairs."""
 
 from __future__ import absolute_import, division, print_function, \
     unicode_literals
 
 import numpy as np
 
-from halotools.mock_observables.surface_density.surface_density_helpers import log_interpolation_with_inner_zero_masking as log_interp
-from halotools.mock_observables.surface_density.surface_density_helpers import annular_area_weighted_midpoints
-from halotools.mock_observables.surface_density.surface_density_helpers import rho_matter_comoving_in_halotools_units as rho_m_comoving
-from halotools.mock_observables.surface_density.mass_in_cylinders import total_mass_enclosed_in_stack_of_cylinders
-
+from halotools.sim_manager.sim_defaults import default_cosmology
 from halotools.mock_observables.mock_observables_helpers import (
     get_num_threads, get_separation_bins_array,
     get_period, enforce_sample_respects_pbcs,
     enforce_sample_has_correct_shape)
+from halotools.mock_observables.surface_density import (surface_density_helpers, mass_in_cylinders)
 
-from halotools.sim_manager.sim_defaults import default_cosmology
+log_interp = surface_density_helpers.log_interpolation_with_inner_zero_masking
+rho_m_comoving = surface_density_helpers.rho_matter_comoving_in_halotools_units
+annular_area_weighted_midpoints = surface_density_helpers.annular_area_weighted_midpoints
+mtot_cylinders = mass_in_cylinders.total_mass_enclosed_in_stack_of_cylinders
+
 
 __all__ = ['delta_sigma', 'delta_sigma_from_precomputed_pairs']
 __author__ = ('Andrew Hearin', )
@@ -224,9 +225,9 @@ def delta_sigma(galaxies, particles, particle_masses,
             rp_bins, period, num_threads)
     result = _delta_sigma_process_args(*args)
     galaxies, particles, particle_masses, downsampling_factor, \
-        rp_bins, period, num_threads, PBCs = result
+        rp_bins, period, num_threads, _ = result
 
-    total_mass_in_stack_of_cylinders = total_mass_enclosed_in_stack_of_cylinders(
+    total_mass_in_stack_of_cylinders = mtot_cylinders(
         galaxies, particles, particle_masses, downsampling_factor, rp_bins,
         period, num_threads=num_threads, approx_cell1_size=approx_cell1_size,
         approx_cell2_size=approx_cell2_size)

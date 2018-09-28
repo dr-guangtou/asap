@@ -1,9 +1,12 @@
 """Module to deal with configuration file."""
+from __future__ import print_function, division, unicode_literals
 
 import os
 import yaml
 
 import numpy as np
+
+from . import parameters as pa
 
 __all__ = ["parse_config", "config_obs", "config_um", "config_emcee"]
 
@@ -213,12 +216,137 @@ def config_um(cfg_um, verbose=False):
     return cfg_um
 
 
-def config_emcee(cfg_emcee, verbose=True):
+def config_emcee(cfg_emcee, verbose=False):
     """Configuration parameters for using emcee sampler.
 
     Parameters
     ----------
     cfg_emcee : dict
         Configuration parameters for emcee sampler.
+    verbose : boolen
+        Blah, blah, blah
+
+    Return
+    ------
+        Updated configuration parameters about emcee sampler.
+
     """
-    pass
+    # Number of emcee walkers
+    cfg_emcee['nwalkers'] = 128 if 'nwalkers' not in cfg_emcee else cfg_emcee['nwalkers']
+
+    # Number of emcee walkers during burn-in
+    if 'nwalkers_burnin' not in cfg_emcee:
+        cfg_emcee['nwalkers_burnin'] = cfg_emcee['nwalkers']
+
+    # Number of emcee runs
+    cfg_emcee['nsamples'] = 200 if 'nsamples' not in cfg_emcee else cfg_emcee['nsamples']
+
+    # Number of burn-in runs
+    cfg_emcee['nburnin'] = 200 if 'nburnin' not in cfg_emcee else cfg_emcee['nburnin']
+
+    # Number of processors to run on
+    cfg_emcee['nthreads'] = 1 if 'nthreads' not in cfg_emcee else cfg_emcee['nthreads']
+
+    # Choice of emcee move
+    cfg_emcee['moves'] = 'stretch' if 'moves' not in cfg_emcee else cfg_emcee['moves']
+
+    # Whether to use different move during burn-in
+    if 'moves_burnin' not in cfg_emcee:
+        cfg_emcee['moves_burnin'] = cfg_emcee['moves']
+
+    if verbose:
+        print("#    Use %5d walkers with %10s moves for %5d steps of burn-in" % (
+            cfg_emcee['nwalkers_burnin'], cfg_emcee['moves_burnin'], cfg_emcee['nburnin']))
+        print("#    Use %5d walkers with %10s moves for %5d steps of sampling" % (
+            cfg_emcee['nwalkers'], cfg_emcee['moves'], cfg_emcee['nsamples']))
+
+    # The a parameter for stretch move
+    cfg_emcee['stretch_a'] = 4 if 'stretch_a' not in cfg_emcee else cfg_emcee['stretch_a']
+
+    cfg_emcee['walk_s'] = None if 'walk_s' not in cfg_emcee else cfg_emcee['walk_s']
+
+    cfg_emcee['de_sigma'] = 0.2 if 'de_sigma' not in cfg_emcee else cfg_emcee['de_sigma']
+
+    return cfg_emcee
+
+
+def config_model(cfg_model, verbose=False):
+    """Basic configuration of the model.
+
+    Parameters
+    ----------
+    cfg : dict
+        Configuration parameters of the model.
+    verbose : boolen
+        Blah, blah, blah
+
+    Return
+    ------
+        Updated configuration parameters of the model.
+
+    """
+    # Type of the model
+    cfg_model['type'] = 'basic' if 'type' not in cfg_model else cfg_model['type']
+
+    # Choice of the sampler
+    cfg_model['sampler'] = 'emcee' if 'sampler' not in cfg_model else cfg_model['sampler']
+
+    # Do not change anything below unless you know what you are doing.
+    # Only fit SMF
+    cfg_model['smf_only'] = False if 'smf_only' not in cfg_model else cfg_model['smf_only']
+
+    # Only fit weak lensing
+    cfg_model['wl_only'] = False if 'wl_only' not in cfg_model else cfg_model['wl_only']
+
+    # Weight for the likelihoods of the weak lensing data
+    cfg_model['wl_weight'] = 1.0 if 'wl_weight' not in cfg_model else cfg_model['wl_weight']
+
+    # About the output file
+    cfg_model['out_dir'] = '' if 'out_dir' not in cfg_model else cfg_model['out_dir']
+
+    cfg_model['prefix'] = 'asap_model' if 'prefix' not in cfg_model else cfg_model['prefix']
+    if verbose:
+        print("# Running model: %s" % cfg_model['prefix'])
+
+    # Config the sampler
+    if cfg_model['sampler'] == 'emcee':
+        if verbose:
+            print("#    Will use emcee as sampler ...")
+        if 'emcee' not in cfg_model:
+            cfg_model['emcee'] = {}
+        cfg_model['emcee'] = config_emcee(cfg_model['emcee'], verbose=verbose)
+    else:
+        # Just use emcee for now
+        raise Exception("# Wrong choice of sampler: [emcee]")
+
+    return cfg_model
+
+
+def update_configuration(cfg, verbose=False):
+    """Basic configuration of the model.
+
+    Parameters
+    ----------
+    cfg : dict
+        Configuration parameters of the model.
+    verbose : boolen
+        Blah, blah, blah
+
+    Return
+    ------
+        Updated configuration parameters of the model.
+
+    """
+    # Basic model configuration
+    cfg['model'] = config_model(cfg['model'], verbose=verbose)
+
+    # Config the observation data
+    cfg['obs'] = config_obs(cfg['obs'], verbose=verbose)
+
+    # Config the UniverseMachine data
+    cfg['um'] = config_um(cfg['um'], verbose=verbose)
+
+    # Config the parameters
+    params = pa.AsapParams(cfg['parameters'])
+
+    return cfg, params

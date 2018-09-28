@@ -103,24 +103,25 @@ um:
     min_nobj_per_bin: 30
     min_scatter: 0.01
 
-# About emcee sampling method
-emcee:
-    out_dir: "./"
+# Flavor of the model
+model:
+    type: 'frac4'
+    sampler: 'emcee'
+    out_dir: ""
     prefix: "asap_mmax_m10_frac4_test_A"
-    moves_burnin: "stretch"
-    moves: "kde"
-    stretch_a: 6
-    nthreads: 8
-    nsamples: 100
-    nburnin: 100
-    nwalkers: 400
-    nwalkers_burnin: 128
+    # prob: True
     # Do not change anything below unless you know what you are doing.
     smf_only: False
     wl_only: False
     wl_weight: 1.0
+    # About emcee sampling method
+    emcee:
+        moves_burnin: "stretch"
+        moves: "kde"
+        stretch_a: 6
+        nthreads: 8
+        nsamples: 100
+        nburnin: 100
+        nwalkers: 400
+        nwalkers_burnin: 128
 
-# Flavor of the model
-model:
-    type: 'frac4'
-    prob: True

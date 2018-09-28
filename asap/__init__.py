@@ -3,7 +3,8 @@
 from . import io
 from . import priors
 from . import config
+from . import fitting
 from . import ensemble
 from . import parameters
 
-__all__ = ["config", "priors", "io", "parameters", "ensemble"]
+__all__ = ["config", "priors", "io", "parameters", "ensemble", "fitting"]

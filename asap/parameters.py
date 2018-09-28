@@ -99,6 +99,64 @@ class AsapParams(object):
         """Sampling the prior distributions"""
         return np.asarray([distr.sample(nsample=nsamples) for distr in self._distr]).T
 
+    def lnprior(self, theta, nested=False):
+        """Public version of _ln_prior.
+
+        Parameters
+        ----------
+        theta : list or array
+            A set of parameter values.
+        nested : bool, optional
+            True is using nested sampling instead. Will return 0 for any finite ln(prior).
+
+        Return
+        ------
+        ln_prior : float
+            Sum of the ln(prior)
+
+        """
+        lnp = self._lnprior(theta)
+
+        if nested and np.isfinite(lnp):
+            return 0.0
+
+        return lnp
+
+    def transform(self, theta_cube):
+        """Go from unit cube to parameter space, for nested sampling.
+
+        Parameters
+        ----------
+        theta_cuba : list or array
+            A set of parameter values in the unit hyper-cube.
+        nested : bool, optional
+            True is using nested sampling instead. Will return 0 for any finite ln(prior).
+
+        Return
+        ------
+        theta : array
+            Parameters values.
+
+        """
+        return np.array([d.unit_transform(u) for (u, d) in zip(theta_cube, self._distr)])
+
+    def _lnprior(self, theta):
+        """Return a scalar which is the ln of the product of the prior
+        probabilities for each element of theta.
+
+        Parameters
+        ----------
+        theta : list or array
+            A set of parameter values.
+
+        Return
+        ------
+        ln_prior : float
+            Sum of the ln(prior)
+
+        """
+        return np.sum([d.lnp(p) for (p, d) in zip(theta, self._distr)])
+
     def get_ini(self):
         """Return an array of initial values for parameters"""
         return np.array([distr.get_mean()for distr in self._distr])

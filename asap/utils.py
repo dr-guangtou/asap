@@ -1,48 +1,18 @@
 """Utilities for A.S.A.P model."""
-
 from __future__ import print_function, division, unicode_literals
 
+import copy
 import pickle
-import emcee
 
-from scipy.stats import mvn, norm, multivariate_normal
+from astropy.table import Column, vstack
+from scipy.stats import mvn, norm
 
 import numpy as np
 
 
-__all__ = ["mcmc_save_pickle", "mcmc_save_results", "mcmc_load_pickle",
-           "mcmc_initial_guess", "mcmc_samples_stats", "mcmc_load_results",
-           "mcmc_setup_moves", "mass_gaussian_weight_2d",
-           "mass_gaussian_weight"]
-
-
-def mcmc_save_pickle(mcmc_pickle_file, mcmc_results):
-    """Pickle the chain to a file."""
-    pickle_file = open(mcmc_pickle_file, 'wb')
-    pickle.dump(mcmc_results, pickle_file)
-    pickle_file.close()
-
-    return None
-
-
-def mcmc_load_pickle(mcmc_pickle_file):
-    """Load the pickled pickle."""
-    pickle_file = open(mcmc_pickle_file, 'rb')
-    mcmc_pickle = pickle.load(pickle_file)
-    pickle_file.close()
-
-    return mcmc_pickle
-
-
-def mcmc_initial_guess(param_ini, param_sig, n_walkers, n_dims):
-    """Initialize guesses for the MCMC run."""
-    mcmc_position = np.zeros([n_walkers, n_dims])
-
-    for ii, param_0 in enumerate(param_ini):
-        mcmc_position[:, ii] = (
-            param_0 + param_sig[ii] * np.random.randn(n_walkers))
-
-    return mcmc_position
+__all__ = ["mcmc_save_results", "mcmc_samples_stats", "mcmc_load_results",
+           "mass_gaussian_weight_2d", "mass_gaussian_weight",
+           "rank_splitting_sample"]
 
 
 def mcmc_samples_stats(mcmc_samples):
@@ -96,24 +66,6 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
     return
 
 
-def mcmc_setup_moves(cfg, move_col):
-    """Choose the Move object for emcee."""
-    if cfg[move_col] == 'snooker':
-        emcee_moves = emcee.moves.DESnookerMove()
-    elif cfg[move_col] == 'stretch':
-        emcee_moves = emcee.moves.StretchMove(a=cfg['mcmc_stretch_a'])
-    elif cfg[move_col] == 'walk':
-        emcee_moves = emcee.moves.WalkMove(s=cfg['mcmc_walk_s'])
-    elif cfg[move_col] == 'kde':
-        emcee_moves = emcee.moves.KDEMove()
-    elif cfg[move_col] == 'de':
-        emcee_moves = emcee.moves.DEMove(cfg['mcmc_de_sigma'])
-    else:
-        raise Exception("Wrong option: stretch, walk, kde, de, snooker")
-
-    return emcee_moves
-
-
 def mass_gaussian_weight_2d(logms1, logms2, sigms1, sigms2,
                             bin1_l, bin1_r, bin2_l, bin2_r):
     """Weight of galaaxy using two stellar masses."""
@@ -138,3 +90,85 @@ def mass_gaussian_weight(logms, sigms, left, right):
     """Weights of stellar in bin."""
     return (norm.sf(left, loc=logms, scale=sigms) -
             norm.sf(right, loc=logms, scale=sigms))
+
+
+def rank_splitting_sample(cat, X_col, Y_col, n_bins=5, n_sample=2,
+                          X_min=None, X_max=None, X_bins=None,
+                          id_each_bin=True):
+    """Split sample into N_sample with fixed distribution in X, but different
+    rank orders in Y.
+
+    Parameters:
+    -----------
+    cat : astropy.table
+        Table for input catalog
+    X_col : string
+        Name of the column for parameter that should have fixed distribution
+    Y_col : string
+        Name of the column for parameter that need to be split
+    n_bins : int
+        Number of bins in X
+    n_sample : int
+        Number of bins in Y
+    X_min : float
+        Minimum value of X for the binning
+    X_max: float
+        Maximum value of X for the binning
+    X_bins : array
+        Edges of X bins, provided by the users
+        Usefull for irregular binnings
+
+    Return
+    ------
+
+    """
+    data = copy.deepcopy(cat)
+
+    X = data[X_col]
+    X_len = len(X)
+    if X_bins is None:
+        if X_min is None:
+            X_min = np.nanmin(X)
+        if X_max is None:
+            X_max = np.nanmax(X)
+
+        msg = '# Sample size should be much larger than number of bins in X'
+        assert X_len > (2 * n_bins), msg
+
+        X_bins = np.linspace(X_min, X_max, (n_bins + 1))
+    else:
+        n_bins = (len(X_bins) - 1)
+
+    # Place holder for sample ID
+    data.add_column(Column(data=(np.arange(X_len) * 0),
+                           name='sample_id'))
+    data.add_column(Column(data=np.arange(X_len), name='index_ori'))
+
+    # Create index array for object in each bin
+    X_idxbins = np.digitize(X, X_bins, right=True)
+
+    bin_list = []
+    for ii in range(n_bins):
+        subbin = data[X_idxbins == (ii + 1)]
+        subbin.sort(Y_col)
+
+        subbin_len = len(subbin)
+        subbin_size = int(np.ceil(subbin_len / n_sample))
+
+        idx_start, idx_end = 0, subbin_size
+        for jj in range(n_sample):
+            if idx_end > subbin_len:
+                idx_end = subbin_len
+            if id_each_bin:
+                subbin['sample_id'][idx_start:idx_end] = ((jj + 1) +
+                                                          (ii * n_sample))
+            else:
+                subbin['sample_id'][idx_start:idx_end] = (jj + 1)
+            idx_start = idx_end
+            idx_end += subbin_size
+
+        bin_list.append(subbin)
+
+    new_data = vstack(bin_list)
+
+    return new_data

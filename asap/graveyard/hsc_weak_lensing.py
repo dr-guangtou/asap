@@ -1,18 +1,10 @@
-"""
-Functions for HSC weak lensing.
-"""
+"""Module about HSC weak lensing results."""
 
-from __future__ import \
-    division, \
-    print_function, \
-    absolute_import
+from __future__ import  division, print_function, absolute_import
 
 import os
-import copy
-import warnings
 import numpy as np
 
-# astropy
 from astropy.table import Table
 
 

@@ -12,6 +12,38 @@ from astropy.cosmology import FlatLambdaCDM
 __all__ = ["load_obs", "load_um", "save_pickle", "load_pickle"]
 
 
+def load_dsigma(cfg, verbose=False):
+    """Read in the observed weak lensing sigma profiles.
+
+    Parameters
+    ----------
+    cfg : dict
+        Configuration parameters for the observations.
+    verbose : boolen
+        Blah, blah, blah
+
+    Return
+    ------
+    """
+    # TODO: Need to be updated
+    with open(cfg['dsigma'], 'rb') as f:
+        # BUG: Tricky work around for pickling Python 2 array in Python 3
+        # https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
+        u = pickle._Unpickler(f)
+        u.encoding = 'latin1'
+        wl_bin, wl_dsigma = u.load()
+
+    cfg['wl_n_bin'] = len(wl_bin)
+    if verbose:
+        if cfg['wl_n_bin'] > 1:
+            print("# There are %d DSigma profiles in this sample" %
+                  cfg['wl_n_bin'])
+        else:
+            print("# There is 1 DSigma profile in this sample")
+    
+    return wl_bin, wl_dsigma
+
+
 def load_obs(cfg, verbose=True):
     """Load the observed data.
 
@@ -33,22 +65,7 @@ def load_obs(cfg, verbose=True):
     mtot = np.array(mass[cfg['mtot_col']])
 
     # Observed DeltaSigma profiles
-    # TODO: Need to be updated
-    with open(cfg['dsigma'], 'rb') as f:
-        # BUG: Tricky work around for pickling Python 2 array in Python 3
-        # https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
-        u = pickle._Unpickler(f)
-        u.encoding = 'latin1'
-        wl_bin, wl_dsigma = u.load()
-
-    cfg['wl_n_bin'] = len(wl_bin)
-    if verbose:
-        if cfg['wl_n_bin'] > 1:
-            print("# There are %d DSigma profiles in this sample" %
-                  cfg['wl_n_bin'])
-        else:
-            print("# There is 1 DSigma profile in this sample")
-
+    wl_bin, wl_dsigma = load_dsigma(cfg, verbose=verbose)
     cfg['dsigma_n_data'] = len(wl_dsigma[0].r) * cfg['wl_n_bin']
 
     # Stellar mass functions

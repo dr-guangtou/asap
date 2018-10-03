@@ -2,7 +2,7 @@
 from __future__ import print_function, division, unicode_literals
 
 import copy
-import pickle
+import numbers
 
 from astropy.table import Column, vstack
 from scipy.stats import mvn, norm
@@ -62,8 +62,6 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
         for param_stats in mcmc_params_stats:
             print(param_stats)
         print("#------------------------------------------------------")
-
-    return
 
 
 def mass_gaussian_weight_2d(logms1, logms2, sigms1, sigms2,
@@ -172,3 +170,69 @@ def rank_splitting_sample(cat, X_col, Y_col, n_bins=5, n_sample=2,
     new_data = vstack(bin_list)
 
     return new_data
+
+
+def check_random_state(seed):
+    """Turn seed into a `numpy.random.RandomState` instance.
+
+    Parameters
+    ----------
+    seed : `None`, int, or `numpy.random.RandomState`
+        If ``seed`` is `None`, return the `~numpy.random.RandomState`
+        singleton used by ``numpy.random``.  If ``seed`` is an `int`,
+        return a new `~numpy.random.RandomState` instance seeded with
+        ``seed``.  If ``seed`` is already a `~numpy.random.RandomState`,
+        return it.  Otherwise raise ``ValueError``.
+
+    Returns
+    -------
+    random_state : `numpy.random.RandomState`
+        RandomState object.
+
+    Notes
+    -----
+    This routine is from scikit-learn.  See
+    http://scikit-learn.org/stable/developers/utilities.html#validation-tools.
+    """
+
+    if seed is None or seed is np.random:
+        return np.random.mtrand._rand
+    if isinstance(seed, (numbers.Integral, np.integer)):
+        return np.random.RandomState(seed)
+    if isinstance(seed, np.random.RandomState):
+        return seed
+
+    raise ValueError('{0!r} cannot be used to seed a numpy.random.RandomState'
+                     ' instance'.format(seed))
+
+
+def random_cmap(ncolors=256, random_state=None):
+    """Generate a matplotlib colormap consisting of random (muted) colors.
+
+    A random colormap is very useful for plotting segmentation images.
+
+    Parameters
+    ----------
+    ncolors : int, optional
+        The number of colors in the colormap.  The default is 256.
+    random_state : int or `~numpy.random.RandomState`, optional
+        The pseudo-random number generator state used for random
+        sampling.  Separate function calls with the same
+        ``random_state`` will generate the same colormap.
+
+    Returns
+    -------
+    cmap : `matplotlib.colors.Colormap`
+        The matplotlib colormap with random colors.
+    """
+
+    from matplotlib import colors
+
+    prng = check_random_state(random_state)
+    h = prng.uniform(low=0.0, high=1.0, size=ncolors)
+    s = prng.uniform(low=0.2, high=0.7, size=ncolors)
+    v = prng.uniform(low=0.5, high=1.0, size=ncolors)
+    hsv = np.dstack((h, s, v))
+    rgb = np.squeeze(colors.hsv_to_rgb(hsv))
+
+    return colors.ListedColormap(rgb)

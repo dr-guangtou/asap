@@ -1,6 +1,7 @@
 # Literature values of the scatter in SM at fixed HM
 # Only care about HM > 13
 import numpy as np
+from plots import labels as l
 
 hm0, hm1, n = 13, 15, 50
 
@@ -35,7 +36,7 @@ lit2 = {
             "x": np.linspace(np.log10(5e13), np.log10(1.5e15), num=n),
             "y": np.array([0.17] * n),
             "error": 0.03,
-            "label": r"Kravtsov2018 $M_{\ast,cen}$",
+            "label": r"Kravtsov2018 " + l.m_star_legend("cen"),
             "color": "orange",
             "ls": ":",
         },
@@ -51,7 +52,7 @@ lit2 = {
             "x": gu_vir,
             "y": gu_z0,
             "error": gu_z0_err,
-            "label": r"Gu2016 $M_{\ast,cen}$",
+            "label": r"Gu2016 " + l.m_star_legend("cen"),
             "color": "orange",
             "ls": "--",
         },
@@ -59,7 +60,7 @@ lit2 = {
             "x": np.linspace(13, 15, num=n), # Check this!
             "y": np.array([0.21] * n),
             "error": 0.03,
-            "label": r"Tinker2013 $M_{\ast,cen}$",
+            "label": r"Tinker2013 " + l.m_star_legend("cen"),
             "color": "orange",
             "ls": "-.",
         },
@@ -67,7 +68,7 @@ lit2 = {
             "x": np.array([12, 14]),
             "y": np.array([0.22, 0.18]),
             "error": 0.01,
-            "label": r"Zu2015 $M_{\ast,cen}$",
+            "label": r"Zu2015 " + l.m_star_legend("cen"),
             "color": "orange",
             "ls": "-",
         },
@@ -75,7 +76,7 @@ lit2 = {
             "x": np.linspace(np.log10(5e13), np.log10(1.5e15), num=n),
             "y": np.array([0.11] * n),
             "error": 0.03,
-            "label": r"Kravtsov2018 $M_{\ast,halo}$",
+            "label": r"Kravtsov2018 " + l.m_star_legend("tot"),
             "color": "green",
             "ls": ":",
         },
@@ -83,7 +84,7 @@ lit2 = {
             "x": np.linspace(np.log10(8e13), np.log10(2e15), num=n),
             "y": np.array([0.12] * n),
             "error": 0.00, # No error on the scatter quoted
-            "label": r"Lin2012 $M_{\ast,halo}$",
+            "label": r"Lin2012 " + l.m_star_legend("tot"),
             "color": "green",
             "ls": "--",
         },

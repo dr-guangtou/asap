@@ -62,7 +62,10 @@ def in_hm_at_fixed_number_density_incl_richness(data_stellar_cut_x, richness, ax
     # Put the richness at the tops
     ax2 = ax.twiny()
     richness_counts = [5, 10, 20, 30]
-    ticks = fits.density_at_richness(richness, richness_counts) / sim_volume
+    try:
+        ticks = fits.density_at_richness(richness, richness_counts) / sim_volume
+    except:
+        ticks = fits.density_at_richness(richness, richness_counts[:-1]) / sim_volume
     ax2.set(
             xlim=np.log10(ax.get_xlim()),
             xticks=np.log10(ticks),

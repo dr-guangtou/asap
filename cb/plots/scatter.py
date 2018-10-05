@@ -51,7 +51,7 @@ def in_sm_at_fixed_hm_incl_lit(central_catalogs, ax = None):
         ylabel=l.sm_scatter("x"),
         xlim=ax.get_xlim(), # don't let the lit values move this around
     )
-    ax.add_artist(ax.legend(handles=our_lines, loc="upper right", fontsize="xx-small"))
+    ax.add_artist(ax.legend(handles=our_lines, loc="upper right", fontsize="x-small"))
 
     # And now for the lit values
     ax = plot_lit(ax)

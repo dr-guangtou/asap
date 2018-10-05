@@ -35,7 +35,7 @@ def hm_at_fixed_sm(catalog, n_sats, fit=None, ax=None):
 
     if fit is not None:
         ax.plot(sm_bin_midpoints, smhm_fit.f_shmr_inverse(sm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
-    ax.legend()
+    ax.legend(fontsize="x-small")
 
     return ax
 
@@ -55,20 +55,23 @@ def sm_at_fixed_hm(catalog, n_sats, fit=None, ax=None):
     std_sm, _, _ = scipy.stats.binned_statistic(x, y, statistic="std", bins=hm_bin_edges)
 
     # Plot data and colored error regions
-    ax.plot(hm_bin_midpoints, mean_sm, marker="o", label="Universe Machine", linewidth=1)
-    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.5, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.25, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
-    ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
+    line = ax.plot(hm_bin_midpoints, mean_sm, marker="o", linestyle="None", markersize=2)[0]
+    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm+std_sm, alpha=0.3, facecolor=line.get_color())
+    ax.fill_between(hm_bin_midpoints, mean_sm-std_sm, mean_sm-(2*std_sm), alpha=0.15, facecolor=line.get_color())
+    ax.fill_between(hm_bin_midpoints, mean_sm+std_sm, mean_sm+(2*std_sm), alpha=0.15, facecolor=line.get_color())
+    # ax.fill_between(hm_bin_midpoints, mean_sm-(2*std_sm), mean_sm-(3*std_sm), alpha=0.125, facecolor="tab:blue")
+    # ax.fill_between(hm_bin_midpoints, mean_sm+(2*std_sm), mean_sm+(3*std_sm), alpha=0.125, facecolor="tab:blue")
     ax.set(
         xlabel=l.m_vir_x_axis,
-        ylabel=l.m_star_x_axis(n_sats),
+        ylabel=l.m_star_x_axis("x"),
     )
 
     if fit is not None:
-        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
-    ax.legend(loc="lower right")
+        # ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), label="Best Fit", linewidth=1)
+        ax.plot(hm_bin_midpoints, smhm_fit.f_shmr(hm_bin_midpoints, *fit), linewidth=1, color=line.get_color(), label=l.m_star_legend(n_sats))
+    print("d mvir / d mstar: {}".format(
+           (hm_bin_midpoints[-1] - hm_bin_midpoints[0]) / (smhm_fit.f_shmr(hm_bin_midpoints[-1], *fit) - smhm_fit.f_shmr(hm_bin_midpoints[0], *fit))))
+    ax.legend(loc="upper left", fontsize="x-small")
 
     return ax
 

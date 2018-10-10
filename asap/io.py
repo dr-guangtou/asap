@@ -25,15 +25,11 @@ def load_dsigma(cfg, verbose=False):
     Return
     ------
     """
-    # TODO: Need to be updated
-    with open(cfg['dsigma'], 'rb') as f:
-        # BUG: Tricky work around for pickling Python 2 array in Python 3
-        # https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
-        u = pickle._Unpickler(f)
-        u.encoding = 'latin1'
-        wl_bin, wl_dsigma = u.load()
+    # Now the DeltaSigma data are stored in a numpy array
+    # Mass bin is defined by: min_logm1, min_logm2, max_logm1, and max_logm2
+    wl_dsigma = np.load(cfg['dsigma'])
 
-    cfg['wl_n_bin'] = len(wl_bin)
+    cfg['wl_n_bin'] = len(wl_dsigma)
     if verbose:
         if cfg['wl_n_bin'] > 1:
             print("# There are %d DSigma profiles in this sample" %
@@ -41,7 +37,7 @@ def load_dsigma(cfg, verbose=False):
         else:
             print("# There is 1 DSigma profile in this sample")
 
-    return wl_bin, wl_dsigma
+    return wl_dsigma
 
 
 def load_obs(cfg, verbose=True):
@@ -65,8 +61,8 @@ def load_obs(cfg, verbose=True):
     mtot = np.array(mass[cfg['mtot_col']])
 
     # Observed DeltaSigma profiles
-    wl_bin, wl_dsigma = load_dsigma(cfg, verbose=verbose)
-    cfg['dsigma_n_data'] = len(wl_dsigma[0].r) * cfg['wl_n_bin']
+    wl_dsigma = load_dsigma(cfg, verbose=verbose)
+    cfg['dsigma_n_data'] = len(wl_dsigma[0]['dsigma']) * cfg['wl_n_bin']
 
     # Stellar mass functions
     if os.path.splitext(cfg['smf_inn'])[-1] == '.npy':
@@ -148,7 +144,7 @@ def load_obs(cfg, verbose=True):
 
     return {'mass': mass, 'minn': minn, 'mtot': mtot,
             'logms_inn': logms_inn, 'logms_tot': logms_tot,
-            'wl_bin': wl_bin, 'wl_dsigma': wl_dsigma,
+            'wl_dsigma': wl_dsigma,
             'smf_inn': smf_inn, 'smf_tot': smf_tot,
             'smf_full': smf_full, 'smf_cov': smf_cov}, cfg
 

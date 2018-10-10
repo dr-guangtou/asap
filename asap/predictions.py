@@ -5,10 +5,39 @@ import numpy as np
 
 from scipy import interpolate
 
+from . import smf
+from . import utils
+
+
+__all__ = ['frac_from_logmh', 'sigma_logms_from_logmh', 'predict_mstar_basic',
+           'predict_smf']
+
 
 def frac_from_logmh(logm_halo, frac_a, frac_b,
                     min_frac=0.0, max_frac=1.0, pivot=15.3):
-    """Halo mass dependent fraction."""
+    """Halo mass dependent fraction.
+    
+    Parameters
+    ----------
+    logm_halo: numpy array 
+        Array of halo mass.
+    frac_a: float
+        Slope of the scaling relation. 
+    frac_b: float
+        Intercept of scaling relation.
+    min_frac: float, optional
+        Minimum fraction allowed. Default: 0.0
+    max_frac: float, optional
+        Maximum fraction allowed. Default: 1.0
+    pivot: float, optional 
+        Pivot halo mass for the scaling relation. Default: 15.3
+    
+    Returns
+    -------
+    frac: numpy array
+        Fraction predicted by the scaling relation.
+        
+    """
     frac = frac_a * (np.array(logm_halo) - pivot) + frac_b
 
     frac = np.where(frac <= min_frac, min_frac, frac)
@@ -17,7 +46,7 @@ def frac_from_logmh(logm_halo, frac_a, frac_b,
     return frac
 
 
-def sigma_logms_from_logmh(logm_halo, sigms_a, sigms_b,
+def sigma_logms_from_logmh(logm_halo, sig_logms_a, sig_logms_b,
                            min_scatter=0.01, pivot=15.3):
     """Scatter of stellar mass at fixed halo mass.
 
@@ -25,26 +54,31 @@ def sigma_logms_from_logmh(logm_halo, sigms_a, sigms_b,
 
     Parameters
     ----------
-    logMhalo: ndarray
+    logm_halo: ndarray
         log10(Mhalo), for UM, use the true host halo mass.
-    sigms_a: float
-        Slope of the SigMs = a x logMh + b relation.
-    sigms_b: float
-        Normalization of the SigMs = a x logMh + b relation.
+    sig_logms_a: float
+        Slope of the sig_logms = a x logMh + b relation.
+    sig_logms_b: float
+        Normalization of the sig_logms = a x logMh + b relation.
     min_scatter: float, optional
         Minimum allowed scatter.
         Sometimes the relation could lead to negative or super tiny
         scatter at high-mass end.  Use min_scatter to replace the
         unrealistic values. Default: 0.01
     pivot: float, optional
-        Pivot halo mass.
+        Pivot halo mass. Default: 15.3
+    
+    Returns
+    -------
+    sig_logms: numpy array
+        Scatter or uncertainties of the predicted stellar mass.
 
     """
-    sigms = sigms_a * (np.array(logm_halo) - pivot) + sigms_b
+    sig_logms = sig_logms_a * (np.array(logm_halo) - pivot) + sig_logms_b
 
-    sigms = np.where(sigms <= min_scatter, min_scatter, sigms)
+    sig_logms = np.where(sig_logms <= min_scatter, min_scatter, sig_logms)
 
-    return sigms
+    return sig_logms
 
 
 def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
@@ -67,6 +101,17 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
         Name of the halo mass column. Default: 'logmh_host'
     pivot: float, optional
         Pivot halo mass. Default: 0.0
+        
+    Returns
+    -------
+    logms_inn_mod: numpy array
+        Predicted stellar mass in the inner aperture.
+    logms_tot_mod: numpy array
+        Predicted total stellar mass of the galaxy.
+    sig_logms: numpy array
+        Uncertainties of the stellar masses. 
+    mask_use: boolen array
+        Mask that indicates the galaxies with stellar mass predictions.
 
     Notes
     -----
@@ -74,7 +119,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
     This is the default model with 7 free parameters:
         shmr_a, shmr_b:   determines a log-log linear SHMR between the
                           halo mass and total stellar mass within the halo.
-        sigms_a, sigms_b: determines the relation between scatter of
+        sig_logms_a, sig_logms_b: determines the relation between scatter of
                           total stellar mass and the halo mass.
         frac_ins:         fraction of the in-situ stars in the inner aperture.
         frac_exs_a, frac_exs_b:  determine the fraction of the ex-situ stars in
@@ -82,12 +127,12 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
     """
     # Model parameters
     assert len(parameters) == 7, "# Wrong parameter combinations."
-    (shmr_a, shmr_b, sigms_a, sigms_b,
+    (shmr_a, shmr_b, sig_logms_a, sig_logms_b,
      frac_ins, frac_exs_a, frac_exs_b) = parameters
 
     # Scatter of logMs_tot based on halo mass
     sig_logms_tot = sigma_logms_from_logmh(
-        um_mock[logmh_col], sigms_a, sigms_b, min_scatter=min_scatter)
+        um_mock[logmh_col], sig_logms_a, sig_logms_b, min_scatter=min_scatter)
 
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all
@@ -126,3 +171,122 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
         return logms_inn_mod, logms_tot_mod, mask_use
 
     return logms_inn_mod, logms_tot_mod, sig_logms, mask_use
+
+
+def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.4):
+    """Predict SMFs weighted by mass uncertainties.
+    
+    Parameters
+    ----------
+    logms_mod_tot: numpy array
+        Array of total stellar masses. 
+    logms_mod_inn: numpy array 
+        Array of stellar mass in the inner region.
+    sig_logms: numpy array
+        Uncertainties of stellar mass.
+    cfg: dict
+        Configuration parameters.
+    min_weight: float, optional
+        Minimum weight used to get SMF of inner aperture mass. Default: 0.4
+    
+    Returns
+    -------
+    smf_tot: numpy array 
+        Stellar mass function of the total stellar mass.
+    smf_inn: numpy array 
+        Stellar mass function of the inner aperture mass.
+        
+    """
+    # SMF of the predicted Mtot (M100 or MMax)
+    
+    # Expected number of galaxies in the 
+    ngal_expect = (cfg['obs']['ngal_use'] * cfg['um']['volume'] / cfg['obs']['volume'])
+    
+    # If the number of predicted galaxies with mass in the observed range is smaller 
+    # than 1/10 of the expected number, don't estimate SMF
+    min_num = int(ngal_expect / 10)
+
+    # If the number of useful galaxy is too small, return None
+    if (logms_mod_tot > cfg['obs']['smf_tot_min']).sum() <= min_num:
+        return None, None
+
+    if (logms_mod_inn > cfg['obs']['smf_inn_min']).sum() <= min_num:
+        return None, None
+
+    smf_tot = smf.smf_sigma_mass_weighted(
+        logms_mod_tot, sig_logms, cfg['um']['volume'], cfg['obs']['smf_tot_nbin'],
+        cfg['obs']['smf_tot_min'], cfg['obs']['smf_tot_max'])
+
+    weight = utils.mass_gaussian_weight(
+        logms_mod_tot, sig_logms, cfg['obs']['smf_tot_min'], cfg['obs']['smf_tot_max'])
+
+    # SMF of the predicted inner aperture mass
+    smf_inn = smf.smf_sigma_mass_weighted(
+        logms_mod_inn[weight > min_weight], sig_logms[weight > min_weight],
+        cfg['um']['volume'], cfg['obs']['smf_inn_nbin'],
+        cfg['obs']['smf_inn_min'], cfg['obs']['smf_inn_max'])
+
+    return smf_tot, smf_inn
+
+
+def get_single_dsigma(cfg, mock_use, mass_encl_use, mask=None, weight=None,
+                      r_interp=None, mstar_lin=None):
+    """Weak lensing dsigma profiles using pre-computed pairs.
+
+    Parameters
+    ----------
+    cfg: dict
+        Configurations of the data and model.
+    mask: numpy array, optional
+        Mask array that defines the subsample. Default: None
+    weight: numpy array, optional
+        Galaxy weight used in the calculation. Default: None
+    r_interp : array, optional
+        Radius array to interpolate to. Default: None
+    mstar_lin : float, optional
+        Linear mass for "point source". Default: None
+
+    """
+    # Cosmology
+    um_cosmo = cfg['um_cosmo']
+
+    # Radius bins
+    rp_bins = np.logspace(np.log10(cfg['um_wl_minr']),
+                          np.log10(cfg['um_wl_maxr']), cfg['um_wl_nbin'])
+
+    #  Use the mask to get subsample positions and pre-computed pairs
+    if mask is not None:
+        subsample = mock_use[mask]
+        subsample_mass_encl_precompute = mass_encl_use[mask, :]
+    else:
+        subsample = mock_use
+        subsample_mass_encl_precompute = mass_encl_use
+
+    subsample_positions = np.vstack([subsample['x'],
+                                     subsample['y'],
+                                     subsample['z']]).T
+
+    rp_ht_units, ds_ht_units = delta_sigma_from_precomputed_pairs(
+        subsample_positions, subsample_mass_encl_precompute,
+        rp_bins, cfg['um_lbox'], cosmology=um_cosmo,
+        weight=weight)
+
+    # Unit conversion
+    ds_phys_msun_pc2 = ((1. + cfg['um_redshift']) ** 2 *
+                        (ds_ht_units * um_cosmo.h) / (1e12))
+
+    rp_phys = ((rp_ht_units) / (abs(1. + cfg['um_redshift']) * um_cosmo.h))
+
+    # Add the point source term
+    if mstar_lin is not None:
+        ds_phys_msun_pc2[0] += (
+            mstar_lin / 1e12 / (np.pi * (rp_phys ** 2.0))
+            )
+
+    if r_interp is not None:
+        intrp = interpolate.interp1d(rp_phys, ds_phys_msun_pc2,
+                                     kind='cubic', bounds_error=False)
+        return intrp(r_interp)
+
+    return ds_phys_msun_pc2
+

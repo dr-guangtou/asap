@@ -1,6 +1,4 @@
-"""
-Python functions related to stellar mass function.
-"""
+"""Functions related to stellar mass function."""
 
 from __future__ import print_function, division, unicode_literals, absolute_import
 
@@ -9,7 +7,7 @@ from scipy.stats import norm
 
 import numpy as np
 
-from asap.asap_utils import mtot_minn_weight
+from . import utils 
 
 
 __all__ = ['get_smf_bootstrap', 'bootstrap_smf', 'bootstrap_resample',
@@ -25,23 +23,17 @@ def compute_smf(sm_array, volume, nb, sm_min, sm_max,
     ----------
     sm_array: ndarray
         Array of stellar mass values in log10 values
-
     volume : float
         volume of data in comoving Mpc^-3
-
     nb : number of bins
-
     sm_min : min of x axis
-
     sm_max : max of y axis
 
     Returns
     -------
     x : ndarray
         x axis of SMF in units of log10 M*
-
     smf : ndarray in units of dn / dlogM* in units of Mpc^-3 dex^-1
-
     err : ndarray
         Poisson error
     """
@@ -244,8 +236,8 @@ def ngal_weighted_mass_bin_1d(logms, sigms, left, right):
 def ngal_weighted_mass_bin_2d(logms_1, logms_2, sigms, low, upp,
                               left, right):
     """Weigthed count of galaxies in bin using two masses."""
-    return np.array(mtot_minn_weight(logms_1, logms_2, sigms,
-                                     low, upp, left, right)).sum()
+    return np.array(utils.mtot_minn_weight(
+        logms_1, logms_2, sigms, low, upp, left, right)).sum()
 
 
 def smf_sigma_mass_weighted(logms, sigms, volume, nbin,

@@ -40,7 +40,7 @@ def load_dsigma(cfg, verbose=False):
                   cfg['wl_n_bin'])
         else:
             print("# There is 1 DSigma profile in this sample")
-    
+
     return wl_bin, wl_dsigma
 
 

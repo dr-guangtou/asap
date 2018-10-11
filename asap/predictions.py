@@ -12,7 +12,8 @@ from . import dsigma
 
 
 __all__ = ['frac_from_logmh', 'sigma_logms_from_logmh', 'predict_mstar_basic',
-           'predict_smf']
+           'predict_smf', 'make_model_predictions', 'um_get_dsigma', 'get_single_dsigma_profile',
+           'predict_dsigma_profiles', 'asap_single_mhalo']
 
 
 def frac_from_logmh(logm_halo, frac_a, frac_b,
@@ -129,8 +130,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
     """
     # Model parameters
     assert len(parameters) == 7, "# Wrong parameter combinations."
-    (shmr_a, shmr_b, sig_logms_a, sig_logms_b,
-     frac_ins, frac_exs_a, frac_exs_b) = parameters
+    shmr_a, shmr_b, sig_logms_a, sig_logms_b, frac_ins, frac_exs_a, frac_exs_b = parameters
 
     # Scatter of logMs_tot based on halo mass
     sig_logms_tot = sigma_logms_from_logmh(
@@ -152,6 +152,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
 
     # Mask for massive enough galaxies
     mask_use = logms_tot_mod_all >= min_logms
+
     logms_tot_mod = logms_tot_mod_all[mask_use]
     sig_logms = sig_logms_tot[mask_use]
 
@@ -175,7 +176,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
     return logms_inn_mod, logms_tot_mod, sig_logms, mask_use
 
 
-def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.4):
+def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.3):
     """Predict SMFs weighted by mass uncertainties.
 
     Parameters
@@ -200,21 +201,6 @@ def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.4):
 
     """
     # SMF of the predicted Mtot (M100 or MMax)
-
-    # Expected number of galaxies in the
-    ngal_expect = (cfg['obs']['ngal_use'] * cfg['um']['volume'] / cfg['obs']['volume'])
-
-    # If the number of predicted galaxies with mass in the observed range is smaller
-    # than 1/10 of the expected number, don't estimate SMF
-    min_num = int(ngal_expect / 10)
-
-    # If the number of useful galaxy is too small, return None
-    if (logms_mod_tot > cfg['obs']['smf_tot_min']).sum() <= min_num:
-        return None, None
-
-    if (logms_mod_inn > cfg['obs']['smf_inn_min']).sum() <= min_num:
-        return None, None
-
     smf_tot = smf.smf_sigma_mass_weighted(
         logms_mod_tot, sig_logms, cfg['um']['volume'], cfg['obs']['smf_tot_nbin'],
         cfg['obs']['smf_tot_min'], cfg['obs']['smf_tot_max'])
@@ -334,14 +320,22 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
         DeltaSigma profile of mock galaxies in a mass bin.
 
     """
-    # "Point source" term for the central galaxy
-    weight = np.array(
-        utils.mtot_minn_weight(logms_mod_tot, logms_mod_inn, sig_logms,
-                               obs_prof['min_logm1'], obs_prof['max_logm1'],
-                               obs_prof['min_logm2'], obs_prof['max_logm2']))
-
-    # Exclude the ones with tiny weight values.
-    mask = (weight >= min_weight)
+    if sig_logms is None:
+        # If not uncertainties are provided, just make all weight = 1
+        weight = np.ones(len(logms_mod_tot))
+        # Just make cut based on the mask bin
+        mask = ((logms_mod_tot >= obs_prof['min_logm1']) &
+                (logms_mod_tot < obs_prof['max_logm1']) &
+                (logms_mod_inn >= obs_prof['min_logm2']) &
+                (logms_mod_inn < obs_prof['max_logm2']))
+    else:
+        weight = np.array(
+            utils.mtot_minn_weight(
+                logms_mod_tot, logms_mod_inn, sig_logms,
+                obs_prof['min_logm1'], obs_prof['max_logm1'],
+                obs_prof['min_logm2'], obs_prof['max_logm2']))
+        # Exclude the ones with tiny weight values.
+        mask = (weight >= min_weight)
 
     if mask.sum() >= min_num:
         if add_stellar:
@@ -395,9 +389,137 @@ def predict_dsigma_profiles(cfg, obs_dsigma, mock_use, mass_encl_use, logms_mod_
         mock_use = mock_use[mask]
         mass_encl_use = mass_encl_use[mask, :]
 
-    if sig_logms is None:
-        sig_logms = np.zeros(len(mock_use))
-
     return [get_single_dsigma_profile(
         cfg, mock_use, mass_encl_use, obs_prof, logms_mod_tot, logms_mod_inn, sig_logms,
         min_num=min_num, add_stellar=add_stellar) for obs_prof in obs_dsigma]
+
+
+def make_model_predictions(parameters, cfg, obs_data, um_data, verbose=False, return_all=False):
+    """Return all model predictions.
+
+    Parameters
+    ----------
+    parameters: array
+        One set of model parameters
+    cfg: dict
+        Model configuration parameters.
+    obs_data: dict
+        Dictionary of observations.
+    um_data: dict
+        Dictionary of UniverseMachine data.
+    return_all: boolen, optional
+        Whether return all information. Default: False
+
+    Returns
+    -------
+    um_smf_tot: numpy array
+        Stellar mass function of the total stellar mass.
+    um_smf_inn: numpy array
+        Stellar mass function of the inner aperture mass.
+    um_dsigma:
+        List of DeltaSigma profiles.
+
+    """
+    # Predict stellar masses
+    if cfg['model']['type'] == 'basic':
+        logms_mod_inn, logms_mod_tot, sig_logms, mask_tot = predict_mstar_basic(
+            um_data['um_mock'], parameters, random=False, min_logms=cfg['um']['min_logms'],
+            logmh_col=cfg['um']['logmh_col'], min_scatter=cfg['um']['min_scatter'],
+            pivot=cfg['um']['pivot_logmh'])
+    else:
+        raise Exception("# Wrong choice of model: [basic]! ")
+
+    # Estimate the expected number of galaxies in the model
+    ngal_expect = cfg['obs']['ngal_use'] * (cfg['um']['volume'] / cfg['obs']['volume'])
+    ngal_use = ((logms_mod_tot >= cfg['obs']['smf_tot_min']) &
+                (logms_mod_inn >= cfg['obs']['smf_inn_min'])).sum()
+
+    # TODO: Could be more aggressive
+    if ngal_use <= (ngal_expect / 20) or ngal_use >= (ngal_expect * 20):
+        # If the number of useful galaxies is problematic, just pass
+        if verbose:
+            print("# The model is not very realistic: %d v.s. %d" % (ngal_expect, ngal_use))
+        um_smf_tot, um_smf_inn = None, None,
+        um_dsigma = None
+    else:
+        # Predict SMFs
+        um_smf_tot, um_smf_inn = predict_smf(
+            logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.1)
+
+        # Predict DeltaSigma profiles
+        um_dsigma = predict_dsigma_profiles(
+            cfg, obs_data['wl_dsigma'], um_data['um_mock'], um_data['um_mass_encl'],
+            logms_mod_tot, logms_mod_inn, mask=mask_tot, sig_logms=sig_logms,
+            min_num=3, add_stellar=cfg['um']['wl_add_stellar'])
+
+    if return_all:
+        return (um_smf_tot, um_smf_inn, um_dsigma, logms_mod_inn, logms_mod_tot,
+                sig_logms, mask_tot)
+
+    return um_smf_tot, um_smf_inn, um_dsigma
+
+
+def get_mean_mhalo(mock_use, obs_prof, logms_mod_tot, logms_mod_inn, sig_logms=None):
+    """Mhalo and scatter in one bin.
+
+    Parameters
+    ----------
+    mock_use: numpy array
+        Mock galaxy catalog.
+    obs_prof: numpy array
+        Observed DeltaSigma information for one mass bin.
+    logms_mod_tot: numpy array
+        Array of total stellar masses.
+    logms_mod_inn: numpy array
+        Array of stellar mass in the inner region.
+    sig_logms: numpy array, optional
+        Uncertainties of stellar mass. Default: None
+
+    Returns
+    -------
+        The mean halo mass in the mass bin and its standard deviation
+
+    """
+    if sig_logms is None:
+        # If not uncertainties are provided, just make all weight = 1
+        weight = np.ones(len(logms_mod_tot))
+        # Just make cut based on the mask bin
+        mask = ((logms_mod_tot >= obs_prof['min_logm1']) &
+                (logms_mod_tot < obs_prof['max_logm1']) &
+                (logms_mod_inn >= obs_prof['min_logm2']) &
+                (logms_mod_inn < obs_prof['max_logm2']))
+    else:
+        weight = np.array(
+            utils.mtot_minn_weight(
+                logms_mod_tot, logms_mod_inn, sig_logms,
+                obs_prof['min_logm1'], obs_prof['max_logm1'],
+                obs_prof['min_logm2'], obs_prof['max_logm2']))
+        # Exclude the ones with tiny weight values.
+        mask = (weight >= 0.03)
+
+    # Just return the logMHalo and its scatter in each bin
+    return utils.weighted_avg_and_std(mock_use['logmh_vir'][mask],
+                                      weight[mask])
+
+
+def predict_mhalo(obs_dsigma, mock_use, logms_mod_tot, logms_mod_inn, sig_logms=None):
+    """Halo mass and its scatter in each bin.
+
+    Parameters
+    ----------
+    obs_dsigma: list
+        List of observed DeltaSigma profiles.
+    mock_use: numpy array
+        UniverseMachine mock catalog.
+    logms_mod_tot : ndarray
+        Total stellar mass (e.g. M100) predicted by UM.
+    logms_mod_inn : ndarray
+        Inner stellar mass (e.g. M10) predicted by UM.
+    sig_logms: numpy array, optional
+        Uncertainties of stellar mass. Default: None
+
+    """
+    # The mock catalog and precomputed mass files for subsamples
+    return [get_mean_mhalo(
+                mock_use, obs_prof, logms_mod_tot, logms_mod_inn, sig_logms=sig_logms)
+            for obs_prof in obs_dsigma]

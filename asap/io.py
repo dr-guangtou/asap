@@ -131,12 +131,10 @@ def load_obs(cfg, verbose=True):
                cfg['smf_tot_max']))
 
     # Redshift range and observed volume
-    zmin = np.nanmin(mass[cfg['z_col']])
-    zmax = np.nanmax(mass[cfg['z_col']])
-
     cosmo = FlatLambdaCDM(H0=cfg['h0'] * 100, Om0=cfg['omega_m'])
     cfg['volume'] = (
-        (cosmo.comoving_volume(zmax) - cosmo.comoving_volume(zmin)) *
+        (cosmo.comoving_volume(np.nanmax(mass[cfg['z_col']])) - 
+         cosmo.comoving_volume(np.nanmin(mass[cfg['z_col']]))) *
         (cfg['area'] / 41254.0)).value
 
     if verbose:

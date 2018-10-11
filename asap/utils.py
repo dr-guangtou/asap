@@ -12,7 +12,7 @@ import numpy as np
 
 __all__ = ["mcmc_save_results", "mcmc_samples_stats", "mcmc_load_results",
            "mass_gaussian_weight_2d", "mass_gaussian_weight",
-           "rank_splitting_sample"]
+           "rank_splitting_sample", "weighted_avg_and_std"]
 
 
 def mcmc_samples_stats(mcmc_samples):
@@ -236,3 +236,19 @@ def random_cmap(ncolors=256, random_state=None):
     rgb = np.squeeze(colors.hsv_to_rgb(hsv))
 
     return colors.ListedColormap(rgb)
+
+
+def weighted_avg_and_std(values, weights):
+    """Return the weighted average and standard deviation.
+
+    values, weights -- Numpy ndarrays with the same shape.
+
+    Based on:
+    https://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
+    """
+    average = np.average(values, weights=weights)
+
+    # Fast and numerically precise:
+    variance = np.average((values-average)**2, weights=weights)
+
+    return average, np.sqrt(variance)

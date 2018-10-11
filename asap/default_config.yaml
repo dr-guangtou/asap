@@ -14,10 +14,10 @@ parameters:
     param_2:
         name: 'b'
         label: r'$b$'
-        ini: 3.70
+        ini: 11.8
         type: 'flat'
-        min: 1.00
-        max: 6.00
+        min: 10.0
+        max: 13.0
         sig: 1.00
     # Slope of the Mhalo-sigma relation
     param_3:
@@ -87,14 +87,17 @@ um:
     dir: '/Users/song/Dropbox/work/project/asap/data/s16a_massive_wide2/um2'
     galaxy: 'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy'
     dsigma: 'um_smdpl_0.7124_new_vagc_mpeak_11.5_50m_r_0.08_50_22bins.npy'
-    halo_col: 'logmh_host'
-    star_col: 'logms_tot'
+    logmh_col: 'logmh_host'
+    logms_col: 'logms_tot'
+    pivot_logmh: 13.5
+    min_logmh: 12.0
+    min_logms: 11.0
+    min_scatter: 0.01
     # Do not change anything below unless you know what you are doing.
+    redshift: 0.3637
     lbox: 400.0
     h0: 0.678
     omega_m: 0.307
-    min_mvir: 12.0
-    redshift: 0.3637
     wl_minr: 0.08
     wl_maxr: 50.0
     wl_nbin: 22
@@ -102,14 +105,13 @@ um:
     mtot_nbin: 80
     mtot_nbin_min: 7
     min_nobj_per_bin: 30
-    min_scatter: 0.01
 
 # Flavor of the model
 model:
-    type: 'frac4'
+    type: 'basic'
     sampler: 'emcee'
     out_dir: ""
-    prefix: "asap_mmax_m10_frac4_test_A"
+    prefix: "asap_mmax_m10_basic_test_A"
     # prob: True
     # Do not change anything below unless you know what you are doing.
     smf_only: False

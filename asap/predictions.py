@@ -4,9 +4,11 @@ from __future__ import print_function, division, unicode_literals
 import numpy as np
 
 from scipy import interpolate
+from astropy.cosmology import FlatLambdaCDM
 
 from . import smf
 from . import utils
+from . import dsigma
 
 
 __all__ = ['frac_from_logmh', 'sigma_logms_from_logmh', 'predict_mstar_basic',
@@ -16,27 +18,27 @@ __all__ = ['frac_from_logmh', 'sigma_logms_from_logmh', 'predict_mstar_basic',
 def frac_from_logmh(logm_halo, frac_a, frac_b,
                     min_frac=0.0, max_frac=1.0, pivot=15.3):
     """Halo mass dependent fraction.
-    
+
     Parameters
     ----------
-    logm_halo: numpy array 
+    logm_halo: numpy array
         Array of halo mass.
     frac_a: float
-        Slope of the scaling relation. 
+        Slope of the scaling relation.
     frac_b: float
         Intercept of scaling relation.
     min_frac: float, optional
         Minimum fraction allowed. Default: 0.0
     max_frac: float, optional
         Maximum fraction allowed. Default: 1.0
-    pivot: float, optional 
+    pivot: float, optional
         Pivot halo mass for the scaling relation. Default: 15.3
-    
+
     Returns
     -------
     frac: numpy array
         Fraction predicted by the scaling relation.
-        
+
     """
     frac = frac_a * (np.array(logm_halo) - pivot) + frac_b
 
@@ -67,7 +69,7 @@ def sigma_logms_from_logmh(logm_halo, sig_logms_a, sig_logms_b,
         unrealistic values. Default: 0.01
     pivot: float, optional
         Pivot halo mass. Default: 15.3
-    
+
     Returns
     -------
     sig_logms: numpy array
@@ -101,7 +103,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
         Name of the halo mass column. Default: 'logmh_host'
     pivot: float, optional
         Pivot halo mass. Default: 0.0
-        
+
     Returns
     -------
     logms_inn_mod: numpy array
@@ -109,7 +111,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
     logms_tot_mod: numpy array
         Predicted total stellar mass of the galaxy.
     sig_logms: numpy array
-        Uncertainties of the stellar masses. 
+        Uncertainties of the stellar masses.
     mask_use: boolen array
         Mask that indicates the galaxies with stellar mass predictions.
 
@@ -175,12 +177,12 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
 
 def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.4):
     """Predict SMFs weighted by mass uncertainties.
-    
+
     Parameters
     ----------
     logms_mod_tot: numpy array
-        Array of total stellar masses. 
-    logms_mod_inn: numpy array 
+        Array of total stellar masses.
+    logms_mod_inn: numpy array
         Array of stellar mass in the inner region.
     sig_logms: numpy array
         Uncertainties of stellar mass.
@@ -188,21 +190,21 @@ def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.4):
         Configuration parameters.
     min_weight: float, optional
         Minimum weight used to get SMF of inner aperture mass. Default: 0.4
-    
+
     Returns
     -------
-    smf_tot: numpy array 
+    smf_tot: numpy array
         Stellar mass function of the total stellar mass.
-    smf_inn: numpy array 
+    smf_inn: numpy array
         Stellar mass function of the inner aperture mass.
-        
+
     """
     # SMF of the predicted Mtot (M100 or MMax)
-    
-    # Expected number of galaxies in the 
+
+    # Expected number of galaxies in the
     ngal_expect = (cfg['obs']['ngal_use'] * cfg['um']['volume'] / cfg['obs']['volume'])
-    
-    # If the number of predicted galaxies with mass in the observed range is smaller 
+
+    # If the number of predicted galaxies with mass in the observed range is smaller
     # than 1/10 of the expected number, don't estimate SMF
     min_num = int(ngal_expect / 10)
 
@@ -229,14 +231,18 @@ def predict_smf(logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.4):
     return smf_tot, smf_inn
 
 
-def get_single_dsigma(cfg, mock_use, mass_encl_use, mask=None, weight=None,
-                      r_interp=None, mstar_lin=None):
+def um_get_dsigma(cfg, mock_use, mass_encl_use, mask=None, weight=None,
+                  r_interp=None, mstar_lin=None):
     """Weak lensing dsigma profiles using pre-computed pairs.
 
     Parameters
     ----------
     cfg: dict
         Configurations of the data and model.
+    mock_use: numpy array
+        Mock galaxy catalog.
+    mass_encl_use: numpy array
+        Pre-computed pairs results for mock galaxies.
     mask: numpy array, optional
         Mask array that defines the subsample. Default: None
     weight: numpy array, optional
@@ -246,13 +252,21 @@ def get_single_dsigma(cfg, mock_use, mass_encl_use, mask=None, weight=None,
     mstar_lin : float, optional
         Linear mass for "point source". Default: None
 
+    Returns
+    -------
+        DeltaSigma profile for UM mock galaxies.
+
     """
+    # Make sure the data have the right shape
+    assert mock_use.shape[0] == mass_encl_use.shape[0], ("Mock catalog and pre-compute "
+                                                         "results are not consistent")
+
     # Cosmology
-    um_cosmo = cfg['um_cosmo']
+    um_cosmo = FlatLambdaCDM(H0=cfg['um']['h0'] * 100.0, Om0=cfg['um']['omega_m'])
 
     # Radius bins
-    rp_bins = np.logspace(np.log10(cfg['um_wl_minr']),
-                          np.log10(cfg['um_wl_maxr']), cfg['um_wl_nbin'])
+    rp_bins = np.logspace(np.log10(cfg['um']['wl_minr']),
+                          np.log10(cfg['um']['wl_maxr']), cfg['um']['wl_nbin'])
 
     #  Use the mask to get subsample positions and pre-computed pairs
     if mask is not None:
@@ -262,31 +276,128 @@ def get_single_dsigma(cfg, mock_use, mass_encl_use, mask=None, weight=None,
         subsample = mock_use
         subsample_mass_encl_precompute = mass_encl_use
 
-    subsample_positions = np.vstack([subsample['x'],
-                                     subsample['y'],
-                                     subsample['z']]).T
+    # Get the positions of the mock galaxies
+    subsample_positions = np.vstack([subsample['x'], subsample['y'], subsample['z']]).T
 
-    rp_ht_units, ds_ht_units = delta_sigma_from_precomputed_pairs(
+    rp_ht_units, ds_ht_units = dsigma.delta_sigma_from_precomputed_pairs(
         subsample_positions, subsample_mass_encl_precompute,
-        rp_bins, cfg['um_lbox'], cosmology=um_cosmo,
+        rp_bins, cfg['um']['lbox'], cosmology=um_cosmo,
         weight=weight)
 
     # Unit conversion
-    ds_phys_msun_pc2 = ((1. + cfg['um_redshift']) ** 2 *
+    ds_phys_msun_pc2 = ((1. + cfg['um']['redshift']) ** 2 *
                         (ds_ht_units * um_cosmo.h) / (1e12))
 
-    rp_phys = ((rp_ht_units) / (abs(1. + cfg['um_redshift']) * um_cosmo.h))
+    rp_phys = ((rp_ht_units) / (abs(1. + cfg['um']['redshift']) * um_cosmo.h))
 
     # Add the point source term
     if mstar_lin is not None:
-        ds_phys_msun_pc2[0] += (
-            mstar_lin / 1e12 / (np.pi * (rp_phys ** 2.0))
-            )
+        # Only add to the inner most data point.
+        ds_phys_msun_pc2[0] += (mstar_lin / 1e12 / (np.pi * (rp_phys[0] ** 2.0)))
 
     if r_interp is not None:
-        intrp = interpolate.interp1d(rp_phys, ds_phys_msun_pc2,
-                                     kind='cubic', bounds_error=False)
+        intrp = interpolate.interp1d(rp_phys, ds_phys_msun_pc2, kind='cubic', bounds_error=False)
         return intrp(r_interp)
 
     return ds_phys_msun_pc2
 
+
+def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_tot, logms_mod_inn,
+                              sig_logms, min_weight=0.03, min_num=3, add_stellar=False):
+    """Weigted delta sigma profiles.
+
+    Parameters
+    ----------
+    cfg: dict
+        Configurations of the data and model.
+    mock_use: numpy array
+        Mock galaxy catalog.
+    mass_encl_use: numpy array
+        Pre-computed pairs results for mock galaxies.
+    obs_prof: numpy array
+        Observed DeltaSigma information for one mass bin.
+    logms_mod_tot: numpy array
+        Array of total stellar masses.
+    logms_mod_inn: numpy array
+        Array of stellar mass in the inner region.
+    sig_logms: numpy array
+        Uncertainties of stellar mass.
+    min_weight: float, optional
+        Minimum weight value for calculating DeltaSigma profile. Default: 0.03
+    min_num: int, optional
+        Minimum number of useful mock galaxy to calculate DeltaSigma profile. Default: 3
+    add_stellar: boolen, optional
+        Whether add stellar mass to the profile. Default: False
+
+    Returns
+    -------
+        DeltaSigma profile of mock galaxies in a mass bin.
+
+    """
+    # "Point source" term for the central galaxy
+    weight = np.array(
+        utils.mtot_minn_weight(logms_mod_tot, logms_mod_inn, sig_logms,
+                               obs_prof['min_logm1'], obs_prof['max_logm1'],
+                               obs_prof['min_logm2'], obs_prof['max_logm2']))
+
+    # Exclude the ones with tiny weight values.
+    mask = (weight >= min_weight)
+
+    if mask.sum() >= min_num:
+        if add_stellar:
+            # Use the weighted mean total stellar mass
+            mstar_lin = 10.0 ** (np.sum(weight[mask] * logms_mod_tot[mask]) /
+                                 np.sum(weight[mask]))
+        else:
+            mstar_lin = None
+
+        return um_get_dsigma(
+            cfg, mock_use[mask], mass_encl_use[mask, :],
+            weight=weight[mask], r_interp=obs_prof['r_mpc'], mstar_lin=mstar_lin)
+
+    return np.zeros(len(obs_prof['r_mpc']))
+
+
+def predict_dsigma_profiles(cfg, obs_dsigma, mock_use, mass_encl_use, logms_mod_tot, logms_mod_inn,
+                            mask=None, sig_logms=None, min_num=3, add_stellar=False):
+    """WL profiles to compare with observations.
+
+    Parameters
+    ----------
+    cfg: dict
+        Configurations of the data and model.
+    obs_dsigma: numpy array
+        Observed DeltaSigma profiles.
+    mock_use: numpy array
+        Mock galaxy catalog.
+    mass_encl_use: numpy array
+        Pre-computed pairs results for mock galaxies.
+    logms_mod_tot : ndarray
+        Total stellar mass (e.g. M100) predicted by UM.
+    logms_mod_inn : ndarray
+        Inner stellar mass (e.g. M10) predicted by UM.
+    sig_logms: numpy array, optional
+        Uncertainties of stellar mass. Default: None
+    mask: bool array, optional
+        Mask for the input mock catalog and precomputed WL pairs. Default: None
+    min_num: int, optional
+        Minimum requred galaxies in each bin to estimate WL profile. Default: 5
+    add_stellar: boolen, optional
+        Whether add stellar mass to the profile. Default: False
+
+    Returns
+    -------
+        A list of DeltaSigma profiles for UM mock galaxies in different mass bins.
+
+    """
+    # The mock catalog and precomputed mass files for subsamples
+    if mask is not None:
+        mock_use = mock_use[mask]
+        mass_encl_use = mass_encl_use[mask, :]
+
+    if sig_logms is None:
+        sig_logms = np.zeros(len(mock_use))
+
+    return [get_single_dsigma_profile(
+        cfg, mock_use, mass_encl_use, obs_prof, logms_mod_tot, logms_mod_inn, sig_logms,
+        min_num=min_num, add_stellar=add_stellar) for obs_prof in obs_dsigma]

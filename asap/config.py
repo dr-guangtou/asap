@@ -154,7 +154,6 @@ def config_um(cfg_um, verbose=False):
     # ----------------- Cosmology ----------------------- #
     cfg_um['h0'] = 0.678 if 'h0' not in cfg_um else cfg_um['h0']
     cfg_um['omega_m'] = 0.307 if 'omega_m' not in cfg_um else cfg_um['omega_m']
-    # --------------------------------------------------- #
 
     # ---------- UniverseMachine Mock Related ----------- #
     cfg_um['dir'] = '' if 'dir' not in cfg_um else cfg_um['dir']

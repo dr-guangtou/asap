@@ -87,6 +87,7 @@ um:
     dir: '/Users/song/Dropbox/work/project/asap/data/s16a_massive_wide2/um2'
     galaxy: 'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy'
     dsigma: 'um_smdpl_0.7124_new_vagc_mpeak_11.5_50m_r_0.08_50_22bins.npy'
+    #dsigma: 'um_smdpl_0.7124_new_vagc_mpeak_11.5_10m_r_0.08_50_22bins.npy'
     logmh_col: 'logmh_host'
     logms_col: 'logms_tot'
     pivot_logmh: 13.5
@@ -117,17 +118,18 @@ model:
     smf_only: False
     wl_only: False
     wl_weight: 1.0
-    # Radial range to compare DeltaSigma profile
+    # Radial range to compare DeltaSigma profile, in unit of Mpc
     dsigma_minr: 0.15
     dsigma_maxr: 15.0
     # About emcee sampling method
     emcee:
         moves_burnin: "stretch"
         moves: "kde"
-        stretch_a: 6
-        nthreads: 8
-        nsamples: 100
-        nburnin: 100
-        nwalkers: 400
-        nwalkers_burnin: 128
+        stretch_a: 4
+        nthreads: 4
+        nsamples: 10
+        nburnin: 10
+        nwalkers: 32
+        nwalkers_burnin: 32
+        ini_prior: True
 

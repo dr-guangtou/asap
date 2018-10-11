@@ -249,6 +249,10 @@ def config_emcee(cfg_emcee, verbose=False):
     # Choice of emcee move
     cfg_emcee['moves'] = 'stretch' if 'moves' not in cfg_emcee else cfg_emcee['moves']
 
+    # When initializing the walkers, use the prior distributions? or use small pertubations
+    # around the initial values.
+    cfg_emcee['ini_prior'] = True if 'ini_prior' not in cfg_emcee else cfg_emcee['ini_prior']
+
     # Whether to use different move during burn-in
     if 'moves_burnin' not in cfg_emcee:
         cfg_emcee['moves_burnin'] = cfg_emcee['moves']

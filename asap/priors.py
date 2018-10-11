@@ -198,7 +198,7 @@ class StudentT(object):
         """
         return self.distr.cdf(x, loc=self.loc, scale=self.scale, df=self.df)
 
-    def sample(self, nsample, limit=False):
+    def sample(self, nsample, limit=True):
         """Sample the distribution.
 
         Parameter

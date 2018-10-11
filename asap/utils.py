@@ -4,8 +4,9 @@ from __future__ import print_function, division, unicode_literals
 import copy
 import numbers
 
-from astropy.table import Column, vstack
 from scipy.stats import mvn, norm
+
+from astropy.table import Column, vstack
 
 import numpy as np
 
@@ -66,12 +67,15 @@ def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
 
 def mass_gaussian_weight_2d(logms1, logms2, sigms1, sigms2,
                             bin1_l, bin1_r, bin2_l, bin2_r):
-    """Weight of galaaxy using two stellar masses."""
-    p, _ = mvn.mvnun([bin1_l, bin2_l],
-                     [bin1_r, bin2_r],
-                     [logms1, logms2],
-                     [[sigms1 ** 2, sigms1 * sigms2],
-                      [sigms2 * sigms1, sigms2 ** 2]])
+    """Weight of galaaxy using two stellar masses.
+
+    Notes
+    -----
+        Now this step is actually the bottom neck.
+
+    """
+    p, _ = mvn.mvnun([bin1_l, bin2_l], [bin1_r, bin2_r], [logms1, logms2],
+                     [[sigms1 ** 2, sigms1 * sigms2], [sigms2 * sigms1, sigms2 ** 2]])
 
     return p
 
@@ -79,8 +83,7 @@ def mass_gaussian_weight_2d(logms1, logms2, sigms1, sigms2,
 def mtot_minn_weight(logm_tot, logm_inn, sig,
                      mtot_0, mtot_1, minn_0, minn_1):
     """Two-dimensional weight of galaxy in Mtot-Minn box."""
-    return [mass_gaussian_weight_2d(m1, m2, ss, ss,
-                                    mtot_0, mtot_1, minn_0, minn_1)
+    return [mass_gaussian_weight_2d(m1, m2, ss, ss, mtot_0, mtot_1, minn_0, minn_1)
             for m1, m2, ss in zip(logm_tot, logm_inn, sig)]
 
 

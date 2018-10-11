@@ -112,7 +112,7 @@ class AsapParams(object):
         """
         return np.asarray([distr.sample(nsample=nsamples) for distr in self._distr]).T
 
-    def perturb(self, nsample=1, level=0.05):
+    def perturb(self, nsamples=1, level=0.05):
         """Generate samples of parameters using small perturbation around the mean.
 
         Parameters
@@ -129,7 +129,7 @@ class AsapParams(object):
 
         """
         return np.asarray(
-            [self.transform(np.random.randn(self.n_param) * level + 0.5) for i in range(nsample)])
+            [self.transform(np.random.randn(self.n_param) * level + 0.5) for i in range(nsamples)])
 
     def lnprior(self, theta, nested=False):
         """Public version of _ln_prior.

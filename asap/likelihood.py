@@ -3,9 +3,6 @@
 import numpy as np
 from numpy import linalg
 
-from scipy.stats import t as student_t
-
-from . import prior
 from . import predictions
 
 __all__ = ['ln_likelihood', 'ln_probability', 'lnlike_dsigma', 'lnlike_smf']
@@ -16,7 +13,23 @@ def ln_probability(theta, cfg, params, obs_data, um_data, nested=False):
 
     Parameters
     ----------
-    param_tuple: tuple of model parameters.
+    theta: tuple or list
+        One set of model parameters.
+    cfg: dict
+        Configuration parameters.
+    params: asap.Parameters object
+        Object for model parameters.
+    obs_data: dict
+        Dictionary of observations.
+    um_data: dict
+        Dictionary of UniverseMachine data.
+    sep_return: boolen, optional
+        Return the likelihood for SMF and DeltaSigma profiles separately when True.
+        Default: False
+
+    Returns
+    -------
+        The ln(likelihood) of the model given the input parameters.
 
     """
     ln_prior = params.lnprior(theta, nested=nested)
@@ -29,7 +42,6 @@ def ln_probability(theta, cfg, params, obs_data, um_data, nested=False):
 
 def lnlike_dsigma(dsigma_obs, dsigma_um, mask=None):
     """Calculate the likelihood for WL profile."""
-    # TODO: Make an option for masking the radius
     if mask is None:
         dsigma_var = (dsigma_obs['dsigma_err'] ** 2)
         dsigma_dif = (dsigma_obs['dsigma'] - dsigma_um) ** 2
@@ -51,7 +63,7 @@ def lnlike_smf(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn, obs_smf_cov=Non
     if obs_smf_cov is not None:
         smf_cov_inv = linalg.inv(obs_smf_cov)
         lnlike_norm = -0.5 * ((np.log(2.0 * np.pi) * len(obs_smf_cov)) +
-                               np.log(linalg.det(obs_smf_cov)))
+                              np.log(linalg.det(obs_smf_cov)))
         smf_dif = np.concatenate([smf_mtot_dif, smf_minn_dif])
 
         smf_chi2 = np.dot(smf_dif, np.dot(smf_cov_inv, smf_dif))
@@ -72,13 +84,33 @@ def lnlike_smf(obs_smf_tot, um_smf_tot, obs_smf_inn, um_smf_inn, obs_smf_cov=Non
     return smf_mtot_lnlike + smf_minn_lnlike
 
 
-def model_chi2(param_tuple, cfg, obs_data, um_data):
+def model_chi2(theta, cfg, obs_data, um_data):
     """Chi2 function for the model."""
-    return -1.0 * ln_likelihood(param_tuple, cfg, obs_data, um_data)
+    return -1.0 * ln_likelihood(theta, cfg, obs_data, um_data)
 
 
 def ln_likelihood(theta, cfg, obs_data, um_data, sep_return=False):
-    """Calculate the lnLikelihood of the model."""
+    """Calculate the lnLikelihood of the model.
+
+    Parameters
+    ----------
+    theta: tuple or list
+        One set of model parameters.
+    cfg: dict
+        Configuration parameters.
+    obs_data: dict
+        Dictionary of observations.
+    um_data: dict
+        Dictionary of UniverseMachine data.
+    sep_return: boolen, optional
+        Return the likelihood for SMF and DeltaSigma profiles separately when True.
+        Default: False
+
+    Returns
+    -------
+        The ln(likelihood) of the model given the input parameters.
+
+    """
     # Unpack the input parameters
     parameters = list(theta)
 

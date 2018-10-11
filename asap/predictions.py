@@ -13,7 +13,7 @@ from . import dsigma
 
 __all__ = ['frac_from_logmh', 'sigma_logms_from_logmh', 'predict_mstar_basic',
            'predict_smf', 'make_model_predictions', 'um_get_dsigma', 'get_single_dsigma_profile',
-           'predict_dsigma_profiles', 'asap_single_mhalo']
+           'predict_dsigma_profiles', 'predict_mhalo', 'get_mean_mhalo']
 
 
 def frac_from_logmh(logm_halo, frac_a, frac_b,
@@ -520,6 +520,5 @@ def predict_mhalo(obs_dsigma, mock_use, logms_mod_tot, logms_mod_inn, sig_logms=
 
     """
     # The mock catalog and precomputed mass files for subsamples
-    return [get_mean_mhalo(
-                mock_use, obs_prof, logms_mod_tot, logms_mod_inn, sig_logms=sig_logms)
+    return [get_mean_mhalo(mock_use, obs_prof, logms_mod_tot, logms_mod_inn, sig_logms=sig_logms)
             for obs_prof in obs_dsigma]

@@ -303,6 +303,10 @@ def config_model(cfg_model, verbose=False):
     # About the output file
     cfg_model['out_dir'] = '' if 'out_dir' not in cfg_model else cfg_model['out_dir']
 
+    # Radial range to compare DeltaSigma profile
+    cfg_model['dsigma_minr'] = 0.0 if 'dsigma_minr' not in cfg_model else cfg_model['dsigma_minr']
+    cfg_model['dsigma_maxr'] = 20.0 if 'dsigma_maxr' not in cfg_model else cfg_model['dsigma_maxr']
+
     cfg_model['prefix'] = 'asap_model' if 'prefix' not in cfg_model else cfg_model['prefix']
     if verbose:
         print("# Running model: %s" % cfg_model['prefix'])

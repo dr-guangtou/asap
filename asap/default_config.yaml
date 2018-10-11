@@ -117,6 +117,9 @@ model:
     smf_only: False
     wl_only: False
     wl_weight: 1.0
+    # Radial range to compare DeltaSigma profile
+    dsigma_minr: 0.15
+    dsigma_maxr: 15.0
     # About emcee sampling method
     emcee:
         moves_burnin: "stretch"

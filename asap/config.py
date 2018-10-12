@@ -230,38 +230,45 @@ def config_emcee(cfg_emcee, verbose=False):
         Updated configuration parameters about emcee sampler.
 
     """
-    # Number of emcee walkers
-    cfg_emcee['nwalkers'] = 128 if 'nwalkers' not in cfg_emcee else cfg_emcee['nwalkers']
-
-    # Number of emcee walkers during burn-in
-    if 'nwalkers_burnin' not in cfg_emcee:
-        cfg_emcee['nwalkers_burnin'] = cfg_emcee['nwalkers']
-
-    # Number of emcee runs
-    cfg_emcee['nsamples'] = 200 if 'nsamples' not in cfg_emcee else cfg_emcee['nsamples']
-
-    # Number of burn-in runs
-    cfg_emcee['nburnin'] = 200 if 'nburnin' not in cfg_emcee else cfg_emcee['nburnin']
-
     # Number of processors to run on
-    cfg_emcee['nthreads'] = 1 if 'nthreads' not in cfg_emcee else cfg_emcee['nthreads']
+    cfg_emcee['n_thread'] = 1 if 'n_thread' not in cfg_emcee else cfg_emcee['n_thread']
 
-    # Choice of emcee move
-    cfg_emcee['moves'] = 'stretch' if 'moves' not in cfg_emcee else cfg_emcee['moves']
+    # Config the burn-in process
 
-    # When initializing the walkers, use the prior distributions? or use small pertubations
-    # around the initial values.
-    cfg_emcee['ini_prior'] = True if 'ini_prior' not in cfg_emcee else cfg_emcee['ini_prior']
+    # Move for burn-in process
+    if 'burnin_move' not in cfg_emcee:
+        cfg_emcee['burnin_move'] = 'stretch'
+    # Number of walkers for burn-in
+    if 'burnin_n_walker' not in cfg_emcee:
+        cfg_emcee['burnin_n_walker'] = 64
+    # Repeat the burn in process a few times
+    if 'burnin_n_repeat' not in cfg_emcee:
+        cfg_emcee['burnin_n_repeat'] = 1
+    # Steps for burn-in run
+    if 'burnin_n_sample' not in cfg_emcee:
+        cfg_emcee['burnin_n_sample'] = 100
 
-    # Whether to use different move during burn-in
-    if 'moves_burnin' not in cfg_emcee:
-        cfg_emcee['moves_burnin'] = cfg_emcee['moves']
+    # Config the final sampling process
+
+    # Move for final sampling process
+    if 'sample_move' not in cfg_emcee:
+        cfg_emcee['sample_move'] = 'stretch'
+    # Number of walkers for burn-in
+    if 'sample_n_walker' not in cfg_emcee:
+        cfg_emcee['sample_n_walker'] = 64
+    # Steps for burn-in run
+    if 'sample_n_sample' not in cfg_emcee:
+        cfg_emcee['sample_n_sample'] = 100
 
     if verbose:
         print("#    Use %5d walkers with %10s moves for %5d steps of burn-in" % (
             cfg_emcee['nwalkers_burnin'], cfg_emcee['moves_burnin'], cfg_emcee['nburnin']))
         print("#    Use %5d walkers with %10s moves for %5d steps of sampling" % (
             cfg_emcee['nwalkers'], cfg_emcee['moves'], cfg_emcee['nsamples']))
+
+    # When initializing the walkers, use the prior distributions? or use small pertubations
+    # around the initial values.
+    cfg_emcee['ini_prior'] = True if 'ini_prior' not in cfg_emcee else cfg_emcee['ini_prior']
 
     # The a parameter for stretch move
     cfg_emcee['stretch_a'] = 4 if 'stretch_a' not in cfg_emcee else cfg_emcee['stretch_a']

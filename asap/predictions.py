@@ -321,9 +321,9 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
     if sig_logms is None:
         # Just make cut based on the mask bin
         mask = ((logms_mod_tot >= obs_prof['min_logm1']) &
-                (logms_mod_tot < obs_prof['max_logm1']) &
+                (logms_mod_tot <= obs_prof['max_logm1']) &
                 (logms_mod_inn >= obs_prof['min_logm2']) &
-                (logms_mod_inn < obs_prof['max_logm2']))
+                (logms_mod_inn <= obs_prof['max_logm2']))
 
         if add_stellar:
             # Use the weighted mean total stellar mass
@@ -334,14 +334,15 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
         return um_get_dsigma(
             cfg, mock_use[mask], mass_encl_use[mask, :],
             weight=None, r_interp=obs_prof['r_mpc'], mstar_lin=mstar_lin)
+    elif len(sig_logms) <= 3:
+        return np.zeros(len(obs_prof['r_mpc']))
     else:
         # Make an initial cut in the 2-sigma region, try to speed up the process
-        max_sig = sig_logms.max()
-        max_sig = 0.1 if max_sig <= 0.1 else max_sig
-        mask_ini = ((logms_mod_tot >= obs_prof['min_logm1'] - 2.0 * max_sig) &
-                    (logms_mod_tot <= obs_prof['max_logm1'] + 2.0 * max_sig) &
-                    (logms_mod_inn >= obs_prof['min_logm2'] - 2.0 * max_sig) &
-                    (logms_mod_inn <= obs_prof['max_logm2'] + 2.0 * max_sig))
+        max_sig = np.max(sig_logms)
+        mask_ini = ((logms_mod_tot >= obs_prof['min_logm1'] - 1.0 * max_sig) &
+                    (logms_mod_tot <= obs_prof['max_logm1'] + 1.0 * max_sig) &
+                    (logms_mod_inn >= obs_prof['min_logm2'] - 1.0 * max_sig) &
+                    (logms_mod_inn <= obs_prof['max_logm2'] + 1.0 * max_sig))
 
         if mask_ini.sum() >= min_num:
             # Assign weight to each galaxy based on its contribution to the mass bin
@@ -352,7 +353,7 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
                     obs_prof['min_logm2'], obs_prof['max_logm2']))
 
             # DEBUG
-            # print(weights.sum(), weights.min(), weights.max())
+            #print(mask_ini.sum(), max_sig, weights.min(), weights.max())
 
             if add_stellar:
                 # Use the weighted mean total stellar mass
@@ -365,6 +366,7 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
                 weight=weights, r_interp=obs_prof['r_mpc'], mstar_lin=mstar_lin)
 
         return np.zeros(len(obs_prof['r_mpc']))
+        # return np.full(len(obs_prof['r_mpc']), -np.inf)
 
 
 def predict_dsigma_profiles(cfg, obs_dsigma, mock_use, mass_encl_use, logms_mod_tot, logms_mod_inn,
@@ -449,18 +451,19 @@ def make_model_predictions(parameters, cfg, obs_data, um_data, verbose=False, re
     ngal_use = ((logms_mod_tot >= cfg['obs']['smf_tot_min']) &
                 (logms_mod_inn >= cfg['obs']['smf_inn_min'])).sum()
 
-    # TODO: Could be more aggressive
-    if ngal_use <= (ngal_expect / 20) or ngal_use >= (ngal_expect * 20):
-        # If the number of useful galaxies is problematic, just pass
-        if verbose:
-            print("# The model is not very realistic: %d v.s. %d" % (ngal_expect, ngal_use))
-        um_smf_tot, um_smf_inn = None, None,
-        um_dsigma = None
-    else:
-        # Predict SMFs
-        um_smf_tot, um_smf_inn = predict_smf(
-            logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.1)
+    # Predict SMFs
+    um_smf_tot, um_smf_inn = predict_smf(
+        logms_mod_tot, logms_mod_inn, sig_logms, cfg, min_weight=0.1)
 
+    # TODO: Could be more aggressive
+    if ngal_use <= (ngal_expect / 5) or ngal_use >= (ngal_expect * 5):
+        # If the number of useful galaxies is problematic, just pass
+        # Predict DeltaSigma profiles
+        um_dsigma = predict_dsigma_profiles(
+            cfg, obs_data['wl_dsigma'], um_data['um_mock'], um_data['um_mass_encl'],
+            logms_mod_tot, logms_mod_inn, mask=mask_tot, sig_logms=None,
+            min_num=3, add_stellar=cfg['um']['wl_add_stellar'])
+    else:
         # Predict DeltaSigma profiles
         um_dsigma = predict_dsigma_profiles(
             cfg, obs_data['wl_dsigma'], um_data['um_mock'], um_data['um_mass_encl'],

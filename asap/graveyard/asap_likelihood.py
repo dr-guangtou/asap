@@ -1,37 +1,20 @@
-"""Likelihood functions for A.S.A.P model."""
+"""Module for likelihood functions for A.S.A.P model."""
 
 import numpy as np
 from numpy import linalg
 
 from scipy.stats import t as student_t
 
+from asap.prior import flat_prior, student_t_prior
+
 from asap.asap_model_prediction import asap_predict_model, asap_predict_model_prob
 
 
-__all__ = ['asap_ln_prob', 'asap_ln_like', 'asap_flat_prior',
+__all__ = ['asap_ln_prob', 'asap_ln_like',
            'asap_dsigma_lnlike', 'asap_smf_lnlike']
 
 
-def student_t_prior(param, loc, scale, df=1):
-    """Return the natural log prior probability of parameter at `param`."""
-    return np.log(student_t.pdf(param, df=df, loc=loc, scale=scale))
-
-
-def asap_flat_prior(param_tuple, param_low, param_upp):
-    """Priors of parameters."""
-    if not np.all([low <= param <= upp for param, low, upp in
-                   zip(list(param_tuple), param_low, param_upp)]):
-        return -np.inf
-
-    return 0.0
-
-
-def asap_flat_prior_transform(unit_cube, param_low, param_upp):
-    """Transform unit cube into flat priors."""
-    return unit_cube * param_upp + (1.0 - unit_cube) * param_low
-
-
-def asap_ln_prob(param_tuple, cfg, obs_data, um_data):
+def asap_ln_prob(theta, cfg, params, obs_data, um_data, nested=False):
     """Probability function to sample in an MCMC.
 
     Parameters
@@ -39,12 +22,12 @@ def asap_ln_prob(param_tuple, cfg, obs_data, um_data):
     param_tuple: tuple of model parameters.
 
     """
-    lp = asap_flat_prior(param_tuple, cfg['param_low'], cfg['param_upp'])
+    ln_prior = params.lnprior(theta, nested=nested)
 
-    if not np.isfinite(lp):
+    if not np.isfinite(ln_prior):
         return -np.inf
 
-    return lp + asap_ln_like(param_tuple, cfg, obs_data, um_data)
+    return ln_prior + asap_ln_like(param_tuple, cfg, obs_data, um_data)
 
 
 def asap_dsigma_lnlike(obs_dsigma_prof, dsigma_um):
@@ -105,7 +88,7 @@ def asap_chi2(param_tuple, cfg, obs_data, um_data):
     return -1.0 * asap_ln_like(param_tuple, cfg, obs_data, um_data)
 
 
-def asap_ln_like(param_tuple, cfg, obs_data, um_data, chi2=False,
+def asap_ln_like(param_tuple, cfg, obs_data, um_data,
                  sep_return=False):
     """Calculate the lnLikelihood of the model."""
     # Unpack the input parameters

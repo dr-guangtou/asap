@@ -118,7 +118,8 @@ def run_emcee_sampler(cfg, params, ln_probability, postargs=[], postkwargs={}, p
 
     # Number of parameters and walkers for burn-in process
     n_dim = params.n_param
-    n_walkers_burnin, n_step_burnin = ini_positions.shape[0], ini_positions.shape[1]
+    n_walkers_burnin = ini_positions.shape[0]
+    n_step_burnin = cfg['model']['emcee']['burnin_n_sample']
 
     # Setup the `Move` for burn-in walkers
     burnin_move = setup_moves(cfg['model']['emcee'], 'burnin_move')
@@ -139,14 +140,14 @@ def run_emcee_sampler(cfg, params, ln_probability, postargs=[], postkwargs={}, p
     if debug:
         return burnin_results, sampler_burnin
 
-    # Rest the chains
-    sampler_burnin.reset()
-
     burnin_pos, _, burnin_state = burnin_results
 
     # Save the burn-in results
     io.save_results_to_npz(burnin_results, sampler_burnin, 'burnin.npz', n_dim,
                            verbose=verbose)
+    
+    # Rest the chains
+    sampler_burnin.reset()
 
     # Number of walkers and steps for the final sampling run
     n_walkers_sample = cfg['model']['emcee']['sample_n_walker']

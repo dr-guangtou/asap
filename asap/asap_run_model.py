@@ -311,10 +311,10 @@ def asap_emcee_fit(args, verbose=True):
             # Burn-in
             mcmc_burnin_pos, mcmc_burnin_lnp, mcmc_burnin_state = asap_emcee_burnin(
                 burnin_sampler, mcmc_ini_position, cfg, verbose=True)
-            
+
             # Estimate the Kernel density distributions of final brun-in positions
             # Resample the distributions to get starting positions of the actual run
-            mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos), 
+            mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos),
                                bw_method='silverman')
             mcmc_new_pos = np.transpose(mcmc_kde.resample(cfg['mcmc_nwalkers']))
 
@@ -350,10 +350,10 @@ def asap_emcee_fit(args, verbose=True):
         # Burn-in
         mcmc_burnin_pos, mcmc_burnin_lnp, mcmc_burnin_state = asap_emcee_burnin(
             burnin_sampler, mcmc_ini_position, cfg, verbose=True)
-        
+
         # Estimate the Kernel density distributions of final brun-in positions
         # Resample the distributions to get starting positions of the actual run
-        mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos), 
+        mcmc_kde = gaussian_kde(np.transpose(mcmc_burnin_pos),
                             bw_method='silverman')
         mcmc_new_pos = np.transpose(mcmc_kde.resample(cfg['mcmc_nwalkers']))
 

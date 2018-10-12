@@ -2,7 +2,8 @@
 from __future__ import print_function, division, unicode_literals
 
 from multiprocessing import Pool
-from contextlib import closing
+#from contextlib import closing
+#from schwimmbad import MPIPool
 
 import emcee
 
@@ -68,7 +69,10 @@ def fit_asap_model(config_file, verbose=True, debug=False):
     # Initialize the model, load the data
     cfg, params, obs_data, um_data = initial_model(config_file, verbose=verbose)
 
-    with closing(Pool(processes=cfg['model']['emcee']['n_thread'])) as pool:
+    ln_prob_function = likelihood.ln_probability
+
+    with Pool() as pool:
+    #with closing(Pool(processes=cfg['model']['emcee']['n_thread'])) as pool:
         sample_results, sampler = ensemble.run_emcee_sampler(
             cfg, params, likelihood.ln_probability,
             postargs=[cfg, params, obs_data, um_data],

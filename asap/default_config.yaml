@@ -92,7 +92,7 @@ um:
     logms_col: 'logms_tot'
     pivot_logmh: 13.5
     min_logmh: 12.0
-    min_logms: 11.0
+    min_logms: 11.4
     min_scatter: 0.01
     # Do not change anything below unless you know what you are doing.
     redshift: 0.3637
@@ -120,7 +120,7 @@ model:
     wl_weight: 1.0
     # Radial range to compare DeltaSigma profile, in unit of Mpc
     dsigma_minr: 0.15
-    dsigma_maxr: 15.0
+    dsigma_maxr: 12.0
     # About emcee sampling method
     emcee:
         n_thread: 8

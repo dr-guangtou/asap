@@ -189,6 +189,9 @@ def config_um(cfg_um, verbose=False):
     # Minimum Virial mass used in the modeling
     cfg_um['min_mvir'] = 11.5 if 'min_mvir' not in cfg_um else cfg_um['min_mvir']
 
+    # Pivot halo mass for the TSHMR
+    cfg_um['pivot_logmh'] = 0.0 if 'pivot_logmh' not in cfg_um else cfg_um['pivot_logmh']
+
     # Redshift of the simulatin snapshot
     cfg_um['redshift'] = 0.3637 if 'redshift' not in cfg_um else cfg_um['redshift']
 

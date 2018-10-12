@@ -9,7 +9,10 @@ import numpy as np
 from astropy.table import Table, Column
 from astropy.cosmology import FlatLambdaCDM
 
-__all__ = ["load_obs", "load_um", "save_pickle", "load_pickle"]
+from . import ensemble
+
+
+__all__ = ["load_obs", "load_um", "save_pickle", "load_pickle", "load_npz_results"]
 
 
 def load_dsigma(cfg, verbose=False):
@@ -230,3 +233,46 @@ def load_pickle(pickle_file):
     pickle_file.close()
 
     return data
+
+
+def load_npz_results(mcmc_file):
+    """Retrieve the MCMC results from .npz file."""
+    mcmc_data = np.load(mcmc_file)
+
+    return (mcmc_data['samples'], mcmc_data['chains'],
+            mcmc_data['lnprob'], mcmc_data['best'],
+            mcmc_data['position'], mcmc_data['acceptance'])
+
+
+def save_results_to_npz(mcmc_results, mcmc_sampler, mcmc_file,
+                        mcmc_ndims, verbose=True):
+    """Save the MCMC run results."""
+    (mcmc_position, mcmc_lnprob, _) = mcmc_results
+
+    mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
+        (-1, mcmc_ndims))
+    mcmc_chains = mcmc_sampler.chain
+    mcmc_lnprob = mcmc_sampler.lnprobability
+    ind_1, ind_2 = np.unravel_index(np.argmax(mcmc_lnprob, axis=None),
+                                    mcmc_lnprob.shape)
+    mcmc_best = mcmc_chains[ind_2, ind_1, :]
+    mcmc_params_stats = ensemble.mcmc_samples_stats(mcmc_samples)
+
+    np.savez(mcmc_file,
+             samples=mcmc_samples, lnprob=np.array(mcmc_lnprob),
+             best=np.array(mcmc_best), chains=mcmc_chains,
+             position=np.asarray(mcmc_position),
+             acceptance=np.array(mcmc_sampler.acceptance_fraction))
+
+    if verbose:
+        print("#------------------------------------------------------")
+        print("#  Mean acceptance fraction",
+              np.mean(mcmc_sampler.acceptance_fraction))
+        print("#------------------------------------------------------")
+        print("#  Best ln(Probability): %11.5f" % np.max(mcmc_lnprob))
+        print(mcmc_best)
+        print("#------------------------------------------------------")
+        for param_stats in mcmc_params_stats:
+            print(param_stats)
+        print("#------------------------------------------------------")
+

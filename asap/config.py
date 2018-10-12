@@ -261,10 +261,12 @@ def config_emcee(cfg_emcee, verbose=False):
         cfg_emcee['sample_n_sample'] = 100
 
     if verbose:
-        print("#    Use %5d walkers with %10s moves for %5d steps of burn-in" % (
-            cfg_emcee['nwalkers_burnin'], cfg_emcee['moves_burnin'], cfg_emcee['nburnin']))
+        print("#    Use %5d walkers with %10s moves for %5d x %2d steps of burn-in" % (
+            cfg_emcee['burnin_n_walker'], cfg_emcee['burnin_move'], 
+            cfg_emcee['burnin_n_sample'], cfg_emcee['burnin_n_repeat']))
         print("#    Use %5d walkers with %10s moves for %5d steps of sampling" % (
-            cfg_emcee['nwalkers'], cfg_emcee['moves'], cfg_emcee['nsamples']))
+            cfg_emcee['sample_n_walker'], cfg_emcee['sample_move'],
+            cfg_emcee['sample_n_sample']))
 
     # When initializing the walkers, use the prior distributions? or use small pertubations
     # around the initial values.

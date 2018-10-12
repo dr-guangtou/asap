@@ -123,13 +123,14 @@ model:
     dsigma_maxr: 15.0
     # About emcee sampling method
     emcee:
-        moves_burnin: "stretch"
-        moves: "kde"
+        n_thread: 8
+        burnin_move: "stretch"
+        burnin_n_walker: 32
+        burnin_n_repeat: 1
+        burnin_n_sample: 10
+        sample_move: "stretch"
+        sample_n_walker: 32
+        sample_n_sample: 10
         stretch_a: 4
-        nthreads: 4
-        nsamples: 10
-        nburnin: 10
-        nwalkers: 32
-        nwalkers_burnin: 32
         ini_prior: True
 

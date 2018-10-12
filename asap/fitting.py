@@ -1,7 +1,8 @@
 """Module for model fitting."""
 from __future__ import print_function, division, unicode_literals
 
-from functools import partial
+from multiprocessing import Pool
+from contextlib import closing
 
 import emcee
 
@@ -10,7 +11,7 @@ from . import config
 from . import ensemble
 from . import likelihood
 
-__all__ = ['initial_model', 'run_emcee_sampler']
+__all__ = ['initial_model', 'fit_asap_model']
 
 
 def initial_model(config_file, verbose=True):
@@ -50,7 +51,7 @@ def initial_model(config_file, verbose=True):
     return cfg, params, obs_data, um_data
 
 
-def fit_asap_model(config_file, verbose=True):
+def fit_asap_model(config_file, verbose=True, debug=False):
     """Fit A.S.A.P model.
 
     Parameters
@@ -67,13 +68,11 @@ def fit_asap_model(config_file, verbose=True):
     # Initialize the model, load the data
     cfg, params, obs_data, um_data = initial_model(config_file, verbose=verbose)
 
-    from multiprocessing import Pool
-    from contextlib import closing
-
-    with closing(Pool(processes=cfg['model']['emcee']['nthreads'])) as pool:
-        burnin_results = ensemble.run_emcee_sampler(
+    with closing(Pool(processes=cfg['model']['emcee']['n_thread'])) as pool:
+        sample_results, sampler = ensemble.run_emcee_sampler(
             cfg, params, likelihood.ln_probability,
             postargs=[cfg, params, obs_data, um_data],
-            postkwargs={'nested': False}, pool=pool)
+            postkwargs={'nested': False}, pool=pool, verbose=verbose,
+            debug=debug)
 
-    return burnin_results
+    return sample_results, sampler

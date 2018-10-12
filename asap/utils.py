@@ -11,59 +11,9 @@ from astropy.table import Column, vstack
 import numpy as np
 
 
-__all__ = ["mcmc_save_results", "mcmc_samples_stats", "mcmc_load_results",
-           "mass_gaussian_weight_2d", "mass_gaussian_weight",
+__all__ = ["mass_gaussian_weight_2d", "mass_gaussian_weight",
            "rank_splitting_sample", "weighted_avg_and_std", "ellipse_split_2d",
            "ellipse_distance", "ellipse_selector", "split_sample_along_axis_angle"]
-
-
-def mcmc_samples_stats(mcmc_samples):
-    """1D marginalized parameter constraints."""
-    return map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]),
-               zip(*np.percentile(mcmc_samples,
-                                  [16, 50, 84], axis=0)))
-
-
-def mcmc_load_results(mcmc_file):
-    """Retrieve the MCMC results from .npz file."""
-    mcmc_data = np.load(mcmc_file)
-
-    return (mcmc_data['samples'], mcmc_data['chains'],
-            mcmc_data['lnprob'], mcmc_data['best'],
-            mcmc_data['position'], mcmc_data['acceptance'])
-
-
-def mcmc_save_results(mcmc_results, mcmc_sampler, mcmc_file,
-                      mcmc_ndims, verbose=True):
-    """Save the MCMC run results."""
-    (mcmc_position, mcmc_lnprob, _) = mcmc_results
-
-    mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
-        (-1, mcmc_ndims))
-    mcmc_chains = mcmc_sampler.chain
-    mcmc_lnprob = mcmc_sampler.lnprobability
-    ind_1, ind_2 = np.unravel_index(np.argmax(mcmc_lnprob, axis=None),
-                                    mcmc_lnprob.shape)
-    mcmc_best = mcmc_chains[ind_2, ind_1, :]
-    mcmc_params_stats = mcmc_samples_stats(mcmc_samples)
-
-    np.savez(mcmc_file,
-             samples=mcmc_samples, lnprob=np.array(mcmc_lnprob),
-             best=np.array(mcmc_best), chains=mcmc_chains,
-             position=np.asarray(mcmc_position),
-             acceptance=np.array(mcmc_sampler.acceptance_fraction))
-
-    if verbose:
-        print("#------------------------------------------------------")
-        print("#  Mean acceptance fraction",
-              np.mean(mcmc_sampler.acceptance_fraction))
-        print("#------------------------------------------------------")
-        print("#  Best ln(Probability): %11.5f" % np.max(mcmc_lnprob))
-        print(mcmc_best)
-        print("#------------------------------------------------------")
-        for param_stats in mcmc_params_stats:
-            print(param_stats)
-        print("#------------------------------------------------------")
 
 
 def mass_gaussian_weight_2d(logms1, logms2, sigms1, sigms2,

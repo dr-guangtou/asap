@@ -289,7 +289,7 @@ def um_get_dsigma(cfg, mock_use, mass_encl_use, mask=None, weight=None,
 
 
 def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_tot, logms_mod_inn,
-                              sig_logms, min_weight=0.03, min_num=3, add_stellar=False):
+                              sig_logms, min_num=3, add_stellar=False):
     """Weigted delta sigma profiles.
 
     Parameters
@@ -308,8 +308,6 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
         Array of stellar mass in the inner region.
     sig_logms: numpy array
         Uncertainties of stellar mass.
-    min_weight: float, optional
-        Minimum weight value for calculating DeltaSigma profile. Default: 0.03
     min_num: int, optional
         Minimum number of useful mock galaxy to calculate DeltaSigma profile. Default: 3
     add_stellar: boolen, optional
@@ -321,35 +319,52 @@ def get_single_dsigma_profile(cfg, mock_use, mass_encl_use, obs_prof, logms_mod_
 
     """
     if sig_logms is None:
-        # If not uncertainties are provided, just make all weight = 1
-        weight = np.ones(len(logms_mod_tot))
         # Just make cut based on the mask bin
         mask = ((logms_mod_tot >= obs_prof['min_logm1']) &
                 (logms_mod_tot < obs_prof['max_logm1']) &
                 (logms_mod_inn >= obs_prof['min_logm2']) &
                 (logms_mod_inn < obs_prof['max_logm2']))
-    else:
-        weight = np.array(
-            utils.mtot_minn_weight(
-                logms_mod_tot, logms_mod_inn, sig_logms,
-                obs_prof['min_logm1'], obs_prof['max_logm1'],
-                obs_prof['min_logm2'], obs_prof['max_logm2']))
-        # Exclude the ones with tiny weight values.
-        mask = (weight >= min_weight)
 
-    if mask.sum() >= min_num:
         if add_stellar:
             # Use the weighted mean total stellar mass
-            mstar_lin = 10.0 ** (np.sum(weight[mask] * logms_mod_tot[mask]) /
-                                 np.sum(weight[mask]))
+            mstar_lin = 10.0 ** np.nanmean(logms_mod_tot[mask])
         else:
             mstar_lin = None
 
         return um_get_dsigma(
             cfg, mock_use[mask], mass_encl_use[mask, :],
-            weight=weight[mask], r_interp=obs_prof['r_mpc'], mstar_lin=mstar_lin)
+            weight=None, r_interp=obs_prof['r_mpc'], mstar_lin=mstar_lin)
+    else:
+        # Make an initial cut in the 2-sigma region, try to speed up the process
+        max_sig = sig_logms.max()
+        max_sig = 0.1 if max_sig <= 0.1 else max_sig
+        mask_ini = ((logms_mod_tot >= obs_prof['min_logm1'] - 2.0 * max_sig) &
+                    (logms_mod_tot <= obs_prof['max_logm1'] + 2.0 * max_sig) &
+                    (logms_mod_inn >= obs_prof['min_logm2'] - 2.0 * max_sig) &
+                    (logms_mod_inn <= obs_prof['max_logm2'] + 2.0 * max_sig))
 
-    return np.zeros(len(obs_prof['r_mpc']))
+        if mask_ini.sum() >= min_num:
+            # Assign weight to each galaxy based on its contribution to the mass bin
+            weights = np.array(
+                utils.mtot_minn_weight(
+                    logms_mod_tot[mask_ini], logms_mod_inn[mask_ini], sig_logms[mask_ini],
+                    obs_prof['min_logm1'], obs_prof['max_logm1'],
+                    obs_prof['min_logm2'], obs_prof['max_logm2']))
+
+            # DEBUG
+            # print(weights.sum(), weights.min(), weights.max())
+
+            if add_stellar:
+                # Use the weighted mean total stellar mass
+                mstar_lin = 10.0 ** (np.sum(weights * logms_mod_tot[mask_ini]) / weights.sum())
+            else:
+                mstar_lin = None
+
+            return um_get_dsigma(
+                cfg, mock_use[mask_ini], mass_encl_use[mask_ini, :],
+                weight=weights, r_interp=obs_prof['r_mpc'], mstar_lin=mstar_lin)
+
+        return np.zeros(len(obs_prof['r_mpc']))
 
 
 def predict_dsigma_profiles(cfg, obs_dsigma, mock_use, mass_encl_use, logms_mod_tot, logms_mod_inn,

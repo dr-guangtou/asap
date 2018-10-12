@@ -414,7 +414,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
                      - 0.2,
                      np.nanmax(np.log10(obs_smf_tot[mask_tot]['smf']))
                      + 0.8)
-    
+
     for tick in ax1.xaxis.get_major_ticks():
         tick.label.set_fontsize(20)
     for tick in ax1.yaxis.get_major_ticks():
@@ -424,7 +424,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
         tick.label.set_fontsize(20)
     for tick in ax2.yaxis.get_major_ticks():
         tick.label.set_fontsize(20)
-    
+
     fig.savefig('asap_mtot_minn_smf.pdf', dpi=100)
 
     return fig
@@ -479,7 +479,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
             tick.label.set_fontsize(25)
 
         if ref_prof is not None:
-            ax.plot(ref_prof.r, ref_prof.sig, linewidth=3.0, 
+            ax.plot(ref_prof.r, ref_prof.sig, linewidth=3.0,
                     color=GRN(0.8), linestyle='--', alpha=0.9)
 
         # Observed WL profile
@@ -637,7 +637,7 @@ def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
 
 
 def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
-                    mcmc_burnin=None, burnin_alpha=0.2, 
+                    mcmc_burnin=None, burnin_alpha=0.2,
                     trace_alpha=0.2):
     """Traceplot for MCMC results."""
     if mcmc_burnin is not None:

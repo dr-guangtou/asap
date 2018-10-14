@@ -3,29 +3,26 @@ from __future__ import print_function, division
 
 import numpy as np
 
-from astroML.stats import binned_statistic_2d
-
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.ticker import NullFormatter
+from matplotlib import gridspec
 from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import NullFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from astroML.stats import binned_statistic_2d
 
 from scipy.ndimage.filters import gaussian_filter
 
 import corner
-from palettable.colorbrewer.sequential import OrRd_3, OrRd_8, Greys_9, PuBu_4, Purples_9, Greens_9
-ORG = OrRd_8.mpl_colormap
-ORG_2 = OrRd_3.mpl_colormap
-BLU = PuBu_4.mpl_colormap
-BLK = Greys_9.mpl_colormap
-PUR = Purples_9.mpl_colormap
-GRN = Greens_9.mpl_colormap
+
+ORG = plt.get_cmap('OrRd')
+ORG_2 = plt.get_cmap('YlOrRd')
+BLU = plt.get_cmap('PuBu')
+BLK = plt.get_cmap('Greys')
+PUR = plt.get_cmap('Purples')
+GRN = plt.get_cmap('Greens')
 
 plt.rcParams['figure.dpi'] = 100.0
-plt.rcParams['figure.facecolor'] = 'w'
-plt.rcParams['font.family'] = 'serif'
-plt.rcParams['font.size'] = 12.0
 plt.rc('text', usetex=True)
 
 

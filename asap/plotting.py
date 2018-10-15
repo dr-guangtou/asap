@@ -509,9 +509,9 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
                     linewidth=4.0, color='royalblue', alpha=0.7)
 
         if um_mhalo is not None:
-            ax.text(0.55, 0.92, r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
+            ax.text(0.54, 0.90, r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
                     verticalalignment='center', horizontalalignment='left',
-                    fontsize=18.0, transform=ax.transAxes, color='royalblue')
+                    fontsize=20.0, transform=ax.transAxes, color='royalblue')
 
         # X, Y Limits
         x_min = np.min(obs_prof['r_mpc']) * 0.2
@@ -805,11 +805,11 @@ def plot_mtot_minn_trend(
     for tick in ax1.yaxis.get_major_ticks():
         tick.label.set_fontsize(22)
 
-    divider = make_axes_locatable(ax1)
-    cax = divider.append_axes("right", size="5%", pad=0.1)
-    cbar_ticks = MaxNLocator(nticks).tick_values(z_min, z_max)
-    cbar = plt.colorbar(HM, cax=cax, ticks=cbar_ticks)
-    cbar.solids.set_edgecolor("face")
+    #divider = make_axes_locatable(ax1)
+    #cax = divider.append_axes("right", size="5%", pad=0.1)
+    #cbar_ticks = MaxNLocator(nticks).tick_values(z_min, z_max)
+    #cbar = plt.colorbar(HM, cax=cax, ticks=cbar_ticks)
+    #cbar.solids.set_edgecolor("face")
 
     ax1.text(x_title, y_title, title, size=30, transform=ax1.transAxes)
 

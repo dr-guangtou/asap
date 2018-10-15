@@ -26,8 +26,7 @@ plt.rcParams['figure.dpi'] = 100.0
 plt.rc('text', usetex=True)
 
 
-def plot_logmh_sig_logms_tot(logmh_cen, sig_logms_tot,
-                             sigms_a, sigms_b):
+def plot_logmh_sig_logms_tot(logmh_cen, sig_logms_tot, sigms_a, sigms_b):
     """Log Mh v.s. sig(Log Ms_tot)."""
     fig = plt.figure(figsize=(6, 6))
     fig.subplots_adjust(left=0.19, right=0.995,
@@ -60,8 +59,7 @@ def plot_logmh_sig_logms_tot(logmh_cen, sig_logms_tot,
     return fig
 
 
-def plot_logmh_logms_tot(logmh, logms_tot,
-                         shmr_a, shmr_b):
+def plot_logmh_logms_tot(logmh, logms_tot, shmr_a, shmr_b):
     """Log Mh v.s. Log Ms_tot."""
     fig = plt.figure(figsize=(6, 6))
     fig.subplots_adjust(left=0.19, right=0.995,
@@ -99,8 +97,7 @@ def plot_logmh_logms_tot(logmh, logms_tot,
     return fig
 
 
-def display_obs_smf(obs_smf_mtot, obs_smf_minn,
-                    obs_smf_full=None,
+def display_obs_smf(obs_smf_mtot, obs_smf_minn, obs_smf_full=None,
                     label_mtot=r'$M_{\star,\ 100\mathrm{kpc}}$',
                     label_mfull=r'$M_{\star,\ \mathrm{S82}}$',
                     label_minn=r'$M_{\star,\ 10\mathrm{kpc}}$'):
@@ -179,16 +176,10 @@ def show_smf(smf_list, label_list=None, text=None, loc=1,
     return fig
 
 
-def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
-                       obs_logms_tot, obs_logms_inn,
-                       um_smf_tot, um_smf_inn,
-                       logms_mod_tot, logms_mod_inn,
-                       obs_smf_full=None,
-                       shmr_a=None, shmr_b=None,
-                       sigms_a=None, sigms_b=None,
-                       um_smf_tot_all=None,
-                       not_table=False,
-                       **kwargs):
+def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
+                       um_smf_tot, um_smf_inn, logms_mod_tot, logms_mod_inn,
+                       obs_smf_full=None, shmr_a=None, shmr_b=None,
+                       sigms_a=None, sigms_b=None, um_smf_tot_all=None, not_table=False):
     """Plot the UM predicted M100-M10 plane and their SMFs."""
     fig, axes = plt.subplots(2, figsize=(7, 9))
     fig.subplots_adjust(left=0.145, right=0.995,
@@ -422,15 +413,13 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn,
     for tick in ax2.yaxis.get_major_ticks():
         tick.label.set_fontsize(20)
 
-    fig.savefig('asap_mtot_minn_smf.pdf', dpi=100)
+    # fig.savefig('asap_mtot_minn_smf.pdf', dpi=100)
 
     return fig
 
 
-def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
-                         obs_mhalo=None, um_mhalo=None,
-                         each_col=3, reference=None,
-                         **kwargs):
+def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
+                         each_col=3, reference=None):
     """Plot the UM predicted weak lensing profiles."""
     obs_wl_n_bin = len(obs_wl_dsigma)
     if obs_wl_n_bin <= each_col:
@@ -439,6 +428,8 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     else:
         n_row = each_col
         n_col = int(np.ceil(obs_wl_n_bin / each_col))
+
+    print(n_row, n_col, obs_wl_n_bin)
 
     fig = plt.figure(figsize=(4 * n_col, 3.5 * n_row))
     fig.subplots_adjust(left=0.075, right=0.995,
@@ -449,10 +440,10 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
     gs.update(wspace=0.0, hspace=0.00)
 
     y_min_arr = np.array(
-        [np.nanmin(prof.sig) for prof in obs_wl_dsigma])
+        [np.nanmin(prof['dsigma']) for prof in obs_wl_dsigma])
     y_min_arr = np.where(y_min_arr <= 0.0, np.nan, y_min_arr)
     y_max_arr = np.array(
-        [np.nanmax(prof.sig) for prof in obs_wl_dsigma])
+        [np.nanmax(prof['dsigma']) for prof in obs_wl_dsigma])
     y_min = np.nanmin(y_min_arr) * 0.5
     y_max = np.nanmax(y_max_arr) * 1.5
 
@@ -476,80 +467,57 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
             tick.label.set_fontsize(25)
 
         if ref_prof is not None:
-            ax.plot(ref_prof.r, ref_prof.sig, linewidth=3.0,
+            ax.plot(ref_prof['r_mpc'], ref_prof['dsigma'], linewidth=3.0,
                     color=GRN(0.8), linestyle='--', alpha=0.9)
 
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
-        ax.errorbar(obs_prof.r, obs_prof.sig,
-                    obs_prof.err_w, fmt='o',
-                    color='salmon',
-                    ecolor='lightsalmon',
-                    markersize=9,
-                    alpha=0.8)
-        ax.plot(obs_prof.r, obs_prof.sig,
-                linewidth=1.0, color='salmon',
-                alpha=0.5)
+        ax.errorbar(obs_prof['r_mpc'], obs_prof['dsigma'],
+                    obs_prof['dsigma_err'], fmt='o', color='salmon', 
+                    ecolor='lightsalmon', markersize=9, alpha=0.8)
+        ax.plot(obs_prof['r_mpc'], obs_prof['dsigma'],
+                linewidth=1.0, color='salmon', alpha=0.5)
 
         if reference is not None and reference == ii:
             ax.text(0.04, 0.41, r'$\mathrm{Ref}$',
-                    verticalalignment='center',
-                    horizontalalignment='left',
-                    fontsize=23.0,
-                    transform=ax.transAxes,
-                    color=GRN(0.9), alpha=1.0)
+                    verticalalignment='center', horizontalalignment='left',
+                    fontsize=23.0, transform=ax.transAxes, color=GRN(0.9), 
+                    alpha=1.0)
 
         # Label the mass range
-        ax.text(0.04, 0.29,
-                r'${\rm Bin: %d}$' % obs_prof.bin_id,
-                verticalalignment='center',
-                horizontalalignment='left',
-                fontsize=23.0,
-                transform=ax.transAxes,
-                color='k', alpha=0.9)
+        ax.text(0.04, 0.29, r'${\rm Bin: %d}$' % obs_prof['id'],
+                verticalalignment='center', horizontalalignment='left',
+                fontsize=23.0, transform=ax.transAxes, color='k', alpha=0.9)
 
-        ax.text(0.04, 0.18,
-                r"$\log M_{\rm tot}:[%5.2f,%5.2f]$" % (obs_prof.low_mtot,
-                                                       obs_prof.upp_mtot),
-                verticalalignment='center',
-                horizontalalignment='left',
-                fontsize=17.0,
-                transform=ax.transAxes,
-                color='k', alpha=0.9)
+        ax.text(0.04, 0.18, r"$\log M_{\rm tot}:[%5.2f,%5.2f]$" % (
+                    obs_prof['min_logm1'], obs_prof['max_logm1']),
+                verticalalignment='center', horizontalalignment='left',
+                fontsize=17.0, transform=ax.transAxes, color='k', alpha=0.9)
 
-        ax.text(0.04, 0.08,
-                r"$\log M_{\rm inn}:[%5.2f,%5.2f]$" % (obs_prof.low_minn,
-                                                       obs_prof.upp_minn),
-                verticalalignment='center',
-                horizontalalignment='left',
-                fontsize=17.0,
-                transform=ax.transAxes,
-                color='k', alpha=0.9)
+        ax.text(0.04, 0.08, r"$\log M_{\rm inn}:[%5.2f,%5.2f]$" % (
+                    obs_prof['min_logm2'], obs_prof['max_logm2']),
+                verticalalignment='center', horizontalalignment='left',
+                fontsize=17.0, transform=ax.transAxes, color='k', alpha=0.9)
 
         # Predicted WL profile
         if isinstance(um_wl_profs[0], (list,)):
             for dsig in um_wl_profs:
-                ax.plot(obs_prof.r, dsig[ii],
-                        linewidth=2.5, color='royalblue',
-                        alpha=0.7)
+                ax.plot(obs_prof['r_mpc'], dsig[ii],
+                        linewidth=2.5, color='royalblue', alpha=0.7)
         else:
-            ax.scatter(obs_prof.r, um_wl_profs[ii],
+            ax.scatter(obs_prof['r_mpc'], um_wl_profs[ii],
                        marker='h', s=7, c='b', alpha=1.0)
-            ax.plot(obs_prof.r, um_wl_profs[ii],
+            ax.plot(obs_prof['r_mpc'], um_wl_profs[ii],
                     linewidth=4.0, color='royalblue', alpha=0.7)
 
         if um_mhalo is not None:
-            ax.text(0.55, 0.92,
-                    r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
-                    verticalalignment='center',
-                    horizontalalignment='left',
-                    fontsize=18.0,
-                    transform=ax.transAxes,
-                    color='royalblue')
+            ax.text(0.55, 0.92, r"$[%5.2f \pm %5.2f]$" % um_mhalo[ii],
+                    verticalalignment='center', horizontalalignment='left',
+                    fontsize=18.0, transform=ax.transAxes, color='royalblue')
 
         # X, Y Limits
-        x_min = np.min(obs_prof.r) * 0.2
-        x_max = np.max(obs_prof.r) * 1.8
+        x_min = np.min(obs_prof['r_mpc']) * 0.2
+        x_max = np.max(obs_prof['r_mpc']) * 1.8
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
 
@@ -564,7 +532,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs,
         else:
             ax.xaxis.set_major_formatter(NullFormatter())
 
-    fig.savefig('asap_dsigma_profs.pdf', dpi=120)
+    # fig.savefig('asap_dsigma_profs.pdf', dpi=120)
 
     return fig
 
@@ -634,8 +602,7 @@ def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
 
 
 def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
-                    mcmc_burnin=None, burnin_alpha=0.2,
-                    trace_alpha=0.2):
+                    mcmc_burnin=None, burnin_alpha=0.2, trace_alpha=0.2):
     """Traceplot for MCMC results."""
     if mcmc_burnin is not None:
         fig = plt.figure(figsize=(12, 15))

@@ -429,23 +429,18 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
         n_row = each_col
         n_col = int(np.ceil(obs_wl_n_bin / each_col))
 
-    print(n_row, n_col, obs_wl_n_bin)
-
     fig = plt.figure(figsize=(4 * n_col, 3.5 * n_row))
-    fig.subplots_adjust(left=0.075, right=0.995,
-                        bottom=0.09, top=0.995,
+    fig.subplots_adjust(left=0.075, right=0.995, bottom=0.09, top=0.995,
                         wspace=0.00, hspace=0.00)
 
     gs = gridspec.GridSpec(n_row, n_col)
     gs.update(wspace=0.0, hspace=0.00)
 
-    y_min_arr = np.array(
-        [np.nanmin(prof['dsigma']) for prof in obs_wl_dsigma])
+    y_min_arr = np.array([np.nanmin(prof['dsigma']) for prof in obs_wl_dsigma])
     y_min_arr = np.where(y_min_arr <= 0.0, np.nan, y_min_arr)
-    y_max_arr = np.array(
-        [np.nanmax(prof['dsigma']) for prof in obs_wl_dsigma])
-    y_min = np.nanmin(y_min_arr) * 0.5
-    y_max = np.nanmax(y_max_arr) * 1.5
+    y_max_arr = np.array([np.nanmax(prof['dsigma']) for prof in obs_wl_dsigma])
+    y_min = np.nanmin(y_min_arr) * 0.8
+    y_max = np.nanmax(y_max_arr) * 1.9
 
     if reference is not None:
         ref_prof = obs_wl_dsigma[reference]
@@ -459,7 +454,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
         ax = plt.subplot(gs[row_id, col_id])
         ax.loglog()
 
-        ax.grid(linestyle='--', linewidth=1, alpha=0.3, zorder=0)
+        ax.grid(linestyle='--', linewidth=1.5, alpha=0.4, zorder=0)
 
         for tick in ax.xaxis.get_major_ticks():
             tick.label.set_fontsize(25)
@@ -472,32 +467,35 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
 
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
-        ax.errorbar(obs_prof['r_mpc'], obs_prof['dsigma'],
-                    obs_prof['dsigma_err'], fmt='o', color='salmon', 
-                    ecolor='lightsalmon', markersize=9, alpha=0.8)
-        ax.plot(obs_prof['r_mpc'], obs_prof['dsigma'],
-                linewidth=1.0, color='salmon', alpha=0.5)
+        ax.errorbar(
+            obs_prof['r_mpc'], obs_prof['dsigma'], obs_prof['dsigma_err'], 
+            fmt='o', color='salmon', ecolor='lightsalmon', markersize=9, alpha=0.9)
+        ax.plot(
+            obs_prof['r_mpc'], obs_prof['dsigma'], linewidth=1.5, color='salmon', alpha=0.5)
 
         if reference is not None and reference == ii:
             ax.text(0.04, 0.41, r'$\mathrm{Ref}$',
                     verticalalignment='center', horizontalalignment='left',
-                    fontsize=23.0, transform=ax.transAxes, color=GRN(0.9), 
+                    fontsize=23.0, transform=ax.transAxes, color=GRN(0.8), 
                     alpha=1.0)
 
         # Label the mass range
         ax.text(0.04, 0.29, r'${\rm Bin: %d}$' % obs_prof['id'],
                 verticalalignment='center', horizontalalignment='left',
-                fontsize=23.0, transform=ax.transAxes, color='k', alpha=0.9)
+                fontsize=23.0, transform=ax.transAxes, color='k', alpha=1.0)
 
-        ax.text(0.04, 0.18, r"$\log M_{\rm tot}:[%5.2f,%5.2f]$" % (
-                    obs_prof['min_logm1'], obs_prof['max_logm1']),
-                verticalalignment='center', horizontalalignment='left',
-                fontsize=17.0, transform=ax.transAxes, color='k', alpha=0.9)
+        ax.text(
+            0.04, 0.18, 
+            r"$\log M_{\rm tot}:[%5.2f,%5.2f]$" % (
+                obs_prof['min_logm1'], obs_prof['max_logm1']),
+            verticalalignment='center', horizontalalignment='left',
+            fontsize=17.0, transform=ax.transAxes, color='k', alpha=1.0)
 
-        ax.text(0.04, 0.08, r"$\log M_{\rm inn}:[%5.2f,%5.2f]$" % (
-                    obs_prof['min_logm2'], obs_prof['max_logm2']),
-                verticalalignment='center', horizontalalignment='left',
-                fontsize=17.0, transform=ax.transAxes, color='k', alpha=0.9)
+        ax.text(
+            0.04, 0.08, r"$\log M_{\rm inn}:[%5.2f,%5.2f]$" % (
+                obs_prof['min_logm2'], obs_prof['max_logm2']),
+            verticalalignment='center', horizontalalignment='left',
+            fontsize=17.0, transform=ax.transAxes, color='k', alpha=1.0)
 
         # Predicted WL profile
         if isinstance(um_wl_profs[0], (list,)):
@@ -505,8 +503,8 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
                 ax.plot(obs_prof['r_mpc'], dsig[ii],
                         linewidth=2.5, color='royalblue', alpha=0.7)
         else:
-            ax.scatter(obs_prof['r_mpc'], um_wl_profs[ii],
-                       marker='h', s=7, c='b', alpha=1.0)
+            ax.scatter(obs_prof['r_mpc'], um_wl_profs[ii], marker='h', 
+                       s=20, c='b', alpha=0.9)
             ax.plot(obs_prof['r_mpc'], um_wl_profs[ii],
                     linewidth=4.0, color='royalblue', alpha=0.7)
 
@@ -524,11 +522,9 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
         if col_id != 0:
             ax.yaxis.set_major_formatter(NullFormatter())
         else:
-            ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$',
-                          fontsize=30)
+            ax.set_ylabel(r'$\Delta\Sigma$ $[M_{\odot}/{\rm pc}^2]$', fontsize=30)
         if row_id == (n_row - 1):
-            ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$',
-                          fontsize=30)
+            ax.set_xlabel(r'$r_{\rm p}$ ${\rm [Mpc]}$', fontsize=30)
         else:
             ax.xaxis.set_major_formatter(NullFormatter())
 
@@ -571,7 +567,7 @@ def plot_best_fit_scatter_relation(sigms_a, sigms_b, min_scatter=0.02):
     return fig
 
 
-def plot_best_fit_shmr(shmr_a, shmr_b, sigms_a, sigms_b):
+def plot_best_fit_shmr(shmr_a, shmr_b):
     """Log Mh v.s. Log Ms_tot."""
     fig = plt.figure(figsize=(6, 6))
     fig.subplots_adjust(left=0.19, right=0.995,
@@ -609,8 +605,7 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
     else:
         fig = plt.figure(figsize=(10, 15))
 
-    fig.subplots_adjust(hspace=0.0, wspace=0.0,
-                        bottom=0.027, top=0.97,
+    fig.subplots_adjust(hspace=0.0, wspace=0.0, bottom=0.027, top=0.97,
                         left=0.06, right=0.94)
 
     # I want the plot of individual walkers to span 2 columns
@@ -624,7 +619,16 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         assert len(mcmc_best) == len(mcmc_labels)
 
     for ii, param in enumerate(mcmc_labels):
+        # Getthe chains from burn-in process and the final sampling process
         param_chain = mcmc_chains[:, :, ii]
+        if mcmc_burnin is not None:
+            param_burnin = mcmc_burnin[:, :, ii]
+        
+        # Get the range of Y-axis
+        y_min = np.min([np.min(param_chain), np.min(param_burnin)])
+        y_max = np.max([np.max(param_chain), np.max(param_burnin)])
+
+        # Maximum variance of the walkers
         max_var = max(np.var(param_chain[:, :], axis=1))
 
         # Trace plot
@@ -635,23 +639,18 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         ax1.yaxis.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
         for walker in param_chain:
-            ax1.plot(np.arange(len(walker)), walker,
-                     drawstyle="steps",
-                     color=ORG_2(1.0 - np.var(walker) / max_var),
-                     alpha=trace_alpha)
+            ax1.plot(np.arange(len(walker)), walker, alpha=trace_alpha, 
+                     drawstyle="steps", color=ORG_2(1.0 - np.var(walker) / max_var))
 
             if mcmc_burnin is None:
-                ax1.set_ylabel(param,
-                               fontsize=28,
-                               labelpad=18,
-                               color='k')
+                ax1.set_ylabel(param, fontsize=28, labelpad=18, color='k')
 
             # Don't show ticks on the y-axis
-            ax1.tick_params(labelleft='off')
+            ax1.tick_params(labelleft=False)
 
         # For the plot on the bottom, add an x-axis label. Hide all others
         if ii != (nparam - 1):
-            ax1.tick_params(labelbottom='off')
+            ax1.tick_params(labelbottom=False)
         else:
             for tick in ax1.xaxis.get_major_ticks():
                 tick.label.set_fontsize(20)
@@ -661,22 +660,19 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         ax2.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
         ax2.hist(np.ravel(param_chain[:, :]),
-                 bins=np.linspace(ax1.get_ylim()[0],
-                                  ax1.get_ylim()[1],
-                                  100),
-                 orientation='horizontal',
-                 alpha=0.7,
-                 facecolor=ORG_2(0.9),
+                 bins=np.linspace(ax1.get_ylim()[0], ax1.get_ylim()[1], 100),
+                 orientation='horizontal', alpha=0.7, facecolor=ORG_2(0.9),
                  edgecolor="none")
 
         ax1.set_xlim(1, len(walker))
-        ax1.set_ylim(np.min(param_chain[:, 0]), np.max(param_chain[:, 0]))
+        ax1.set_ylim(y_min, y_max)
         ax2.set_ylim(ax1.get_ylim())
 
         ax1.get_xaxis().tick_bottom()
         ax2.xaxis.set_visible(False)
         ax2.yaxis.tick_right()
         ax2.yaxis.set_label_position("right")
+
         for tick in ax2.yaxis.get_major_ticks():
             tick.label.set_fontsize(20)
 
@@ -693,21 +689,15 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
             ax3.yaxis.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
             for walker in param_burnin:
-                ax3.plot(np.arange(len(walker)), walker,
-                         drawstyle="steps",
-                         color=BLU(np.var(walker) / max_var),
-                         alpha=burnin_alpha)
+                ax3.plot(np.arange(len(walker)), walker, drawstyle="steps",
+                         color=BLU(np.var(walker) / max_var), alpha=burnin_alpha)
 
-                ax3.set_ylabel(param,
-                               fontsize=25,
-                               labelpad=18,
-                               color='k')
+                ax3.set_ylabel(param, fontsize=25, labelpad=18, color='k')
 
                 # Don't show ticks on the y-axis
-                ax3.tick_params(labelleft='off')
+                ax3.tick_params(labelleft=False)
                 ax3.set_xlim(1, len(walker))
-                ax3.set_ylim(np.min(param_chain[:, 0]),
-                             np.max(param_chain[:, 0]))
+                ax3.set_ylim(y_min, y_max)
                 ax3.get_xaxis().tick_bottom()
 
         # For the plot on the bottom, add an x-axis label. Hide all others
@@ -720,12 +710,12 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
                 tick.label.set_fontsize(20)
 
         if ii == 0:
-            t = ax1.set_title("Sampling", fontsize=28, color='k')
+            t = ax1.set_title(r"$\mathrm{Sampling}$", fontsize=28, color='k')
             t.set_y(1.01)
-            t = ax2.set_title("Posterior", fontsize=28, color='k')
+            t = ax2.set_title(r"$\mathrm{Posterior}$", fontsize=28, color='k')
             t.set_y(1.01)
             if mcmc_burnin is not None:
-                t = ax3.set_title("Burnin", fontsize=28, color='k')
+                t = ax3.set_title(r"$\mathrm{Burnin}$", fontsize=28, color='k')
                 t.set_y(1.01)
 
     return fig
@@ -743,8 +733,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels, **corner_kwargs):
         fill_contours=True,
         show_titles=True,
         title_kwargs={"fontsize": 20},
-        hist_kwargs={"histtype": 'stepfilled',
-                     "alpha": 0.4,
+        hist_kwargs={"histtype": 'stepfilled', "alpha": 0.4,
                      "edgecolor": "none"},
         use_math_text=True,
         **corner_kwargs

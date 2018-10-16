@@ -725,7 +725,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels, **corner_kwargs):
     """Corner plots for MCMC samples."""
     fig = corner.corner(
         mcmc_samples,
-        bins=25, color=ORG(0.7),
+        bins=30, color=ORG(0.7),
         smooth=1, labels=mcmc_labels,
         label_kwargs={'fontsize': 26},
         quantiles=[0.16, 0.5, 0.84],
@@ -733,7 +733,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels, **corner_kwargs):
         fill_contours=True,
         show_titles=True,
         title_kwargs={"fontsize": 20},
-        hist_kwargs={"histtype": 'stepfilled', "alpha": 0.4,
+        hist_kwargs={"histtype": 'stepfilled', "alpha": 0.5,
                      "edgecolor": "none"},
         use_math_text=True,
         **corner_kwargs

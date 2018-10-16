@@ -263,6 +263,10 @@ def config_emcee(cfg_emcee, verbose=False):
     if 'sample_n_sample' not in cfg_emcee:
         cfg_emcee['sample_n_sample'] = 100
 
+    # Whether use the best positions from burn-in to reinitialize the next step
+    if 'best_positions' not in cfg_emcee:
+        cfg_emcee['best_positions'] = True
+
     if verbose:
         print("#    Use %5d walkers with %10s moves for %5d x %2d steps of burn-in" % (
             cfg_emcee['burnin_n_walker'], cfg_emcee['burnin_move'], 

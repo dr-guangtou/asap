@@ -79,7 +79,7 @@ def mcmc_samples_stats(mcmc_samples):
 
 
 def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
-                       prefix='asap', verbose=True):
+                       prefix='asap', best_position=True, verbose=True):
     """Run the burn-in process in batch mode."""
     if verbose:
         print("\n# Phase: Burn-in ...")
@@ -103,7 +103,10 @@ def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
     burnin_best = sampler_burnin.flatlnprobability.argmax()
 
     # Find new initial positions for all walkers
-    initial_center = sampler_burnin.flatchain[burnin_best, :]
+    if best_position:
+        initial_center = sampler_burnin.flatchain[burnin_best, :]
+    else: 
+        initial_center = None
 
     if burnin_pos.shape[0] < (n_dim * 2):
         ini_positions = reinitialize_ball(
@@ -114,7 +117,7 @@ def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
         ini_positions = reinitialize_ball_covar(
             burnin_pos, burnin_prob, center=initial_center,
             limits=params_limits, disp_floor=0.01,
-            prior_check=params)
+            prior_check=params, threshold=30)
 
     if verbose:
         print("\n# Done burn-in process! ")
@@ -123,7 +126,7 @@ def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
 
 
 def emcee_burnin_repeat(sampler_burnin, ini_positions, params, n_step, n_repeat,
-                        prefix='asap', prob0=None, verbose=True):
+                        prefix='asap', best_position=True, prob0=None, verbose=True):
     """Run the burn-in process in batch mode."""
     if verbose:
         print("\n# Phase: Burn-in ...")
@@ -152,7 +155,10 @@ def emcee_burnin_repeat(sampler_burnin, ini_positions, params, n_step, n_repeat,
         # Is new position better than old position?
         if prob0 is None or sampler_burnin.flatlnprobability[burnin_best] > prob0:
             prob0 = sampler_burnin.flatlnprobability[burnin_best]
-            initial_center = sampler_burnin.flatchain[burnin_best, :]
+            if best_position:
+                initial_center = sampler_burnin.flatchain[burnin_best, :]
+            else:
+                initial_center = None
 
         if ii == n_repeat:
             # Done burning.
@@ -172,7 +178,7 @@ def emcee_burnin_repeat(sampler_burnin, ini_positions, params, n_step, n_repeat,
             ini_positions = reinitialize_ball_covar(
                 burnin_pos, burnin_prob, center=initial_center,
                 limits=params_limits, disp_floor=0.0,
-                prior_check=params)
+                prior_check=params, threshold=30)
 
         # Rest the chain
         sampler_burnin.reset()
@@ -411,11 +417,13 @@ def run_emcee_sampler(cfg, params, ln_probability, postargs=[], postkwargs={}, p
     if n_repeat == 1:
         burnin_results, new_ini_positions = emcee_burnin_batch(
             sampler_burnin, ini_positions, params, n_step_burnin, 
-            prefix=prefix, verbose=verbose)
+            prefix=prefix, verbose=verbose, 
+            best_position=cfg['model']['emcee']['best_positions'])
     else:
         burnin_results, new_ini_positions = emcee_burnin_repeat(
             sampler_burnin, ini_positions, params, n_step_burnin, n_repeat, 
-            prefix=prefix, verbose=verbose)
+            prefix=prefix, verbose=verbose,
+            best_position=cfg['model']['emcee']['best_positions'])
 
     if debug:
         return burnin_results, sampler_burnin

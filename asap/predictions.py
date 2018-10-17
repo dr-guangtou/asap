@@ -134,7 +134,8 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
 
     # Scatter of logMs_tot based on halo mass
     sig_logms_tot = sigma_logms_from_logmh(
-        um_mock[logmh_col], sig_logms_a, sig_logms_b, min_scatter=min_scatter)
+        um_mock[logmh_col], sig_logms_a, sig_logms_b, pivot=pivot,
+        min_scatter=min_scatter)
 
     # Given the prameters for stellar mass halo mass relation, and the
     # random scatter of stellar mass, predict the stellar mass of all

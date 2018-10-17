@@ -159,7 +159,7 @@ def predict_mstar_basic(um_mock, parameters, random=False, min_logms=11.0,
 
     # Fraction of ex-situ component that goes into the inner aperture
     frac_exs = frac_from_logmh(um_mock['logmh_peak'][mask_use],
-                               frac_exs_a, frac_exs_b)
+                               frac_exs_a, frac_exs_b, pivot=pivot)
 
     # Stellar mass for each component
     logms_ins_inn = (logms_tot_mod +
@@ -412,7 +412,7 @@ def predict_dsigma_profiles(cfg, obs_dsigma, mock_use, mass_encl_use, logms_mod_
         min_num=min_num, add_stellar=add_stellar) for obs_prof in obs_dsigma]
 
 
-def make_model_predictions(parameters, cfg, obs_data, um_data, verbose=False, return_all=False):
+def make_model_predictions(parameters, cfg, obs_data, um_data, return_all=False):
     """Return all model predictions.
 
     Parameters

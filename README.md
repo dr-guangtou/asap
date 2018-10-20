@@ -4,4 +4,4 @@
 
 -------
 
-![git animation](https://github.com/dr-guangtou/asap/blob/paper1/doc/dsig_over_aperture_plane.gif)
+![git animation](https://github.com/dr-guangtou/asap/blob/master/doc/dsig_over_aperture_plane.gif)

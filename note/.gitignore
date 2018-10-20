@@ -1,6 +1,7 @@
-fig/
+data/
 test/*.npz
 test/*.pkl
+test/final
 *.fits
 *.csv
 *.pkl

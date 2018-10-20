@@ -1,0 +1,9 @@
+numpy
+scipy
+emcee
+ltsfit
+corner
+astropy
+astroML
+halotools
+matplotlib

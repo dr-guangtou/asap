@@ -5,15 +5,18 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import NullFormatter
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from astroML.stats import binned_statistic_2d
 
 from scipy.ndimage.filters import gaussian_filter
 
 import corner
+
+__all__ = ['plot_logmh_sig_logms_tot', 'plot_logmh_logms_tot', 'display_obs_smf',
+           'show_smf', 'plot_mtot_minn_smf', 'plot_dsigma_profiles',
+           'plot_best_fit_scatter_relation', 'plot_best_fit_shmr', 
+           'plot_mcmc_trace', 'plot_mcmc_corner', 'plot_mass_scatter_fsat_trends']
 
 ORG = plt.get_cmap('OrRd')
 ORG_2 = plt.get_cmap('YlOrRd')
@@ -430,7 +433,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
         n_col = int(np.ceil(obs_wl_n_bin / each_col))
 
     fig = plt.figure(figsize=(4 * n_col, 3.5 * n_row))
-    fig.subplots_adjust(left=0.075, right=0.995, bottom=0.09, top=0.995,
+    fig.subplots_adjust(left=0.08, right=0.995, bottom=0.09, top=0.995,
                         wspace=0.00, hspace=0.00)
 
     gs = gridspec.GridSpec(n_row, n_col)

@@ -15,7 +15,7 @@ import corner
 
 __all__ = ['plot_logmh_sig_logms_tot', 'plot_logmh_logms_tot', 'display_obs_smf',
            'show_smf', 'plot_mtot_minn_smf', 'plot_dsigma_profiles',
-           'plot_best_fit_scatter_relation', 'plot_best_fit_shmr', 
+           'plot_best_fit_scatter_relation', 'plot_best_fit_shmr',
            'plot_mcmc_trace', 'plot_mcmc_corner', 'plot_mass_scatter_fsat_trends']
 
 ORG = plt.get_cmap('OrRd')
@@ -471,7 +471,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
         # Observed WL profile
         obs_prof = obs_wl_dsigma[ii]
         ax.errorbar(
-            obs_prof['r_mpc'], obs_prof['dsigma'], obs_prof['dsigma_err'], 
+            obs_prof['r_mpc'], obs_prof['dsigma'], obs_prof['dsigma_err'],
             fmt='o', color='salmon', ecolor='lightsalmon', markersize=9, alpha=0.9)
         ax.plot(
             obs_prof['r_mpc'], obs_prof['dsigma'], linewidth=1.5, color='salmon', alpha=0.5)
@@ -479,16 +479,16 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
         if reference is not None and reference == ii:
             ax.text(0.04, 0.41, r'$\mathrm{Ref}$',
                     verticalalignment='center', horizontalalignment='left',
-                    fontsize=23.0, transform=ax.transAxes, color=GRN(0.8), 
+                    fontsize=23.0, transform=ax.transAxes, color=GRN(0.8),
                     alpha=1.0)
 
         # Label the mass range
-        ax.text(0.04, 0.29, r'${\rm Bin: %d}$' % obs_prof['id'],
+        ax.text(0.04, 0.29, r'${\rm Bin: %d}$' % (ii + 1),
                 verticalalignment='center', horizontalalignment='left',
                 fontsize=23.0, transform=ax.transAxes, color='k', alpha=1.0)
 
         ax.text(
-            0.04, 0.18, 
+            0.04, 0.18,
             r"$\log M_{\rm tot}:[%5.2f,%5.2f]$" % (
                 obs_prof['min_logm1'], obs_prof['max_logm1']),
             verticalalignment='center', horizontalalignment='left',
@@ -506,7 +506,7 @@ def plot_dsigma_profiles(obs_wl_dsigma, um_wl_profs, um_mhalo=None,
                 ax.plot(obs_prof['r_mpc'], dsig[ii],
                         linewidth=2.5, color='royalblue', alpha=0.7)
         else:
-            ax.scatter(obs_prof['r_mpc'], um_wl_profs[ii], marker='h', 
+            ax.scatter(obs_prof['r_mpc'], um_wl_profs[ii], marker='h',
                        s=20, c='b', alpha=0.9)
             ax.plot(obs_prof['r_mpc'], um_wl_profs[ii],
                     linewidth=4.0, color='royalblue', alpha=0.7)
@@ -626,7 +626,7 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         param_chain = mcmc_chains[:, :, ii]
         if mcmc_burnin is not None:
             param_burnin = mcmc_burnin[:, :, ii]
-        
+
         # Get the range of Y-axis
         y_min = np.min([np.min(param_chain), np.min(param_burnin)])
         y_max = np.max([np.max(param_chain), np.max(param_burnin)])
@@ -642,7 +642,7 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         ax1.yaxis.grid(linewidth=1.5, linestyle='--', alpha=0.5)
 
         for walker in param_chain:
-            ax1.plot(np.arange(len(walker)), walker, alpha=trace_alpha, 
+            ax1.plot(np.arange(len(walker)), walker, alpha=trace_alpha,
                      drawstyle="steps", color=ORG_2(1.0 - np.var(walker) / max_var))
 
             if mcmc_burnin is None:

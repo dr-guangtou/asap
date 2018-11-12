@@ -20,6 +20,9 @@ def sm_scatter_x_given_sm_y(x, y):
 def sm_delta_x_given_sm_y(x, y):
     return r"$\Delta_{M_{\ast, \rm{{" + str(x) + r"}}} | M_{\ast, \rm{{" + str(y) + r"}}}}$"
 
+def sm_delta_x_given_sm_y_halo_props(x, y):
+    return r"$\Delta_{M_{\ast, \rm{{" + str(x) + r"}}} | M_{\ast, \rm{{" + str(y) + r"}}}\,,\ \rm{halo\ properties}}$"
+
 
 def mstar_mhalo_fit(n_sats):
     return r"$M_{\ast, \rm{" + str(n_sats) + "}}-M_{halo}$ fit"

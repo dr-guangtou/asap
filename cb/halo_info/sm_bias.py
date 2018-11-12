@@ -9,11 +9,16 @@ import smhm_fit
 
 # sm_bias = True_SM - Mean_SM(given Mhalo)
 # Note that this needs to be the data halo cut!
-def get_sm_bias(catalog, include_id=False):
-    cdata = catalog["data"]
+def get_sm_bias(catalog, include_id=False, use_cut_data=False):
+    if use_cut_data:
+        wdata, wfit = "data_cut", "fit_cut"
+    else:
+        wdata, wfit = "data", "fit"
+
+    cdata = catalog[wdata]
     stellar_masses = np.log10(cdata["icl"] + cdata["sm"])
     halo_masses = np.log10(cdata["m"])
-    predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *catalog["fit"])
+    predicted_stellar_masses = smhm_fit.f_shmr(halo_masses, *catalog[wfit])
     delta_stellar_masses = stellar_masses - predicted_stellar_masses
 
     if include_id:

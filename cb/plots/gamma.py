@@ -65,25 +65,45 @@ def mhalo_gamma_richness(cutz):
 
     fig, ax = plt.subplots()
     s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2[g], cutz2["richness"], statistic="mean", bins=(25, 25))
-    s = invalidate_unoccupied_bins(s, 10)
+    s = invalidate_unoccupied_bins(s, 12)
     img = _imshow(ax, s, cmap="OrRd")
     ax.set(
         xlabel=l.m_vir_x_axis,
         ylabel=l.gamma2,
-        xlim=(13.4, 15),
-        ylim=(0, 7.5),
+        xlim=(13.5, 14.75),
+        ylim=(0, 6),
     )
-    clb = fig.colorbar(img, ax=ax, label="Mean number of satellite galaxys $>$ 0.2M*")
+    clb = fig.colorbar(img, ax=ax, label=l.ngals)
 
     contours = ax.contour(
             s.x_edge[:-1] + ((s.x_edge[1:] - s.x_edge[:-1]) / 2),
             s.y_edge[:-1] + ((s.y_edge[1:] - s.y_edge[:-1]) / 2),
             s.statistic.T,
-            levels=[0, 0.5, 1, 2, 3.7, 5.5, 10, 13, 16, 19],
+            levels=[1, 2, 4, 6, 8, 10, 13, 16, 19],
             # levels=np.arange(20),
             cmap="copper_r",
     )
     clb.add_lines(contours)
+
+    # Plot applox uncertainties on contours
+    ax.plot([14.4, 14.6], [4, 4], color="black", marker="|")
+    ax.annotate("Approximate size of the\nuncertainties on the contours",
+            [14.1, 4.2],
+            fontsize=8,
+            )
+
+    # We need to know the std
+    fig, ax = plt.subplots()
+    s = scipy.stats.binned_statistic_2d(np.log10(cutz2["m"]), cutz2[g], cutz2["richness"], statistic="std", bins=(25, 25))
+    s = invalidate_unoccupied_bins(s, 12)
+    img = _imshow(ax, s, cmap="OrRd")
+    ax.set(
+        xlabel=l.m_vir_x_axis,
+        ylabel=l.gamma2,
+        xlim=(13.5, 14.75),
+        ylim=(0, 6),
+    )
+    clb = fig.colorbar(img, ax=ax, label=l.ngals)
 
 def mhalo_gamma_richness_with_interp(cutz):
     g = "gammas2"
@@ -189,24 +209,32 @@ def gamma_in_mstarcen_mstartot_bins(mcen, mtot, gamma):
     return ax
 
 # was gamma_in_mstarcen_mstarhalo
-def gamma_of_fixed_cen_and_split_tot_pops(j_cen_mass, j_halo_mass, j_gammas):
+def gamma_of_fixed_cen_and_split_tot_pops(mcen, mtot, gamma):
+    assert len(mcen) == len(mtot)
     fig, ax = plt.subplots()
 
-    cen_selected = (j_cen_mass.values > 10**11.6) & (j_cen_mass.values < 10**11.7)
-    num = 500* 1
-    low_tot_selected = (j_halo_mass.values < 10**11.7)
-    high_tot_selected = (j_halo_mass.values > 10**12.15)
+    in_cen_range = ((mcen > 10**11.6) & (mcen < 10**11.7)).values
+    mcen, mtot, gamma = mcen[in_cen_range], mtot[in_cen_range], gamma[in_cen_range]
 
-    low = j_gammas.values[cen_selected & low_tot_selected]
-    high = j_gammas.values[cen_selected & high_tot_selected]
+    mtot_minus_mcen = (np.log10(mtot) - np.log10(mcen)).values
+
+    low_cut, high_cut = np.percentile(mtot_minus_mcen, [20, 80])
+    print(low_cut, high_cut)
+
+    in_low_tot_range = (mtot_minus_mcen <= low_cut)
+    in_high_tot_range = (mtot_minus_mcen >= high_cut)
+
+    low = gamma.values[in_low_tot_range]
+    high = gamma.values[in_high_tot_range]
     print(len(low))
     print(len(high))
 
-    ax.hist(low, density=True, alpha=0.4, bins=50, label="Lowest " + l.m_star_legend("tot") + " systems")
-    ax.hist(high, density=True, alpha=0.4, bins=50, label="Highest " + l.m_star_legend("tot") + " systems")
+    diff = l.m_star_legend("tot") + r"-" + l.m_star_legend("cen")
+    ax.hist(low, density=True, alpha=0.4, bins=50, label="Small " + diff)
+    ax.hist(high, density=True, alpha=0.4, bins=50, label="Large " + diff)
     ax.set(
-            xlim=(-2, 6),
-            xlabel=l.gamma2,
+            xlim=(-1, 6),
+            xlabel=l.gamma,
             ylabel="Density",
     )
 

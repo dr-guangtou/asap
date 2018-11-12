@@ -72,7 +72,7 @@ def do_fit(x, y, f, restrict_to_power_law):
 # This is the fitting function
 # f_shmr finds SM given HM. As the inverse, this find HM given SM
 def f_shmr_inverse(log_stellar_masses, m1, sm0, beta, delta, gamma):
-    if np.max(log_stellar_masses) > 100:
+    if np.max(log_stellar_masses) > 1e6:
         raise Exception("You are probably not passing log masses!")
 
     stellar_masses = np.power(10, log_stellar_masses)
@@ -85,7 +85,7 @@ def f_shmr_inverse(log_stellar_masses, m1, sm0, beta, delta, gamma):
 # http://www.wolframalpha.com/input/?i=d%2Fdx+B*log10(x%2FS)+%2B+((x%2FS)%5Ed)+%2F+(1+%2B+(x%2FS)%5E-g)+-+0.5
 # https://math.stackexchange.com/questions/504997/derivative-with-respect-to-logx
 def f_shmr_inverse_der(log_stellar_masses, sm0, beta, delta, gamma):
-    if np.max(log_stellar_masses) > 100:
+    if np.max(log_stellar_masses) > 1e6:
         raise Exception("You are probably not passing log masses to der!")
 
     stellar_masses = np.power(10, log_stellar_masses)
@@ -101,7 +101,7 @@ def f_shmr_inverse_der(log_stellar_masses, sm0, beta, delta, gamma):
 # Does this by guessing stellar masses and plugging them into the inverse
 # Scipy is so sick . . .
 def f_shmr(log_halo_masses, m1, sm0, beta, delta, gamma):
-    if np.max(log_halo_masses) > 100:
+    if np.max(log_halo_masses) > 1e6:
         raise Exception("You are probably not passing log halo masses!")
     # Function to minimize
     def f(stellar_masses_guess):

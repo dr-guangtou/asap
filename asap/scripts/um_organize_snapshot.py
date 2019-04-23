@@ -94,7 +94,7 @@ def main(data_file, mpeak_lim=11.0):
     """
     # Input catalog
     if (not os.path.isfile(data_file)) and (not os.path.islink(data_file)):
-        raise OSError("# Can not find the UM results: %s" % data_file)
+        raise IOError("# Can not find the UM results: %s" % data_file)
 
     um_pre, _ = os.path.splitext(data_file)
 

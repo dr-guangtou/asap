@@ -31,7 +31,7 @@ HLIST_COLUMNS = [
     ("phantom", "int"), # 9: nonzero if halo interpolated across timesteps
     # Physical properties of the halo
     ("sam_mvir", "float64"), # 10: Smoothed halo mass used in SAMs
-    ("mvir", "float64"), # 11: Msun/h
+    ("mvir_rock", "float64"), # 11: Msun/h
     ("rvir", "float64"), # 12: kpc/h
     ("rs", "float64"), # 13: scale radius kpc/h
     ("vrms", "float64"), # 14: v rms km/s (physical)
@@ -98,7 +98,7 @@ HLIST_COLUMNS = [
 hlist_selected = {
     "id": (1, "int32"),
     "pid": (5, "int32"),
-    "mvir": (10, "float64"),
+    "mvir_rock": (10, "float64"), # There will be a mvir on the UM side
     "rvir": (11, "float64"),
     "rs": (12, "float64"),
     "scale_half_mass": (61, "float64"),

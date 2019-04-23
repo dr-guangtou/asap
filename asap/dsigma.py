@@ -11,7 +11,6 @@ from halotools.mock_observables.mock_observables_helpers import (
     get_period, enforce_sample_respects_pbcs,
     enforce_sample_has_correct_shape)
 from halotools.mock_observables.surface_density import (surface_density_helpers, mass_in_cylinders)
-
 log_interp = surface_density_helpers.log_interpolation_with_inner_zero_masking
 rho_m_comoving = surface_density_helpers.rho_matter_comoving_in_halotools_units
 annular_area_weighted_midpoints = surface_density_helpers.annular_area_weighted_midpoints

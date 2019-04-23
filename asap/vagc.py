@@ -12,7 +12,7 @@ from halotools.utils import crossmatch
 from halotools.utils import group_member_generator
 from halotools.mock_observables import total_mass_enclosed_per_cylinder
 
-__all__ = ['value_added_mdpl2_mock', 'value_added_smdpl_mock', 
+__all__ = ['value_added_mdpl2_mock', 'value_added_smdpl_mock',
            'total_stellar_mass_including_satellites', 'precompute_lensing_pairs',
            'prep_um_catalog', 'precompute_wl_smdpl']
 
@@ -144,7 +144,7 @@ def total_stellar_mass_including_satellites(gals, colname, hostid='halo_hostid')
     return total_stellar_mass
 
 
-def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz, particle_masses, 
+def precompute_lensing_pairs(galx, galy, galz, ptclx, ptcly, ptclz, particle_masses,
                              downsampling_factor, rp_bins, period):
     """Calculate the precomputed array to be used as the DeltaSigma kernels.
 

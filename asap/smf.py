@@ -7,7 +7,7 @@ from scipy.stats import norm
 
 import numpy as np
 
-from . import utils 
+from . import utils
 
 
 __all__ = ['get_smf_bootstrap', 'bootstrap_smf', 'bootstrap_resample',

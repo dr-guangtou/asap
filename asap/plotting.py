@@ -732,6 +732,7 @@ def plot_mcmc_corner(mcmc_samples, mcmc_labels, **corner_kwargs):
         smooth=2, labels=mcmc_labels,
         label_kwargs={'fontsize': 26},
         quantiles=[0.16, 0.5, 0.84],
+        levels=[0.16, 0.50, 0.84],
         plot_contours=True,
         fill_contours=True,
         show_titles=True,

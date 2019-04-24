@@ -35,7 +35,7 @@ def main(um_file, box_size=400., mhalo_lim=11.5, mhalo_type='peak',
     um_all = vstack([um_cen, um_sat])
 
     # Value added the catalogs
-    um_vagc = value_added_smdpl_mock(um_all, box_size=box_size)
+    um_vagc = value_added_mock(um_all, box_size=box_size)
 
     # Organize the catalog, add additional information, and make Mpeak cut
     um_use = prep_um_catalog(um_vagc, um_min_mvir=mhalo_lim,

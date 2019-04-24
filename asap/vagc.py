@@ -14,7 +14,7 @@ from halotools.mock_observables import total_mass_enclosed_per_cylinder
 
 __all__ = ['value_added_mdpl2_mock', 'value_added_smdpl_mock',
            'total_stellar_mass_including_satellites', 'precompute_lensing_pairs',
-           'prep_um_catalog', 'precompute_wl_smdpl']
+           'prep_um_catalog', 'precompute_wl_smdpl', 'value_added_mock']
 
 
 def value_added_mdpl2_mock(fname):
@@ -84,6 +84,45 @@ def value_added_smdpl_mock(smdpl_mock):
     smdpl_mock['host_halo_mvir'][idxA] = smdpl_mock['mvir'][idxB]
 
     return smdpl_mock
+
+
+def value_added_mock(mock_cat, box_size=400.):
+    """Value added the UniverseMachine model catalog.
+
+    * About box_size:
+        - For SMDPL, box_size=400 Mpc/h. This is the default
+        - For MDPL2, box_size=1000 Mpc/h
+    """
+    # Rename columns
+    mock_cat.rename_column('m', 'mvir')
+    mock_cat.rename_column('mp', 'mpeak')
+    mock_cat.rename_column('id', 'halo_id')
+
+    #  Apply periodic boundary conditions
+    mock_cat['x'] = np.where(
+        mock_cat['x'] < 0, box_size + mock_cat['x'], mock_cat['x'])
+    mock_cat['x'] = np.where(
+        mock_cat['x'] > box_size, mock_cat['x'] - box_size, mock_cat['x'])
+    mock_cat['y'] = np.where(
+        mock_cat['y'] < 0, box_size + mock_cat['y'], mock_cat['y'])
+    mock_cat['y'] = np.where(
+        mock_cat['y'] > box_size, mock_cat['y'] - box_size, mock_cat['y'])
+    mock_cat['z'] = np.where(
+        mock_cat['z'] < 0, box_size + mock_cat['z'], mock_cat['z'])
+    mock_cat['z'] = np.where(
+        mock_cat['z'] > box_size, mock_cat['z'] - box_size, mock_cat['z'])
+
+    # Adjust host halo ID
+    mock_cat['halo_hostid'] = mock_cat['halo_id']
+    satmask = mock_cat['upid'] != -1
+    mock_cat['halo_hostid'][satmask] = mock_cat['upid'][satmask]
+
+    # Estimate host halo mass for the satellites
+    idxA, idxB = crossmatch(mock_cat['halo_hostid'], mock_cat['halo_id'])
+    mock_cat['host_halo_mvir'] = mock_cat['mvir']
+    mock_cat['host_halo_mvir'][idxA] = mock_cat['mvir'][idxB]
+
+    return mock_cat
 
 
 def total_stellar_mass_including_satellites(gals, colname, hostid='halo_hostid'):

@@ -22,7 +22,7 @@ def main(um_file, box_size=400., mhalo_lim=11.5, mhalo_type='peak',
     um_pre, um_ext = os.path.splitext(um_file)
     um_pre_out = um_pre + '_vagc_m%s_%4.1f' % (mhalo_type.strip(), mhalo_lim)
 
-    if um_ext.strip() is not 'npz':
+    if um_ext.strip() is not '.npz':
         raise IOError("# We need the .npz format UM catalog")
 
     # Read in the catalog and separate the centrals and satellites

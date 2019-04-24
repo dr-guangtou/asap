@@ -24,7 +24,7 @@ def downsample_particles(ptbl_file, n_million, seed=95064, csv=False, verbose=Tr
     particle_table_dtype = [
         ("x", "float64"), ("y", "float64"), ("z", "float64")]
 
-    if csv or ptbl_ext is 'csv':
+    if csv or ptbl_ext is '.csv':
         use_csv = True
     else:
         use_csv = False

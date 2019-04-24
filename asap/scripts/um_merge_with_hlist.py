@@ -166,7 +166,7 @@ def main(hlist_file, um_file):
         result = result.view(result.dtype.descr, np.ndarray)
         del result_df
         np.savez(
-            final_extended_file,
+            um_extended_file,
             centrals=result[result["upid"] == -1],
             satellites=result[result["upid"] != -1])
     else:

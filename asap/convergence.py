@@ -3,7 +3,22 @@
 import numpy as np
 
 __all__ = ["convergence_check", "make_kl_bins", "kl_divergence",
-           "find_subsequence"]
+           "find_subsequence", "gelman_rubin"]
+
+def gelman_rubin(chain):
+    """Gelman-Rubin test of convergence.
+    Based on : http://joergdietrich.github.io/emcee-convergence.html
+    """
+    ssq = np.var(chain, axis=1, ddof=1)
+    W = np.mean(ssq, axis=0)
+    theta_b = np.mean(chain, axis=1)
+    theta_bb = np.mean(theta_b, axis=0)
+    m = chain.shape[0]
+    n = chain.shape[1]
+    B = n / (m - 1) * np.sum((theta_bb - theta_b)**2, axis=0)
+    var_theta = (n - 1) / n * W + 1 / n * B
+    R = np.sqrt(var_theta / W)
+    return R
 
 
 def find_subsequence(subseq, seq):

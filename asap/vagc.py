@@ -249,8 +249,7 @@ def prep_um_catalog(um_input, um_min_mvir=None, mhalo_col='logmh_peak'):
     um_mock.add_column(Column(data=mask_central, name='mask_central'))
 
     # Add a column as the BCG+ICL mass
-    um_mock.add_column(Column(data=(um_mock['sm'] + um_mock['icl']),
-                              name='mtot_galaxy'))
+    um_mock.add_column(Column(data=(um_mock['sm'] + um_mock['icl']), name='mtot_galaxy'))
 
     # Total stellar masses within a halo, including the satellites
     mstar_mhalo = total_stellar_mass_including_satellites(um_mock, 'mtot_galaxy')

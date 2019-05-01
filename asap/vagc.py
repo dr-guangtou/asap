@@ -14,7 +14,8 @@ from halotools.mock_observables import total_mass_enclosed_per_cylinder
 
 __all__ = ['value_added_mdpl2_mock', 'value_added_smdpl_mock',
            'total_stellar_mass_including_satellites', 'precompute_lensing_pairs',
-           'prep_um_catalog', 'precompute_wl_smdpl', 'value_added_mock']
+           'prep_um_catalog', 'precompute_wl_smdpl', 'value_added_mock',
+           'get_accretion_rate']
 
 
 def value_added_mdpl2_mock(fname):
@@ -336,3 +337,52 @@ def precompute_wl_smdpl(um_mock, sim_particles,
     print(msg.format(len(um_mock), len(sim_particles), runtime))
 
     return sim_mass_encl
+
+
+def get_accretion_rate(mvir, acc_2tdyn, scale_factor=0.7124, mask=None,
+                       cosmo_model='planck13'):
+    """Estimate accretion rate based on recipe from Benedikt Diemer.
+
+    Enia Xhakaj contributed this piece of code.
+    """
+    from colossus.halo.mass_so import dynamicalTime
+    from colossus.cosmology import cosmology
+
+    cosmo = cosmology.setCosmology(cosmo_model) # for the MDPL2 case
+
+    if mask is not None:
+        acc_2tdyn = acc_2tdyn[mask]
+        mvir = mvir[mask]
+
+    ## Get gammas
+    gamma_ct = acc_2tdyn
+
+    ## Get dynamical time
+    z_now = (1. - scale_factor) / scale_factor
+    dyntime_ct = dynamicalTime(z_now, "vir", definition='crossing') # in years
+
+    ## Estimate delta Mvir
+    delta_mvir = gamma_ct * dyntime_ct * 1e9
+
+    # Find Mvir_now and Mvir_then
+    mvir_now = mvir
+    mvir_then = mvir_now - delta_mvir
+
+    # Find scale factor 1 dynamic time ago using SPARTA's method
+    # Get dynamical time
+    dyntime_sp = dynamicalTime(z_now, "vir", definition='crossing') * 1e9 # in years
+
+    # Time now
+    time_snapshot = cosmo.age(z_now, inverse=False) * 1e9
+
+    # Time back 1tdyn
+    time_back1dyn = time_snapshot - dyntime_sp
+
+    # Ccale factor itdyn ago
+    z_back1dyn = cosmo.age(time_back1dyn / 1e9, inverse=True) # with inverse = True
+    sf_back1dyn = 1./(1. + z_back1dyn)
+
+    # Estimate a new accretion rate: Gamma
+    gamma_sp = np.log10(mvir_now / mvir_then) / np.log10(scale_factor / sf_back1dyn)
+
+    return gamma_sp

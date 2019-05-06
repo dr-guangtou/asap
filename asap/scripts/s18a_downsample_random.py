@@ -45,18 +45,18 @@ S18A_RAND_COLS = [
     'y_sdssshape_psf_shape22', 'y_sdssshape_psf_shape12'
 ]
 
-S18A_RAND_USE = [1, 2, 3, 6, 7, 11, 12, 18, 37, 56, 75, 94]
+S18A_RAND_USE = [0, 1, 2, 5, 6, 10, 11, 17, 36, 55, 74, 93]
 
 S18A_RAND_DTYPE = [
     ("object_id", "int32"), ("ra", "float64"), ("dec", "float64"),
-    ("tract", "int16"), ("patch", "int16"), ("isprimary", "bool"),
-    ("adjust_density", "float64"), ("g_inputcount_value", "int16"),
-    ("r_inputcount_value", "int16"), ("i_inputcount_value", "int16"),
-    ("z_inputcount_value", "int16"), ("y_inputcount_value", "int16")
+    ("tract", "int32"), ("patch", "int32"), ("isprimary", "bool"),
+    ("adjust_density", "float64"), ("g_inputcount_value", "float32"),
+    ("r_inputcount_value", "float32"), ("i_inputcount_value", "float32"),
+    ("z_inputcount_value", "float32"), ("y_inputcount_value", "float32")
 ]
 
 
-def downsample_randoms(rand_file, chunksize=1e6, seed=95064, csv=True,
+def downsample_randoms(rand_file, chunksize=1e6, seed=95064, whitespace=False,
                        downsample=False, verbose=True):
     """Down-sample the random catalogs from the HSC S18A data."""
     if not os.path.isfile(rand_file):
@@ -72,14 +72,17 @@ def downsample_randoms(rand_file, chunksize=1e6, seed=95064, csv=True,
 
     # Read the data
     rand_pchunks = pd.read_csv(
-        rand_file, usecols=S18A_RAND_COLS, delim_whitespace=csv,
-        names=S18A_RAND_USE, dtype=S18A_RAND_DTYPE, index_col=False,
-        chunksize=chunksize)
+        rand_file, usecols=S18A_RAND_USE, delim_whitespace=whitespace,
+        index_col=False, chunksize=chunksize)
 
     rand_pdframe = pd.concat(rand_pchunks)
-    rand_array = rand_pdframe.values.ravel().view(dtype=S18A_RAND_DTYPE)
+    rand_pdframe.rename(columns={'# object_id': 'object_id'}, inplace=True)
+
+    rand_array = rand_pdframe.to_records(index=False)
 
     # Save the result
+    if verbose:
+        print("# There are %d randoms in the file: %s" % (len(rand_array), rand_file))
     np.save(rand_out, rand_array)
 
     # Downsample

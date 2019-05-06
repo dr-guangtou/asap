@@ -57,11 +57,14 @@ S18A_RAND_DTYPE = [
 
 
 def downsample_randoms(rand_file, chunksize=1e6, seed=95064, whitespace=False,
-                       downsample=False, verbose=True):
+                       downsample=False, verbose=True, gzip=False):
     """Down-sample the random catalogs from the HSC S18A data."""
     if not os.path.isfile(rand_file):
         raise IOError("# Can not find the particle table : %s" % rand_file)
-    rand_pre, _ = os.path.splitext(rand_file)
+    if gzip:
+        rand_pre = rand_file.replace('.csv.gz', '')
+    else:
+        rand_pre = rand_file.replace('.csv', '')
 
     # Reduce the number of colunms and save as a numpy array
     rand_out = rand_pre + ".npy"
@@ -108,14 +111,21 @@ if __name__ == "__main__":
         help=('Size of the chunk when reading in the catalog.'))
 
     parser.add_argument(
+        '-g', '--gzip', dest='gzip',
+        help=('Whether the file is in .csv.gz format'),
+        action="store_true", default=False)
+
+    parser.add_argument(
         '-s', '--seed', dest='seed', help='Random seed',
         type=int, default=95064)
 
     parser.add_argument(
         '-v', '--verbose', dest='verbose',
+        help=('Blah, blah...'),
         action="store_true", default=False)
 
     args = parser.parse_args()
 
-    downsample_randoms(args.rand_file, chunksize=args.chunksize,
-        seed=args.seed, verbose=args.verbose)
+    downsample_randoms(
+        args.rand_file, chunksize=args.chunksize,
+        seed=args.seed, verbose=args.verbose, gzip=args.gzip)

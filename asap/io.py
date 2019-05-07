@@ -245,7 +245,7 @@ def load_npz_results(mcmc_file):
 
 
 def save_results_to_npz(mcmc_results, mcmc_sampler, mcmc_file,
-                        mcmc_ndims, verbose=True):
+                        mcmc_ndims, verbose=True, frac=0.1):
     """Save the MCMC run results."""
     (mcmc_position, mcmc_lnprob, _) = mcmc_results
 
@@ -253,14 +253,23 @@ def save_results_to_npz(mcmc_results, mcmc_sampler, mcmc_file,
         (-1, mcmc_ndims))
     mcmc_chains = mcmc_sampler.chain
     mcmc_lnprob = mcmc_sampler.lnprobability
+
+    mcmc_params_stats = ensemble.mcmc_samples_stats(mcmc_samples)
+
+    # Best parameter using the best log(prob)
     ind_1, ind_2 = np.unravel_index(np.argmax(mcmc_lnprob, axis=None),
                                     mcmc_lnprob.shape)
     mcmc_best = mcmc_chains[ind_2, ind_1, :]
-    mcmc_params_stats = ensemble.mcmc_samples_stats(mcmc_samples)
+
+    # Best parameters using the mean of the last few samples
+    _, n_step, n_dim = mcmc_chains.shape
+    mcmc_mean = np.nanmean(
+        mcmc_chains[:, -int(n_step * frac):, :].reshape([-1, n_dim]), axis=0)
 
     np.savez(mcmc_file,
              samples=mcmc_samples, lnprob=np.array(mcmc_lnprob),
-             best=np.array(mcmc_best), chains=mcmc_chains,
+             best=np.array(mcmc_best), mean=np.asarray(mcmc_mean),
+             chains=mcmc_chains,
              position=np.asarray(mcmc_position),
              acceptance=np.array(mcmc_sampler.acceptance_fraction))
 
@@ -271,6 +280,9 @@ def save_results_to_npz(mcmc_results, mcmc_sampler, mcmc_file,
         print("#------------------------------------------------------")
         print("#  Best ln(Probability): %11.5f" % np.max(mcmc_lnprob))
         print(mcmc_best)
+        print("#------------------------------------------------------")
+        print("#  Best parameters (mean):")
+        print(mcmc_mean)
         print("#------------------------------------------------------")
         for param_stats in mcmc_params_stats:
             print(param_stats)

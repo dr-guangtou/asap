@@ -105,7 +105,7 @@ def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
     # Find new initial positions for all walkers
     if best_position:
         initial_center = sampler_burnin.flatchain[burnin_best, :]
-    else: 
+    else:
         initial_center = None
 
     if burnin_pos.shape[0] < (n_dim * 2):
@@ -416,12 +416,12 @@ def run_emcee_sampler(cfg, params, ln_probability, postargs=[], postkwargs={}, p
     # Repeat a few times with new initial positions if necessary
     if n_repeat == 1:
         burnin_results, new_ini_positions = emcee_burnin_batch(
-            sampler_burnin, ini_positions, params, n_step_burnin, 
-            prefix=prefix, verbose=verbose, 
+            sampler_burnin, ini_positions, params, n_step_burnin,
+            prefix=prefix, verbose=verbose,
             best_position=cfg['model']['emcee']['best_positions'])
     else:
         burnin_results, new_ini_positions = emcee_burnin_repeat(
-            sampler_burnin, ini_positions, params, n_step_burnin, n_repeat, 
+            sampler_burnin, ini_positions, params, n_step_burnin, n_repeat,
             prefix=prefix, verbose=verbose,
             best_position=cfg['model']['emcee']['best_positions'])
 

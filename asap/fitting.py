@@ -4,7 +4,7 @@ from __future__ import print_function, division, unicode_literals
 from multiprocessing import Pool
 from contextlib import closing
 
-import numpy as np 
+import numpy as np
 
 import emcee
 
@@ -107,7 +107,7 @@ def fit_asap_model(config_file, verbose=True, use_global=False, debug=False):
 
         with closing(Pool(processes=cfg['model']['emcee']['n_thread'])) as pool:
             sample_results, sampler = ensemble.run_emcee_sampler(
-                cfg, params, ln_probability_global, 
+                cfg, params, ln_probability_global,
                 pool=pool, verbose=verbose, debug=debug)
     else:
         # Initialize the model, load the data

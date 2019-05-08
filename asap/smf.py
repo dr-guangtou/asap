@@ -85,8 +85,8 @@ def bootstrap_resample(X, n_boots=1000):
 
     """
     return np.vstack(
-        X[np.floor(np.random.rand(len(X))*len(X)).astype(int)]
-        for ii in np.arange(n_boots)).T
+        [X[np.floor(np.random.rand(len(X))*len(X)).astype(int)]
+        for ii in np.arange(n_boots)]).T
 
 
 def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
@@ -142,9 +142,9 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
     else:
         sm_boots = bootstrap_resample(sm_array, n_boots=n_boots)
 
-    smf_boots = np.vstack(
+    smf_boots = np.vstack([
         compute_smf(sm_boots[:, ii], volume, nb, sm_min, sm_max, smf_only=True)
-        for ii in range(n_boots)
+        for ii in range(n_boots)]
     )
 
     return x, smf, err_poison, smf_boots, bins

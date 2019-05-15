@@ -182,7 +182,8 @@ def show_smf(smf_list, label_list=None, text=None, loc=1,
 def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
                        um_smf_tot, um_smf_inn, logms_mod_tot, logms_mod_inn,
                        obs_smf_full=None, shmr_a=None, shmr_b=None,
-                       sigms_a=None, sigms_b=None, um_smf_tot_all=None, not_table=False):
+                       sigms_a=None, sigms_b=None, um_smf_tot_all=None,
+                       not_table=False, x_label='Tot', y_label='Inn'):
     """Plot the UM predicted M100-M10 plane and their SMFs."""
     fig, axes = plt.subplots(2, figsize=(7, 9))
     fig.subplots_adjust(left=0.145, right=0.995,
@@ -216,8 +217,8 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
     ax1.legend(fontsize=20, loc='lower right')
     ax1.grid(linestyle='--', linewidth=2, alpha=0.3, zorder=0)
 
-    ax1.set_xlabel(r'$\log M_{\star,\ \mathrm{Tot,\ UM}}$', fontsize=25)
-    ax1.set_ylabel(r'$\log M_{\star,\ \mathrm{Inn,\ UM}}$', fontsize=25)
+    ax1.set_xlabel(r'$\log M_{\star,\ \mathrm{%s,\ UM}}$' % x_label, fontsize=25)
+    ax1.set_ylabel(r'$\log M_{\star,\ \mathrm{%s,\ UM}}$' % y_label, fontsize=25)
 
     ax1.set_xlim(np.nanmin(logms_mod_tot) - 0.09,
                  np.nanmax(logms_mod_tot) + 0.09)
@@ -273,7 +274,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
                      edgecolor='none',
                      interpolate=True,
                      alpha=0.4,
-                     label=r'$\mathrm{Data:\ Mtot}$')
+                     label=r'$\mathrm{Data:\ }M_{\star,\ {\rm %s}}$' % x_label)
 
     ax2.fill_between(obs_smf_inn['logm_mean'],
                      np.log10(obs_smf_inn['smf_low']),
@@ -282,7 +283,7 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
                      edgecolor='none',
                      interpolate=True,
                      alpha=0.4,
-                     label=r'$\mathrm{Data:\ Minn}$')
+                     label=r'$\mathrm{Data:\ }M_{\star,\ {\rm %s}}$' % y_label)
 
     ax2.scatter(obs_smf_inn['logm_mean'],
                 np.log10(obs_smf_inn['smf']),
@@ -332,13 +333,13 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
                      np.log10(um_smf_inn),
                      linewidth=4, linestyle='--',
                      c='salmon',
-                     label=r'$\mathrm{UM:\ Minn}$')
+                     label=r'$\mathrm{UM:\ }M_{\star,\ {\rm %s}}$' % y_label)
         else:
             ax2.plot(um_smf_inn['logm_mean'],
                      np.log10(um_smf_inn['smf']),
                      linewidth=4, linestyle='--',
                      c='salmon',
-                     label=r'$\mathrm{UM:\ Minn}$')
+                     label=r'$\mathrm{UM:\ }M_{\star,\ {\rm %s}}$' % y_label)
 
     if isinstance(um_smf_tot, (list,)):
         for ii, smf in enumerate(um_smf_tot):
@@ -348,13 +349,13 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
                              np.log10(smf),
                              linewidth=1, linestyle='-',
                              c='royalblue', alpha=0.7,
-                             label=r'$\mathrm{UM:\ Mtot}$')
+                             label=r'$\mathrm{UM:\ }M_{\star,\ {\rm %s}}$' % x_label)
                 else:
                     ax2.plot(smf['logm_mean'],
                              np.log10(smf['smf']),
                              linewidth=1, linestyle='-',
                              c='royalblue', alpha=0.7,
-                             label=r'$\mathrm{UM:\ Mtot}$')
+                             label=r'$\mathrm{UM:\ }M_{\star,\ {\rm %s}}$' % x_label)
             else:
                 if not_table:
                     ax2.plot(obs_smf_tot['logm_mean'],
@@ -374,13 +375,13 @@ def plot_mtot_minn_smf(obs_smf_tot, obs_smf_inn, obs_logms_tot, obs_logms_inn,
                      np.log10(um_smf_tot),
                      linewidth=4, linestyle='--',
                      c='royalblue',
-                     label=r'$\mathrm{UM:\ Mtot}$')
+                     label=r'$\mathrm{UM:\ }M_{\star,\ {\rm %s}}$' % x_label)
         else:
             ax2.plot(um_smf_tot['logm_mean'],
                      np.log10(um_smf_tot['smf']),
                      linewidth=4, linestyle='--',
                      c='royalblue',
-                     label=r'$\mathrm{UM:\ Mtot}$')
+                     label=r'$\mathrm{UM:\ }M_{\star,\ {\rm %s}}$' % x_label)
 
     ax2.legend(fontsize=15, loc='upper right')
 

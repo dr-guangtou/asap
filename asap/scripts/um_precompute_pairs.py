@@ -27,7 +27,7 @@ def main(um_file, ptl_file, wl_min_r=0.08, wl_max_r=50.0, wl_n_bins=22, verbose=
         print("# Dealing with {} particles".format(len(sim_particles)))
 
     # Output file name
-    um_pre, _ = os.path.splitext(um_mock)
+    um_pre, _ = os.path.splitext(um_file)
     ptl_pre, _ = os.path.splitext(ptl_file)
     n_ptl = ptl_pre.split('_')[-1]
     precompute_out = "{}_{}_r_{:5.2f}_{:5.2f}_{:2d}bins.npy".format(

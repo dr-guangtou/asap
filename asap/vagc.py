@@ -15,7 +15,7 @@ from halotools.mock_observables import total_mass_enclosed_per_cylinder
 __all__ = ['value_added_mdpl2_mock', 'value_added_smdpl_mock',
            'total_stellar_mass_including_satellites', 'precompute_lensing_pairs',
            'prep_um_catalog', 'precompute_wl_smdpl', 'value_added_mock',
-           'get_accretion_rate']
+           'get_accretion_rate', 'precompute_wl_mdpl2', 'precompute_wl']
 
 
 def value_added_mdpl2_mock(fname):
@@ -284,11 +284,13 @@ def prep_um_catalog(um_input, um_min_mvir=None, mhalo_col='logmh_peak'):
     return um_mock_use
 
 
-def precompute_wl_smdpl(um_mock, sim_particles,
-                        m_particle=9.63E7, n_particles_per_dim=3840,
-                        box_size=400, wl_min_r=0.08, wl_max_r=50.0,
-                        wl_n_bins=22, verbose=True):
-    """Precompute lensing pairs using UniverseMachine SMDPL catalog.
+def precompute_wl(um_mock, sim_particles, m_particle=9.63E7, n_particles_per_dim=3840,
+                  box_size=400, wl_min_r=0.08, wl_max_r=50.0, wl_n_bins=22, verbose=True):
+    """
+    Precompute lensing pairs using UniverseMachine mock and the
+    corresponding simulation particle table.
+
+    Default values are for SMDPL simulation.
 
     Parameters
     ----------
@@ -312,6 +314,128 @@ def precompute_wl_smdpl(um_mock, sim_particles,
         Default: 11
 
     """
+    n_particles_tot = (n_particles_per_dim ** 3)
+
+    if verbose:
+        print("#   The simulation particle mass is %f" % m_particle)
+        print("#   The number of particles is %d" % n_particles_tot)
+
+    sim_downsampling_factor = (n_particles_tot / float(len(sim_particles)))
+
+    # Radius bins
+    rp_bins = np.logspace(np.log10(wl_min_r), np.log10(wl_max_r), wl_n_bins)
+
+    # Box size
+    start = time()
+    sim_mass_encl = precompute_lensing_pairs(
+        um_mock['x'], um_mock['y'], um_mock['z'],
+        sim_particles['x'], sim_particles['y'], sim_particles['z'],
+        m_particle, sim_downsampling_factor,
+        rp_bins, box_size)
+    runtime = (time() - start)
+
+    msg = ("Total runtime for {0} galaxies and {1:.1e} particles "
+           "={2:.2f} seconds")
+    print(msg.format(len(um_mock), len(sim_particles), runtime))
+
+    return sim_mass_encl
+
+def precompute_wl_smdpl(um_mock, sim_particles, wl_min_r=0.08, wl_max_r=50.0,
+                        wl_n_bins=22, verbose=True):
+    """Precompute lensing pairs using UniverseMachine SMDPL catalog.
+
+    See here for more details:
+        https://www.cosmosim.org/cms/simulations/smdpl/
+
+    Parameters
+    ----------
+    sim_particles : astropy.table, optional
+        External particle data catalog.
+
+    um_min_mvir : float, optional
+        Minimum halo mass used in computation.
+        Default: None
+
+    wl_min_r : float, optional
+        Minimum radius for WL measurement.
+        Default: 0.1
+
+    wl_max_r : float, optional
+        Maximum radius for WL measurement.
+        Default: 40.0
+
+    wl_n_bins : int, optional
+        Number of bins in log(R) space.
+        Default: 11
+
+    """
+    # Setup for SMDPL simulation
+    m_particle = 9.63E7
+    n_particles_per_dim = 3840
+    box_size = 400.
+
+    # Total number of particles
+    n_particles_tot = (n_particles_per_dim ** 3)
+
+    if verbose:
+        print("#   The simulation particle mass is %f" % m_particle)
+        print("#   The number of particles is %d" % n_particles_tot)
+
+    sim_downsampling_factor = (n_particles_tot / float(len(sim_particles)))
+
+    # Radius bins
+    rp_bins = np.logspace(np.log10(wl_min_r), np.log10(wl_max_r), wl_n_bins)
+
+    # Box size
+    start = time()
+    sim_mass_encl = precompute_lensing_pairs(
+        um_mock['x'], um_mock['y'], um_mock['z'],
+        sim_particles['x'], sim_particles['y'], sim_particles['z'],
+        m_particle, sim_downsampling_factor,
+        rp_bins, box_size)
+    runtime = (time() - start)
+
+    msg = ("Total runtime for {0} galaxies and {1:.1e} particles "
+           "={2:.2f} seconds")
+    print(msg.format(len(um_mock), len(sim_particles), runtime))
+
+    return sim_mass_encl
+
+def precompute_wl_mdpl2(um_mock, sim_particles, wl_min_r=0.08, wl_max_r=50.0,
+                        wl_n_bins=22, verbose=True):
+    """Precompute lensing pairs using UniverseMachine MDPL2 catalog.
+
+    See here for more details:
+        https://www.cosmosim.org/cms/simulations/mdpl2/
+
+    Parameters
+    ----------
+    sim_particles : astropy.table, optional
+        External particle data catalog.
+
+    um_min_mvir : float, optional
+        Minimum halo mass used in computation.
+        Default: None
+
+    wl_min_r : float, optional
+        Minimum radius for WL measurement.
+        Default: 0.1
+
+    wl_max_r : float, optional
+        Maximum radius for WL measurement.
+        Default: 40.0
+
+    wl_n_bins : int, optional
+        Number of bins in log(R) space.
+        Default: 11
+
+    """
+    # Setup for the MDPL2 simulation
+    m_particle = 1.51E9
+    n_particles_per_dim = 3840
+    box_size = 1000.
+
+    # Total number of particles
     n_particles_tot = (n_particles_per_dim ** 3)
 
     if verbose:

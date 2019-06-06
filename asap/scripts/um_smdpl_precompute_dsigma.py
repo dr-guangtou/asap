@@ -4,99 +4,82 @@ Precompute lensing pairs using UniverseMachine SMDPL catalog.
 """
 
 import os
+import argparse
 
 import numpy as np
 
-from time import time
 from astropy.table import Table
 
-from model_predictions import precompute_lensing_pairs
+from asap import vagc
 
 
-def precompute_wl_smdpl(um_mock, sim_particles, um_min_mvir=None,
-                        m_particle=9.63E7, n_particles_per_dim=3840,
-                        box_size=400, h0=0.6777,
-                        wl_min_r=0.08, wl_max_r=50.0, wl_n_bins=22,
-                        verbose=True):
-    """
-    Precompute lensing pairs using UniverseMachine SMDPL catalog.
-
-    Parameters:
-    -----------
-
-    sim_particles : astropy.table, optional
-        External particle data catalog.
-
-    um_min_mvir : float, optional
-        Minimum halo mass used in computation.
-        Default: None
-
-    wl_min_r : float, optional
-        Minimum radius for WL measurement.
-        Default: 0.08
-
-    wl_max_r : float, optional
-        Maximum radius for WL measurement.
-        Default: 50.0
-
-    wl_n_bins : int, optional
-        Number of bins in log(R) space.
-        Default: 22
-    """
-    n_particles_tot = (n_particles_per_dim ** 3)
+def main(um_file, ptl_file, wl_min_r=0.08, wl_max_r=50.0, wl_n_bins=22, verbose=True):
+    """Pre-compute the particles pairs to calculate WL profile."""
+    # Read in the UM mock catalog
+    um_mock = Table(np.load(um_file))
     if verbose:
-        print("#   The simulation particle mass is %f" % m_particle)
-        print("#   The number of particles is %d" %
-              n_particles_tot)
+        print("# Load in UM mock catalog: {}".format(um_file))
+        print("# Dealing with {} galaxies".format(len(um_mock)))
+    # Read in the particle table
+    sim_particles = Table(np.load(ptl_file))
+    if verbose:
+        print("# Load in particle table: {}".format(ptl_file))
+        print("# Dealing with {} particles".format(len(sim_particles)))
 
-    sim_downsampling_factor = (n_particles_tot /
-                               float(len(sim_particles)))
-
-    if um_min_mvir is not None:
-        sample = um_mock[um_mock['logmh_peak'] >= um_min_mvir]
-    else:
-        sample = um_mock
-
-    # Radius bins
-    rp_bins = np.logspace(np.log10(wl_min_r),
-                          np.log10(wl_max_r),
-                          wl_n_bins)
-    # Box size
-    sim_period = box_size
-
-    start = time()
-    sim_mass_encl = precompute_lensing_pairs(
-        sample['x'], sample['y'], sample['z'],
-        sim_particles['x'], sim_particles['y'], sim_particles['z'],
-        m_particle, sim_downsampling_factor,
-        rp_bins, sim_period)
-    end = time()
-    runtime = (end - start)
-
-    msg = ("Total runtime for {0} galaxies and {1:.1e} particles "
-           "={2:.2f} seconds")
-    print(msg.format(len(sample), len(sim_particles), runtime))
-
-    return sim_mass_encl
-
-
-# Input table
-um_smdpl_dir = '/Users/song/data/massive/dr16a/um2/um2_new'
-um_smdpl_ptbl = os.path.join(um_smdpl_dir,
-                             'um_smdpl_particles_0.7124_50m.npy')
-um_smdpl_gtbl = os.path.join(um_smdpl_dir,
-                             'um_smdpl_0.7124_new_vagc_mpeak_11.5.npy')
-
-sim_particles = Table(np.load(um_smdpl_ptbl))
-um_mock = Table(np.load(um_smdpl_gtbl))
-
-# Output file
-um_smdpl_precompute = os.path.join(
-    um_smdpl_dir,
-    'um_smdpl_0.7124_new_vagc_mpeak_11.5_50m_r_0.08_50_22bins.npy'
+    # Output file name
+    um_pre, _ = os.path.splitext(um_mock)
+    ptl_pre, _ = os.path.splitext(ptl_file)
+    n_ptl = ptl_pre.split('_')[-1]
+    precompute_out = "{}_{}_r_{:5.2f}_{:5.2f}_{:2d}bins.npy".format(
+        um_pre, n_ptl, wl_min_r, wl_max_r, wl_n_bins
     )
+    if verbose:
+        print("# Output file name : {}".format(precompute_out))
 
-# Run precompute
-um_smdpl_mass_encl = precompute_wl_smdpl(um_mock, sim_particles)
+    # Run precompute
+    if 'smdpl' in um_file:
+        mass_encl = vagc.precompute_wl_smdpl(
+            um_mock, sim_particles, wl_min_r=wl_min_r, wl_max_r=wl_max_r,
+            wl_n_bins=wl_n_bins)
+    elif 'mdpl2' in um_file:
+        mass_encl = vagc.precompute_wl_mdpl2(
+            um_mock, sim_particles, wl_min_r=wl_min_r, wl_max_r=wl_max_r,
+            wl_n_bins=wl_n_bins)
+    else:
+        raise NameError("# Wrong simulation: [smdpl/mdpl2]")
 
-np.save(um_smdpl_precompute, um_smdpl_mass_encl)
+    np.save(precompute_out, mass_encl)
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        'um_file', type=str,
+        help=('UniverseMachine snapshot file in .npy format'))
+
+    parser.add_argument(
+        'ptl_file', type=str,
+        help=('Simulation particle table in .npy format'))
+
+    parser.add_argument(
+        '-l', '--r_low', dest='wl_min_r',
+        help='Lower limit of the radial bin',
+        type=float, default=0.08)
+
+    parser.add_argument(
+        '-u', '--r_upp', dest='wl_max_r',
+        help='Upper limit of the radial bin',
+        type=float, default=50.0)
+
+    parser.add_argument(
+        '-n', '--n_bins', dest='wl_n_bins',
+        help='Number of the radial bin',
+        type=int, default=22)
+
+    args = parser.parse_args()
+
+    main(args.um_file, args.ptl_file,
+         wl_min_r=args.wl_min_r, wl_max_r=args.wl_max_r,
+         wl_n_bins=args.wl_n_bins)

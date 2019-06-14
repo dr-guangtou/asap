@@ -5,7 +5,6 @@ import numpy as np
 
 from scipy import interpolate
 from astropy.cosmology import FlatLambdaCDM
-
 from . import smf
 from . import utils
 from . import dsigma

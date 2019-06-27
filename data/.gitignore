@@ -1,3 +1,7 @@
 umachine
+asap_smdpl_mock_default.fits
 s16a_wide2_massive_fsps1_imgsub_use_short.fits
 s16a_wide2_massive_fsps1_imgsub_use_mvir_added.fits
+s16a_wide2_massive_fsps1_imgsub_use_mvir_added_camira_new.fits
+s16a_wide2_massive_fsps1_imgsub_use_mvir_added_camira_new_matched.fits
+*.pkl

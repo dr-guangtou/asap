@@ -4,10 +4,10 @@ parameters:
         name: 'a'
         label: r'$a$'
         ini: 0.60
-        type: 'flat'
-        min: 0.3
-        max: 0.9
-        sig: 0.1
+        type: 'student'
+        min: 0.0
+        max: 1.0
+        sig: 0.20
     # Intercept of the TSHMR
     param_2:
         name: 'b'
@@ -22,7 +22,7 @@ parameters:
         name: 'c'
         label: r'$c$'
         ini: 0.00
-        type: 'flat'
+        type: 'student'
         min: -0.20
         max: 0.20
         sig: 0.05
@@ -30,9 +30,9 @@ parameters:
     param_4:
         name: 'd'
         label: r'$d$'
-        ini: 0.05
+        ini: 0.02
         type: 'flat'
-        min: 0.00
+        min: -0.05
         max: 0.20
         sig: 0.08
     # Fraction of in-situ mass in the inner 10 kpc
@@ -49,7 +49,7 @@ parameters:
         name: 'a_exs'
         label: r'$A_{\mathrm{exs}}$'
         ini: -0.18
-        type: 'flat'
+        type: 'student'
         min: -0.40
         max: 0.20
         sig: 0.08
@@ -60,11 +60,12 @@ parameters:
         ini: 0.40
         type: 'flat'
         min: 0.00
-        max: 0.80
+        max: 0.40
         sig: 0.15
 
 # About observations
 obs:
+    #dir: '/home/shuang/work/asap/data/'
     dir: '/Users/song/Dropbox/work/project/asap/data/'
     galaxy: 's16a_wide2_massive_fsps1_imgsub_use_short.fits'
     dsigma: 's16a_wide2_dsigma_logm11.6_12_bins.npy'
@@ -81,15 +82,16 @@ obs:
 
 # About the UniverseMachine model
 um:
-    dir: '/Users/song/Dropbox/work/project/asap/data/umachine'
+    #dir: '/home/shuang/work/umachine/'
+    dir: '/Users/song/Dropbox/work/project/asap/data/umachine/'
     galaxy: 'um_smdpl_insitu_exsitu_0.7124_basic_logmp_11.5_short.npy'
     dsigma: 'um_smdpl_insitu_exsitu_0.7124_basic_logmp_11.5_50m_r_0.08_50_22bins.npy'
     logmh_col: 'logmh_host'
     logms_col: 'logms_tot'
     pivot_logmh: 13.5
-    min_logmh: 12.0
+    min_logmh: 12.2
     min_logms: 11.0
-    min_scatter: 0.01
+    min_scatter: 0.001
     # Do not change anything below unless you know what you are doing.
     redshift: 0.3637
     lbox: 400.0
@@ -108,24 +110,24 @@ model:
     type: 'basic'
     sampler: 'emcee'
     out_dir: ""
-    prefix: "asap_test_test"
+    prefix: "asap_test_final_6"
     # Do not change anything below unless you know what you are doing.
     smf_only: False
     wl_only: False
     wl_weight: 1.0
     # Radial range to compare DeltaSigma profile, in unit of Mpc
-    dsigma_minr: 0.05
-    dsigma_maxr: 15.0
+    dsigma_minr: 0.15
+    dsigma_maxr: 12.0
     # About emcee sampling method
     emcee:
-        n_thread: 24
+        n_thread: 36
         burnin_move: "snooker"
         burnin_n_walker: 256
         burnin_n_repeat: 3
-        burnin_n_sample: 400
+        burnin_n_sample: 200
         sample_move: "kde"
         sample_n_walker: 256
-        sample_n_sample: 400
+        sample_n_sample: 9000
         stretch_a: 4
         ini_prior: True
         best_positions: True

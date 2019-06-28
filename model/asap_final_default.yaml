@@ -121,11 +121,11 @@ model:
     # About emcee sampling method
     emcee:
         n_thread: 36
-        burnin_move: "snooker"
+        burnin_move: "strech"
         burnin_n_walker: 256
         burnin_n_repeat: 3
         burnin_n_sample: 200
-        sample_move: "kde"
+        sample_move: "stretch"
         sample_n_walker: 256
         sample_n_sample: 9000
         stretch_a: 4

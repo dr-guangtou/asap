@@ -725,19 +725,19 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
     return fig
 
 
-def plot_mcmc_corner(mcmc_samples, mcmc_labels, **corner_kwargs):
+def plot_mcmc_corner(mcmc_samples, mcmc_labels, fontsize=26, labelsize=20, **corner_kwargs):
     """Corner plots for MCMC samples."""
     fig = corner.corner(
         mcmc_samples,
         bins=40, color=ORG(0.7),
         smooth=2, labels=mcmc_labels,
-        label_kwargs={'fontsize': 26},
+        label_kwargs={'fontsize': fontsize},
         quantiles=[0.16, 0.5, 0.84],
         levels=[0.16, 0.50, 0.84],
         plot_contours=True,
         fill_contours=True,
         show_titles=True,
-        title_kwargs={"fontsize": 20},
+        title_kwargs={"fontsize": labelsize},
         hist_kwargs={"histtype": 'stepfilled', "alpha": 0.5,
                      "edgecolor": "none"},
         use_math_text=True,

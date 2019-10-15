@@ -601,13 +601,16 @@ def plot_best_fit_shmr(shmr_a, shmr_b):
     return fig
 
 
-def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
+def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None, figsize=None,
                     mcmc_burnin=None, burnin_alpha=0.2, trace_alpha=0.2):
     """Traceplot for MCMC results."""
-    if mcmc_burnin is not None:
-        fig = plt.figure(figsize=(12, 15))
+    if figsize is None:
+        if mcmc_burnin is not None:
+            fig = plt.figure(figsize=(12, 15))
+        else:
+            fig = plt.figure(figsize=(10, 15))
     else:
-        fig = plt.figure(figsize=(10, 15))
+        fig = plt.figure(figsize=figsize)
 
     fig.subplots_adjust(hspace=0.0, wspace=0.0, bottom=0.027, top=0.97,
                         left=0.06, right=0.94)
@@ -627,10 +630,12 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
         param_chain = mcmc_chains[:, :, ii]
         if mcmc_burnin is not None:
             param_burnin = mcmc_burnin[:, :, ii]
-
-        # Get the range of Y-axis
-        y_min = np.min([np.min(param_chain), np.min(param_burnin)])
-        y_max = np.max([np.max(param_chain), np.max(param_burnin)])
+            # Get the range of Y-axis
+            y_min = np.min([np.min(param_chain), np.min(param_burnin)])
+            y_max = np.max([np.max(param_chain), np.max(param_burnin)])
+        else:
+            y_min = np.min(param_chain)
+            y_max = np.max(param_chain)
 
         # Maximum variance of the walkers
         max_var = max(np.var(param_chain[:, :], axis=1))
@@ -710,8 +715,9 @@ def plot_mcmc_trace(mcmc_chains, mcmc_labels, mcmc_best=None,
             if mcmc_burnin is not None:
                 ax3.xaxis.set_visible(False)
         else:
-            for tick in ax3.xaxis.get_major_ticks():
-                tick.label.set_fontsize(20)
+            if mcmc_burnin is not None:
+                for tick in ax3.xaxis.get_major_ticks():
+                    tick.label.set_fontsize(20)
 
         if ii == 0:
             t = ax1.set_title(r"$\mathrm{Sampling}$", fontsize=28, color='k')

@@ -96,8 +96,11 @@ def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
     burnin_pos, burnin_prob, _ = burnin_results
 
     # Auto-correlation time
-    tau = sampler_burnin.get_autocorr_time(quiet=True)
-    print("# Current autocorrelation time is", tau)
+    try:
+        tau = sampler_burnin.get_autocorr_time(quiet=False, tol=20, c=5)
+        print("# Current autocorrelation time is", tau)
+    except emcee.autocorr.AutocorrError:
+        print("# The chain is shorter than 20 x tau right now...")
 
     # Save the burn-in results
     io.save_results_to_npz(burnin_results, sampler_burnin,
@@ -205,8 +208,11 @@ def emcee_sample_batch(sampler, ini_positions, n_step, prefix='asap', verbose=Tr
         ini_positions, n_step, store=True, progress=True)
 
     # Auto-correlation time
-    tau = sampler.get_autocorr_time(quiet=True)
-    print("# Current autocorrelation time is", tau)
+    try:
+        tau = sampler.get_autocorr_time(quiet=False, tol=50, c=5)
+        print("# Current autocorrelation time is", tau)
+    except emcee.autocorr.AutocorrError:
+        print("# The chain is shorter than 50 x tau right now...")
 
     # Save the burn-in results
     io.save_results_to_npz(sample_results, sampler,

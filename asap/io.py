@@ -6,13 +6,16 @@ import pickle
 
 import numpy as np
 
+import emcee
+
 from astropy.table import Table, Column
 from astropy.cosmology import FlatLambdaCDM
 
 from . import ensemble
 
 
-__all__ = ["load_obs", "load_um", "save_pickle", "load_pickle", "load_npz_results"]
+__all__ = ["load_obs", "load_um", "save_pickle", "load_pickle", "load_npz_results", 
+           "save_results_to_npz"]
 
 
 def load_dsigma(cfg, verbose=False):
@@ -245,31 +248,36 @@ def load_npz_results(mcmc_file):
 
 
 def save_results_to_npz(mcmc_results, mcmc_sampler, mcmc_file,
-                        mcmc_ndims, verbose=True, frac=0.1):
+                        mcmc_ndims, verbose=True, frac=0.1, tol=20, c=5):
     """Save the MCMC run results."""
-    (mcmc_position, mcmc_lnprob, _) = mcmc_results
+    mcmc_position, mcmc_lnprob, _ = mcmc_results
 
-    mcmc_samples = mcmc_sampler.chain[:, :, :].reshape(
-        (-1, mcmc_ndims))
+    mcmc_samples = mcmc_sampler.chain[:, :, :].reshape((-1, mcmc_ndims))
     mcmc_chains = mcmc_sampler.chain
     mcmc_lnprob = mcmc_sampler.lnprobability
 
     mcmc_params_stats = ensemble.mcmc_samples_stats(mcmc_samples)
 
     # Best parameter using the best log(prob)
-    ind_1, ind_2 = np.unravel_index(np.argmax(mcmc_lnprob, axis=None),
-                                    mcmc_lnprob.shape)
-    mcmc_best = mcmc_chains[ind_2, ind_1, :]
+    mcmc_best = mcmc_sampler.flatchain[mcmc_sampler.flatlnprobability.argmax()]
 
     # Best parameters using the mean of the last few samples
     _, n_step, n_dim = mcmc_chains.shape
     mcmc_mean = np.nanmean(
         mcmc_chains[:, -int(n_step * frac):, :].reshape([-1, n_dim]), axis=0)
 
+    # Auto-correlation time
+    try:
+        tau = mcmc_sampler.get_autocorr_time(quiet=False, tol=tol, c=c)
+        print("# Current autocorrelation time is", tau)
+    except emcee.autocorr.AutocorrError:
+        print("# The chain is shorter than {} x tau right now...".format(tol))
+        tau = None
+
     np.savez(mcmc_file,
              samples=mcmc_samples, lnprob=np.array(mcmc_lnprob),
              best=np.array(mcmc_best), mean=np.asarray(mcmc_mean),
-             chains=mcmc_chains,
+             chains=mcmc_chains, tau=tau,
              position=np.asarray(mcmc_position),
              acceptance=np.array(mcmc_sampler.acceptance_fraction))
 
@@ -287,4 +295,3 @@ def save_results_to_npz(mcmc_results, mcmc_sampler, mcmc_file,
         for param_stats in mcmc_params_stats:
             print(param_stats)
         print("#------------------------------------------------------")
-

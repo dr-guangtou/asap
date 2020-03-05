@@ -97,7 +97,8 @@ def emcee_burnin_batch(sampler_burnin, ini_positions, params, n_step,
 
     # Save the burn-in results
     io.save_results_to_npz(burnin_results, sampler_burnin,
-                           prefix + '_burnin.npz', n_dim, verbose=verbose)
+                           prefix + '_burnin.npz', n_dim, verbose=verbose,
+                           tol=20, c=5)
 
     # Find best walker position
     burnin_best = sampler_burnin.flatlnprobability.argmax()
@@ -202,7 +203,8 @@ def emcee_sample_batch(sampler, ini_positions, n_step, prefix='asap', verbose=Tr
 
     # Save the burn-in results
     io.save_results_to_npz(sample_results, sampler,
-                           prefix + '_sample.npz', n_dim, verbose=verbose)
+                           prefix + '_sample.npz', n_dim, verbose=verbose,
+                           tol=50, c=5)
 
     return sample_results
 

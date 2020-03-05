@@ -182,7 +182,8 @@ def config_um(cfg_um, verbose=False):
     # Default simulation is SMDPL
     cfg_um['lbox'] = 400.0 if 'lbox' not in cfg_um else cfg_um['lbox'] # Mpc/h
 
-    cfg_um['volume'] = np.power(cfg_um['lbox'] / cfg_um['h0'], 3)
+    # Use the same h as in observation
+    cfg_um['volume'] = np.power(cfg_um['lbox'] / cfg_obs['h0'], 3)
     if verbose:
         print("# Volumn of the simulation: %15.2f Mpc^3" % cfg_um['volume'])
 

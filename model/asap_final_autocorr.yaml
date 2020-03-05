@@ -108,7 +108,7 @@ model:
     type: 'basic'
     sampler: 'emcee'
     out_dir: ""
-    prefix: "asap_final_test"
+    prefix: "asap_final_autocorr"
     # Do not change anything below unless you know what you are doing.
     smf_only: False
     wl_only: False

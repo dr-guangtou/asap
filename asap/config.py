@@ -134,7 +134,7 @@ def config_obs(cfg_obs, verbose=False):
     return cfg_obs
 
 
-def config_um(cfg_um, verbose=False):
+def config_um(cfg_um, h0=0.7, verbose=False):
     """Config the UniverseMachine data.
 
     Parameters
@@ -183,7 +183,7 @@ def config_um(cfg_um, verbose=False):
     cfg_um['lbox'] = 400.0 if 'lbox' not in cfg_um else cfg_um['lbox'] # Mpc/h
 
     # Use the same h as in observation
-    cfg_um['volume'] = np.power(cfg_um['lbox'] / cfg_obs['h0'], 3)
+    cfg_um['volume'] = np.power(cfg_um['lbox'] / h0, 3)
     if verbose:
         print("# Volumn of the simulation: %15.2f Mpc^3" % cfg_um['volume'])
 
@@ -368,7 +368,7 @@ def update_configuration(cfg, verbose=False):
     cfg['obs'] = config_obs(cfg['obs'], verbose=verbose)
 
     # Config the UniverseMachine data
-    cfg['um'] = config_um(cfg['um'], verbose=verbose)
+    cfg['um'] = config_um(cfg['um'], h0=cfg['obs']['h0'], verbose=verbose)
 
     # Config the parameters
     params = pa.AsapParams(cfg['parameters'])

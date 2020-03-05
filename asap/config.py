@@ -24,7 +24,7 @@ def parse_config(config_file):
         Configuration parameters in dictionary format.
 
     """
-    return yaml.load(open(config_file))
+    return yaml.load(open(config_file), Loader=yaml.FullLoader)
 
 
 def config_obs(cfg_obs, verbose=False):

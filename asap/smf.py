@@ -16,8 +16,7 @@ __all__ = ['get_smf_bootstrap', 'bootstrap_smf', 'bootstrap_resample',
            'smf_sigma_mass_weighted', 'smf_sigma_mass_weighted_2d']
 
 
-def compute_smf(sm_array, volume, nb, sm_min, sm_max,
-                smf_only=False, return_bins=False):
+def compute_smf(sm_array, volume, nb, sm_min, sm_max, smf_only=False, return_bins=False):
     """
     Parameters
     ----------
@@ -38,8 +37,7 @@ def compute_smf(sm_array, volume, nb, sm_min, sm_max,
         Poisson error
     """
 
-    smf, bin_edges = np.histogram(sm_array, bins=nb,
-                                  range=[sm_min, sm_max])
+    smf, bin_edges = np.histogram(sm_array, bins=nb, range=[sm_min, sm_max])
 
     # bin width in dex
     # !! Only works for constant bin size now
@@ -85,13 +83,11 @@ def bootstrap_resample(X, n_boots=1000):
 
     """
     return np.vstack(
-        [X[np.floor(np.random.rand(len(X))*len(X)).astype(int)]
-        for ii in np.arange(n_boots)]).T
+        [X[np.floor(np.random.rand(len(X)) * len(X)).astype(int)] for ii in np.arange(n_boots)]).T
 
 
 def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
-                  n_boots=1000, sm_err=None,
-                  resample_err=False):
+                  n_boots=1000, sm_err=None, resample_err=False):
     """Stellar mass function using bootstrap resampling.
 
     Parameters
@@ -129,8 +125,7 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
 
     """
 
-    x, smf, err_poison, bins = compute_smf(sm_array, volume, nb,
-                                           sm_min, sm_max,
+    x, smf, err_poison, bins = compute_smf(sm_array, volume, nb, sm_min, sm_max,
                                            return_bins=True)
 
     if resample_err:
@@ -144,14 +139,13 @@ def bootstrap_smf(sm_array, volume, nb, sm_min, sm_max,
 
     smf_boots = np.vstack([
         compute_smf(sm_boots[:, ii], volume, nb, sm_min, sm_max, smf_only=True)
-        for ii in range(n_boots)]
-    )
+        for ii in range(n_boots)])
 
     return x, smf, err_poison, smf_boots, bins
 
 
 def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
-                      add_err=None, n_boots=5000, bootstrap=True):
+                      add_err=None, n_boots=5000, allow_zero_phi=False):
     """Estimate the observed SMF and bootstrap errors.
 
     Parameters
@@ -185,9 +179,7 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
         Default: 5000
 
     """
-    smf_boot = bootstrap_smf(logms, volume, nbin,
-                             min_logms, max_logms,
-                             n_boots=n_boots)
+    smf_boot = bootstrap_smf(logms, volume, nbin, min_logms, max_logms, n_boots=n_boots)
     mass_cen, smf_s, smf_err, smf_b, mass_bins = smf_boot
 
     # Median values
@@ -196,24 +188,23 @@ def get_smf_bootstrap(logms, volume, nbin, min_logms, max_logms,
     else:
         smf = np.nanmedian(smf_b, axis=0)
     # 1-sigma errors
-    smf_low = np.nanpercentile(smf_b, 16, axis=0,
-                               interpolation='midpoint')
-    smf_upp = np.nanpercentile(smf_b, 84, axis=0,
-                               interpolation='midpoint')
+    smf_low = np.nanpercentile(smf_b, 16, axis=0, interpolation='midpoint')
+    smf_upp = np.nanpercentile(smf_b, 84, axis=0, interpolation='midpoint')
 
     if add_err is not None:
         smf_err += (smf * add_err)
         smf_low -= (smf * add_err)
         smf_upp += (smf * add_err)
 
-    # Make sure the SMF is above zero
-    smf = np.where(smf <= 0.0, 1E-8, smf)
-    smf_low = np.where(smf_low <= 0.0, 1E-9, smf_low)
-    smf_upp = np.where(smf_upp <= 0.0, 5E-8, smf_upp)
-
     # Left and right edges of the mass bins
     bins_0 = mass_bins[0:-1]
     bins_1 = mass_bins[1:]
+
+    # Make sure the SMF is above zero
+    if not allow_zero_phi:
+        smf = np.where(smf <= 0.0, 0.2 / volume / (bins_1[0] - bins_0[0]), smf)
+        smf_low = np.where(smf_low <= 0.0, 0.01 / volume / (bins_1[0] - bins_0[0]), smf_low)
+        smf_upp = np.where(smf_upp <= 0.0, 1.0 / volume / (bins_1[0] - bins_0[0]), smf_upp)
 
     smf_table = Table()
     smf_table['logm_mean'] = mass_cen
